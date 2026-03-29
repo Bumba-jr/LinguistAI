@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "skills": {
+    "Jutiku_Quiz_Expert": {
+      "source": "budaobu/jutiku_quiz_expert",
+      "sourceType": "github",
+      "computedHash": "a00eef396c91b49a4aa7b718c2ab8dc9873807fe8feaa0b46e136640383ba3ab"
+    },
+    "backend-quiz": {
+      "source": "itlearning/study-backend",
+      "sourceType": "github",
+      "computedHash": "c435452cebc66c7008682eacdd79409f5e9072961af42f340caa8303e9b8ac35"
+    },
+    "branch-quiz": {
+      "source": "buildrtech/dotagents",
+      "sourceType": "github",
+      "computedHash": "4ae5158531f7058cd1440dabacb1cb540812c939ffe1ca09e6c11f34efc2fb36"
+    },
+    "canvas-quiz": {
+      "source": "dbosk/claude-skills",
+      "sourceType": "github",
+      "computedHash": "af9f0cbcb843a77bfa286c55c98dd1980d3f2d25c371cb82c7c6d2277aaba2a1"
+    },
+    "code-comprehension-quiz": {
+      "source": "haroutkhac/code-comprehension-quiz",
+      "sourceType": "github",
+      "computedHash": "5911524b3757c173f4eb43df9484b12a92cd868aafb2d205e4c403a2843214dd"
+    },
+    "quiz": {
+      "source": "readwiseio/readwise-skills",
+      "sourceType": "github",
+      "computedHash": "ea11de51ccedeaf69812f35f85810ec83688b8e98d8ababf9b8cb729d6f2b634"
+    },
+    "quiz-creator": {
+      "source": "szeyu/vibe-study-skills",
+      "sourceType": "github",
+      "computedHash": "c83be0984e8afb6dd82a9977cbeb57caa606ab2e1c2ce0c55e3762a10b6f1e8f"
+    },
+    "quiz-funnels": {
+      "source": "officexapp/quiz-funnels",
+      "sourceType": "github",
+      "computedHash": "8a907ac49b09139f555057f77a0425196f3be5c081e7a38f901f09a92f2977ec"
+    },
+    "quiz-game-mechanics": {
+      "source": "violabg/dev-quiz-battle",
+      "sourceType": "github",
+      "computedHash": "d627dd335b716cdefe2bf13088a2c17411ed9c66259dbe24af2200a5a0840169"
+    },
+    "quiz-generator": {
+      "source": "dmccreary/claude-skills",
+      "sourceType": "github",
+      "computedHash": "c9a06d94ab91e4a86cc50fee342937c2ac5ad8c6bedaa034600e7bb3c0da0e01"
+    },
+    "quiz-maker": {
+      "source": "onewave-ai/claude-skills",
+      "sourceType": "github",
+      "computedHash": "1799bb34bb08244cbb1b8d1d91c753fa53283867146c5fa82abcefeb23863314"
+    },
+    "quizzing-code": {
+      "source": "universalavenue/quizzing-code",
+      "sourceType": "github",
+      "computedHash": "4bc57ee682b3c3e150054a3d5d1a00fdb5fae3ae2f500c800162ecdc034384dd"
+    },
+    "skill-forge-quiz": {
+      "source": "zjfls/zhoujie-claude-skills",
+      "sourceType": "github",
+      "computedHash": "75748a543071f6cfe187bbf85d20f9f25cc991ce0a8d46c835385bb8dac4f099"
+    },
+    "swift-quiz": {
+      "source": "itlearning/study-ios",
+      "sourceType": "github",
+      "computedHash": "546f9446bcc29ee1b1064b4039932d9a96b2afc548e11c9a606a97b8c335c48b"
+    }
+  }
+}

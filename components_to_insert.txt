@@ -1,0 +1,21 @@
+// ─── Word of Day Banner ────────────────────────────────────────────────────
+const WordOfDayBanner = ({ lang }: { lang: Language }) => {
+  const [word, setWord] = useState<{ word: string; translation: string; example: string } | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    getWordOfTheDay(lang).then(setWord).catch(() => {});
+  }, [lang]);
+  if (!word || dismissed) return null;
+  return (
+    <div className="mx-4 mt-2 mb-1 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-100 rounded-2xl px-4 py-2.5 flex items-center gap-3 shrink-0">
+      <Star size={14} className="text-amber-400 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-black text-amber-700">{word.word}</span>
+        <span className="text-xs text-amber-500 mx-1.5">·</span>
+        <span className="text-xs text-amber-600">{word.translation}</span>
+        {word.example && <p className="text-[10px] text-amber-500 mt-0.5 truncate italic">{word.example}</p>}
+      </div>
+      <button onClick={() => setDismissed(true)} className="text-amber-300 hover:text-amber-500 shrink-0"><X size={12} /></button>
+    </div>
+  );
+};

@@ -1,0 +1,7 @@
+{
+  "name": "12 mar LinguistAI - Smart Study Platform",
+  "description": "An AI-powered learning platform that converts your notes and files into interactive quizzes and speech exercises.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
