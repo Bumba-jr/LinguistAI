@@ -794,6 +794,13 @@ const FlashcardsView = () => {
   const [addCardForm, setAddCardForm] = useState({ word: '', translation: '', language: 'French' });
   const [addCardLoading, setAddCardLoading] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  // Import modal state — must live above every early return (Rules of Hooks)
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [extracted, setExtracted] = useState<{ word: string; translation: string; exists: boolean }[]>([]);
+  const [importSelected, setImportSelected] = useState<Set<string>>(new Set());
 
   // ── Streak + Daily goal (Supabase) ────────────────────────────────────
   const DAILY_GOALS = [10, 20, 50];
@@ -1208,13 +1215,6 @@ const FlashcardsView = () => {
   };
 
   // ── Import: paste text → AI extracts each word → dedupe → add ──────────
-  const [importOpen, setImportOpen] = useState(false);
-  const [importText, setImportText] = useState('');
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
-  const [extracted, setExtracted] = useState<{ word: string; translation: string; exists: boolean }[]>([]);
-  const [importSelected, setImportSelected] = useState<Set<string>>(new Set());
-
   const importLang = (quizSettings?.targetLanguage || 'French') as any;
 
   const handleExtract = async () => {
