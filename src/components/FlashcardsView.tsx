@@ -7,11 +7,11 @@ import {
   ArrowLeft, Mic, BookMarked, Zap, AlertTriangle, Globe2,
   MessageSquareQuote, GitBranch, Calendar, PenLine, Shuffle,
   MicOff, Trophy, Star, Flame, Target, Maximize2, Minimize2,
-  Search, SortAsc, Download, Plus, Filter, ChevronDown,
+  Search, SortAsc, Download, Plus, Filter, ChevronDown, Upload, X, Sparkles,
   BookOpen, Link2, TrendingUp, Gauge,
 } from 'lucide-react';
 import { speakText } from '../services/voiceService';
-import { getWordDetails, gradePronunciation, getRelatedWords, getWordEtymology, getSimilarConfusableWords, getWordUsageTips } from '../services/aiService';
+import { getWordDetails, gradePronunciation, getRelatedWords, getWordEtymology, getSimilarConfusableWords, getWordUsageTips, extractVocabulary } from '../services/aiService';
 import { recordAndTranscribe } from '../services/speechService';
 import { WordBreakdown, InteractiveText } from './WordBreakdown';
 import { cn } from '../lib/utils';
@@ -733,7 +733,7 @@ const SineWave = () => {
 
 // ─── Main FlashcardsView ─────────────────────────────────────────────────────
 const FlashcardsView = () => {
-  const { flashcards, updateFlashcard, removeFlashcard, setFlashcards, user } = useAppStore() as any;
+  const { flashcards, updateFlashcard, removeFlashcard, setFlashcards, user, quizSettings } = useAppStore() as any;
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Load flashcards from DB on mount
@@ -1147,7 +1147,11 @@ const FlashcardsView = () => {
           <Layers className="w-12 h-12 text-emerald-500" />
         </div>
         <h2 className="text-2xl font-bold text-stone-800 mb-2">Your deck is empty</h2>
-        <p className="text-stone-400">Highlight words in lectures and add them to start practicing.</p>
+        <p className="text-stone-400 mb-6">Highlight words in lectures, or paste any French or English text to build your deck.</p>
+        <button onClick={() => setImportOpen(true)}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white text-xs font-bold rounded-2xl hover:bg-emerald-600 transition-colors shadow-sm">
+          <Upload size={14} /> Import words
+        </button>
       </div>
     );
   }
@@ -1201,6 +1205,67 @@ const FlashcardsView = () => {
     setAddCardForm({ word: '', translation: '', language: addCardForm.language });
     setAddCardLoading(false);
     setAddCardOpen(false);
+  };
+
+  // ── Import: paste text → AI extracts each word → dedupe → add ──────────
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [extracted, setExtracted] = useState<{ word: string; translation: string; exists: boolean }[]>([]);
+  const [importSelected, setImportSelected] = useState<Set<string>>(new Set());
+
+  const importLang = (quizSettings?.targetLanguage || 'French') as any;
+
+  const handleExtract = async () => {
+    if (!importText.trim()) return;
+    setImporting(true);
+    setImportError(null);
+    setExtracted([]);
+    try {
+      const words = await extractVocabulary(importText.trim(), importLang);
+      const seen = new Set<string>();
+      const rows = words.map(w => {
+        const key = w.word.toLowerCase().replace(/[.,!?;:«»"'-]/g, '').trim();
+        const exists = seen.has(key) || flashcards.some((f: any) =>
+          f.word.toLowerCase().replace(/[.,!?;:«»"'-]/g, '').trim() === key && f.language === importLang);
+        seen.add(key);
+        return { word: w.word, translation: w.translation, exists };
+      });
+      setExtracted(rows);
+      setImportSelected(new Set(rows.filter(r => !r.exists).map(r => r.word)));
+    } catch {
+      setImportError('Could not extract words — the AI may be busy. Try again in a moment.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleImportAdd = () => {
+    const toAdd = extracted.filter(w => importSelected.has(w.word) && !w.exists);
+    toAdd.forEach(w => {
+      const newCard = {
+        id: crypto.randomUUID(),
+        word: w.word,
+        translation: w.translation,
+        language: importLang,
+        nextReview: new Date().toISOString(),
+        lastReviewed: null,
+      };
+      useAppStore.getState().addFlashcard(newCard);
+      if (user) {
+        import('../services/dbService').then(m => m.upsertFlashcard(user.id, newCard)).catch(() => { });
+      }
+    });
+    setImportOpen(false);
+    setImportText('');
+    setExtracted([]);
+    setImportSelected(new Set());
+  };
+
+  const closeImport = () => {
+    setImportOpen(false);
+    setImportError(null);
   };
 
   const sortedFilteredCards = (() => {
@@ -2042,6 +2107,12 @@ const FlashcardsView = () => {
               <CheckCircle2 size={12} /> {bulkMode ? 'Cancel' : 'Select'}
             </button>
 
+            {/* Import */}
+            <button onClick={() => setImportOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border bg-white text-stone-400 border-stone-200 hover:border-emerald-300 hover:text-emerald-600 transition-colors">
+              <Upload size={12} /> Import
+            </button>
+
             {/* Export */}
             <button onClick={exportCSV}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border bg-white text-stone-400 border-stone-200 hover:border-emerald-300 hover:text-emerald-600 transition-colors">
@@ -2139,6 +2210,101 @@ const FlashcardsView = () => {
                 <Plus size={22} />
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Import modal: paste text → AI extracts words → review → add ── */}
+      {importOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm"
+          onClick={() => closeImport()}>
+          <div className="bg-white rounded-3xl border border-stone-100 shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}>
+            {/* header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+              <div>
+                <p className="font-black text-stone-900">Import words</p>
+                <p className="text-[11px] text-stone-400 mt-0.5">
+                  Paste words, sentences or a whole article — AI turns each word into a card ({importLang} → English)
+                </p>
+              </div>
+              <button onClick={closeImport}
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-stone-300 hover:text-stone-600 hover:bg-stone-100 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4 overflow-y-auto">
+              <textarea
+                value={importText}
+                onChange={(e) => { setImportText(e.target.value); setImportError(null); }}
+                rows={6}
+                placeholder={`Paste French or English text here…\n\nExamples:\n• chien, maison, manger\n• Le sandwich est trop petit pour moi.\n• A whole article or page of notes`}
+                className="w-full px-4 py-3 text-sm rounded-2xl border border-stone-200 focus:outline-none focus:border-emerald-400 resize-none bg-stone-50"
+              />
+
+              <button onClick={handleExtract} disabled={importing || !importText.trim()}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-stone-900 text-white text-xs font-bold rounded-2xl hover:bg-stone-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                {importing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                {importing ? 'Extracting words…' : 'Extract words'}
+              </button>
+
+              {importError && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-xs font-medium">
+                  <AlertTriangle size={14} className="shrink-0" /> {importError}
+                </div>
+              )}
+
+              {extracted.length > 0 && (() => {
+                const newOnes = extracted.filter(w => !w.exists);
+                const inDeck = extracted.filter(w => w.exists);
+                return (
+                  <div className="space-y-3">
+                    <p className="text-[11px] font-bold text-stone-400">
+                      <span className="text-emerald-600">{newOnes.length} new</span>
+                      {' · '}
+                      <span className="text-stone-400">{inDeck.length} already in deck</span>
+                      {' — tap a word to include / skip it'}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {extracted.map((w, i) => {
+                        const selected = importSelected.has(w.word);
+                        if (w.exists) {
+                          return (
+                            <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-stone-50 text-stone-300 border border-stone-100 cursor-default">
+                              <CheckCircle2 size={10} />
+                              <span>{w.word}</span>
+                              <span className="font-normal text-stone-300">· in deck</span>
+                            </span>
+                          );
+                        }
+                        return (
+                          <button key={i}
+                            onClick={() => setImportSelected(prev => {
+                              const s = new Set(prev);
+                              s.has(w.word) ? s.delete(w.word) : s.add(w.word);
+                              return s;
+                            })}
+                            className={cn('inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all',
+                              selected
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                : 'bg-white text-stone-300 border-stone-200 hover:border-stone-300')}>
+                            {selected ? <CheckCircle2 size={10} /> : <Plus size={10} />}
+                            <span>{w.word}</span>
+                            <span className={cn('font-normal', selected ? 'text-emerald-500' : 'text-stone-300')}>{w.translation}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button onClick={handleImportAdd} disabled={importSelected.size === 0}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-white text-xs font-bold rounded-2xl hover:bg-emerald-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                      <Plus size={14} />
+                      Add {importSelected.size} card{importSelected.size !== 1 ? 's' : ''} to deck
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </div>
       )}

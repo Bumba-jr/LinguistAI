@@ -507,6 +507,32 @@ Rules:
   return words;
 };
 
+// Extract flashcard-worthy vocabulary from arbitrary pasted text — a word
+// list, sentences, or a whole article. English input is translated into the
+// target language so every card ends up as ${targetLanguage} → English.
+export const extractVocabulary = async (
+  text: string,
+  targetLanguage: Language
+): Promise<{ word: string; translation: string }[]> => {
+  const system = `You extract vocabulary for a ${targetLanguage}-learning student's flashcard deck. The student is an ENGLISH speaker.
+The input can be a word list, sentences, or a whole article — in ${targetLanguage}, in English, or mixed.
+Return ONLY valid JSON: {"words":[{"word":"...","translation":"..."}]}
+Rules:
+- "word" is ALWAYS in ${targetLanguage}: a single word or a very short expression (max 3 words). If the input is English, translate it into ${targetLanguage}.
+- "translation" is the ENGLISH meaning of that word.
+- Keep the input's order. Skip duplicates, numbers, dates, punctuation, and proper names of people or places.
+- Include common function words (articles, prepositions, pronouns, conjunctions) — the student wants each word.
+- Extract at most 100 words.`;
+
+  const raw = await chat(system, text.slice(0, 6000), 4000);
+  const d = parseJSON(raw);
+  return (Array.isArray(d.words) ? d.words : [])
+    .filter((w: any) => w && w.word)
+    .map((w: any) => ({ word: String(w.word).trim(), translation: String(w.translation || '').trim() }))
+    .filter(w => w.word.length > 0)
+    .slice(0, 100);
+};
+
 export const generateSessionSummary = async (
   messages: { role: string; content: string }[],
   targetLanguage: Language,
