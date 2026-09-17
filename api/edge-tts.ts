@@ -15,17 +15,29 @@ const VOICES: Record<string, string> = {
     English: 'en-US-JennyNeural',
 };
 
+const VOICES_MALE: Record<string, string> = {
+    French: 'fr-FR-HenriNeural',
+    Spanish: 'es-ES-AlvaroNeural',
+    German: 'de-DE-ConradNeural',
+    Italian: 'it-IT-DiegoNeural',
+    Japanese: 'ja-JP-KeitaNeural',
+    Portuguese: 'pt-PT-DuarteNeural',
+    Chinese: 'zh-CN-YunxiNeural',
+    English: 'en-US-GuyNeural',
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const isGet = req.method === 'GET';
     const text = String((isGet ? req.query.text : req.body?.text) ?? '');
     const lang = String((isGet ? req.query.lang : req.body?.lang) ?? 'French');
     const slow = (isGet ? req.query.slow : req.body?.slow) === '1' || (isGet ? req.query.slow : req.body?.slow) === true;
+    const gender = String((isGet ? req.query.gender : req.body?.gender) ?? 'female') === 'male' ? 'male' : 'female';
 
     if (!text.trim() || text.length > 1000) {
         return res.status(400).json({ error: 'Invalid text (1-1000 chars)' });
     }
 
-    const voice = VOICES[lang] || VOICES.French;
+    const voice = (gender === 'male' ? VOICES_MALE : VOICES)[lang] || VOICES.French;
     try {
         const tts = new MsEdgeTTS();
         await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);

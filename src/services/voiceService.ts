@@ -56,6 +56,11 @@ const HD_VOICES: Record<string, string> = {
   Japanese: 'coral', Portuguese: 'fable', Chinese: 'ash', English: 'nova',
 };
 
+const HD_VOICES_MALE: Record<string, string> = {
+  French: 'onyx', Spanish: 'ash', German: 'echo', Italian: 'onyx',
+  Japanese: 'echo', Portuguese: 'fable', Chinese: 'onyx', English: 'onyx',
+};
+
 const stopHD = () => {
   if (currentAudio) {
     currentAudio.pause();
@@ -80,10 +85,10 @@ const playBlob = (blob: Blob, onEnd?: () => void) => {
   return audio.play();
 };
 
-const speakEdge = async (text: string, lang: string, onEnd?: () => void, rate = 0.88): Promise<boolean> => {
+const speakEdge = async (text: string, lang: string, onEnd?: () => void, rate = 0.88, gender: 'female' | 'male' = 'female'): Promise<boolean> => {
   if (edgeTtsState === 'failed') return false;
   try {
-    const url = `/api/edge-tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}&slow=${rate < 0.7 ? '1' : '0'}`;
+    const url = `/api/edge-tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}&slow=${rate < 0.7 ? '1' : '0'}&gender=${gender}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`edge-tts ${res.status}`);
     const blob = await res.blob();
@@ -97,7 +102,7 @@ const speakEdge = async (text: string, lang: string, onEnd?: () => void, rate = 
   }
 };
 
-const speakOpenAI = async (text: string, lang: string, onEnd?: () => void, rate = 0.88): Promise<boolean> => {
+const speakOpenAI = async (text: string, lang: string, onEnd?: () => void, rate = 0.88, gender: 'female' | 'male' = 'female'): Promise<boolean> => {
   if (hdTtsState === 'failed') return false;
   try {
     const res = await fetch('/api/openai/v1/audio/speech', {
@@ -105,7 +110,7 @@ const speakOpenAI = async (text: string, lang: string, onEnd?: () => void, rate 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'gpt-4o-mini-tts',
-        voice: HD_VOICES[lang] || 'nova',
+        voice: (gender === 'male' ? HD_VOICES_MALE : HD_VOICES)[lang] || 'nova',
         input: text,
         response_format: 'mp3',
         instructions: rate < 0.7
@@ -165,7 +170,7 @@ const doSpeak = (text: string, lang: string, onEnd?: () => void, rate = 0.88) =>
   window.speechSynthesis.speak(utterance);
 };
 
-export const speakText = (text: string, lang = 'French', onEnd?: () => void, rate = 0.88) => {
+export const speakText = (text: string, lang = 'French', onEnd?: () => void, rate = 0.88, gender: 'female' | 'male' = 'female') => {
   if (!text.trim()) { onEnd?.(); return; }
 
   const browserSpeak = () => {
@@ -175,13 +180,19 @@ export const speakText = (text: string, lang = 'French', onEnd?: () => void, rat
 
   // Neural voices first (realistic), browser voices as last resort
   const tryProviders = async () => {
-    if (await speakEdge(text, lang, onEnd, rate)) return;
-    if (await speakOpenAI(text, lang, onEnd, rate)) return;
+    if (await speakEdge(text, lang, onEnd, rate, gender)) return;
+    if (await speakOpenAI(text, lang, onEnd, rate, gender)) return;
     browserSpeak();
   };
   stopHD();
   window.speechSynthesis.cancel();
   tryProviders();
+};
+
+/** Stop any playing speech immediately (used for barge-in). Fires pending onEnd. */
+export const stopSpeaking = () => {
+  stopHD();
+  window.speechSynthesis.cancel();
 };
 
 export const getBestVoiceExport = getBestVoice;

@@ -18,11 +18,14 @@ const StoryModeView = lazy(() => import('./components/StoryModeView'));
 const GrammarDrillView = lazy(() => import('./components/GrammarDrillView'));
 const LanguageExchangeView = lazy(() => import('./components/LanguageExchangeView'));
 const PronunciationPracticeView = lazy(() => import('./components/PronunciationPracticeView'));
+const DictationView = lazy(() => import('./components/DictationView'));
+const ConjugationDrillView = lazy(() => import('./components/ConjugationDrillView'));
+const ReadingLibraryView = lazy(() => import('./components/ReadingLibraryView'));
 import {
   BookOpen, Upload, GraduationCap, User as UserIcon,
   BarChart2, Layers, MessageSquare, Users, Home,
   FileText, Zap, ArrowRight, Clock, Trash2, Play, Trophy,
-  BookMarked, Sparkles, Users2, Mic, Loader2
+  BookMarked, Sparkles, Users2, Mic, Loader2, Ear, BookOpenCheck, Newspaper
 } from 'lucide-react';
 import AuthPage from './components/AuthPage';
 import { getAuthRedirectUrl } from './lib/auth-config';
@@ -325,6 +328,9 @@ export default function App() {
     { id: 'grammar-drill', label: 'Grammar Drill', icon: Zap },
     { id: 'story-mode', label: 'Story Mode', icon: BookMarked },
     { id: 'pronunciation', label: 'Pronunciation', icon: Mic },
+    { id: 'dictation', label: 'Dictation', icon: Ear },
+    { id: 'conjugation', label: 'Conjugation', icon: BookOpenCheck },
+    { id: 'reading', label: 'Reading', icon: Newspaper },
     { id: 'exchange', label: 'Exchange', icon: Users2 },
     { id: 'analytics', label: 'Analytics', icon: BarChart2 },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
@@ -341,6 +347,9 @@ export default function App() {
     if (activeTab === 'story-mode') return <LazyPage><StoryModeView /></LazyPage>;
     if (activeTab === 'exchange') return <LazyPage><LanguageExchangeView /></LazyPage>;
     if (activeTab === 'pronunciation') return <LazyPage><PronunciationPracticeView /></LazyPage>;
+    if (activeTab === 'dictation') return <LazyPage><DictationView /></LazyPage>;
+    if (activeTab === 'conjugation') return <LazyPage><ConjugationDrillView /></LazyPage>;
+    if (activeTab === 'reading') return <LazyPage><ReadingLibraryView /></LazyPage>;
 
     if (activeTab === 'lectures') {
       // Active lecture open → show it
@@ -604,7 +613,7 @@ export default function App() {
           </h1>
         </div>
 
-        <nav className="flex-1 px-3 py-6 space-y-2">
+        <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
           {navItems.map((item) => (
             <button
               key={item.id}

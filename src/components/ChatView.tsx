@@ -17,7 +17,7 @@ import {
   generateChatResponse, generateSessionSummary, getWordOfTheDay,
   generateChallenge, analyzeTone, generateCustomScenario, generateVocabQuiz, translateWord,
 } from '../services/aiService';
-import { speakText } from '../services/voiceService';
+import { speakText, stopSpeaking } from '../services/voiceService';
 import { InteractiveText } from './WordBreakdown';
 import { cn } from '../lib/utils';
 import type { ChatSession, Language } from '../store/useAppStore';
@@ -1312,7 +1312,14 @@ const ChatView = () => {
   const [voiceMode, setVoiceMode] = useState(false);
   // automatically save every new word the tutor highlights to the flashcard deck
   const [autoSaveWords, setAutoSaveWords] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [voiceGender, setVoiceGender] = useState<'female' | 'male'>(() =>
+    (localStorage.getItem('linguistai-voice-gender') as 'female' | 'male') || 'female');
   const startListeningRef = useRef<() => void>(() => { });
+
+  // tutor speech with the user's chosen voice
+  const speakTutor = (text: string, onEnd?: () => void) =>
+    speakText(text, quizSettings.targetLanguage, onEnd, 0.88, voiceGender);
   const [selectedScenario, setSelectedScenario] = useState<Scenario>(SCENARIOS[0]);
   const [scenarioPicker, setScenarioPicker] = useState(false);
   const [expandedCorrection, setExpandedCorrection] = useState<number | null>(null);
@@ -1579,7 +1586,7 @@ const ChatView = () => {
       if (autoSpeak || voiceMode) {
         const idx = allMsgs.length;
         setIsSpeakingId(idx);
-        speakText(result.reply, quizSettings.targetLanguage, () => {
+        speakTutor(result.reply, () => {
           setIsSpeakingId(null);
           // hands-free: listen again as soon as the tutor finishes speaking
           if (voiceMode) startListeningRef.current();
@@ -1640,6 +1647,8 @@ const ChatView = () => {
 
   const toggleListen = async () => {
     if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+    // barge-in: if the tutor is speaking, cut it off and listen immediately
+    if (isSpeakingId !== null) stopSpeaking();
     const SR = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     if (!SR) { setChatError('Speech recognition is not supported in this browser. Try Chrome.'); return; }
 
@@ -1654,23 +1663,33 @@ const ChatView = () => {
     const r = new SR();
     r.lang = LANG_CODES[quizSettings.targetLanguage] || 'fr-FR';
     r.continuous = false;
-    r.interimResults = false;
+    r.interimResults = true; // live transcript while speaking
     r.onstart = () => setIsListening(true);
     r.onresult = (e: any) => {
-      const res = e.results[0][0];
-      setLastPronScore(Math.round(res.confidence * 100));
-      const transcript = res.transcript;
-      setInput(transcript);
-      setIsListening(false);
-      setTimeout(() => handleSend(transcript), 100);
+      let finalText = '';
+      let interim = '';
+      for (let i = 0; i < e.results.length; i++) {
+        const res = e.results[i][0];
+        if (e.results[i].isFinal) finalText += res.transcript;
+        else interim += res.transcript;
+      }
+      setInterimTranscript(interim);
+      if (finalText) {
+        setLastPronScore(Math.round(e.results[0][0].confidence * 100));
+        setInput(finalText);
+        setIsListening(false);
+        setInterimTranscript('');
+        setTimeout(() => handleSend(finalText), 100);
+      }
     };
     r.onerror = (e: any) => {
       setIsListening(false);
+      setInterimTranscript('');
       if (e.error === 'no-speech') return; // user just didn't speak, no need to show error
       if (e.error === 'not-allowed') setChatError('Microphone access denied. Check your browser settings.');
       else setChatError(`Microphone error: ${e.error}`);
     };
-    r.onend = () => setIsListening(false);
+    r.onend = () => { setIsListening(false); setInterimTranscript(''); };
     r.start();
     recognitionRef.current = r;
   };
@@ -1683,9 +1702,9 @@ const ChatView = () => {
   });
 
   const speakMessage = (content: string, idx: number) => {
-    if (isSpeakingId === idx) { window.speechSynthesis.cancel(); setIsSpeakingId(null); return; }
+    if (isSpeakingId === idx) { stopSpeaking(); setIsSpeakingId(null); return; }
     setIsSpeakingId(idx);
-    speakText(content, quizSettings.targetLanguage, () => setIsSpeakingId(null));
+    speakTutor(content, () => setIsSpeakingId(null));
   };
 
 
@@ -1941,6 +1960,22 @@ const ChatView = () => {
                     </div>
                     <span className={cn('text-[10px] font-black px-2 py-0.5 rounded-lg', autoSaveWords ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-400')}>
                       {autoSaveWords ? 'On' : 'Off'}
+                    </span>
+                  </button>
+
+                  {/* Tutor voice: female / male */}
+                  <button onClick={() => {
+                    const nv = voiceGender === 'female' ? 'male' : 'female';
+                    setVoiceGender(nv);
+                    localStorage.setItem('linguistai-voice-gender', nv);
+                  }}
+                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-stone-50 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <Volume2 size={13} className={voiceGender === 'male' ? 'text-indigo-500' : 'text-pink-500'} />
+                      <span className="text-xs font-semibold text-stone-700">Tutor Voice</span>
+                    </div>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-stone-100 text-stone-500 capitalize">
+                      {voiceGender}
                     </span>
                   </button>
 
@@ -2305,6 +2340,7 @@ const ChatView = () => {
           </button>
         </div>
         {isListening && <p className="text-center text-[10px] text-red-400 font-bold uppercase tracking-widest mt-2 animate-pulse">Listening — speak in {quizSettings.targetLanguage}</p>}
+        {interimTranscript && <p className="text-center text-[11px] text-stone-400 italic mt-1">“{interimTranscript}”</p>}
       </div>
 
       {/* Panels & Modals */}

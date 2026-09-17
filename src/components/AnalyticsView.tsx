@@ -14,6 +14,7 @@ import {
   PolarGrid, PolarAngleAxis, Radar, PieChart, Pie,
 } from 'recharts';
 import { cn } from '../lib/utils';
+import { WeakWordsSection, StudyHeatmap } from './AnalyticsExtras';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const DIFF_COLOR = (s: number) => s < 34 ? '#10b981' : s < 67 ? '#f59e0b' : '#ef4444';
@@ -527,6 +528,9 @@ const AnalyticsView = () => {
             onClick={() => { setTab('vocab'); setTimeout(() => document.getElementById('section-phrases')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }} />
         </div>
 
+        {/* ── Weak words engine ── */}
+        <WeakWordsSection />
+
         {/* ── Tabs ── */}
         <div className="flex gap-1 bg-stone-100 p-1 rounded-2xl w-fit">
           {tabs.map(t => (
@@ -541,6 +545,7 @@ const AnalyticsView = () => {
         {/* ══ OVERVIEW ══ */}
         {tab === 'overview' && (
           <div className="space-y-4">
+            <StudyHeatmap />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Activity chart */}
               <div className="lg:col-span-2 bg-white rounded-3xl border border-stone-100 p-6">

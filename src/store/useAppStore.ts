@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { ReadingArticle } from '../services/aiService';
 
 export type QuestionType = 'multiple_choice' | 'fill_in_the_blank' | 'pronunciation' | 'mixed';
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
@@ -113,7 +114,7 @@ interface AppState {
   user: User | null;
   notes: string;
   extractedText: string;
-  activeTab: 'editor' | 'upload' | 'lectures' | 'analytics' | 'flashcards' | 'chat' | 'rooms' | 'leaderboard' | 'grammar-drill' | 'story-mode' | 'exchange' | 'pronunciation';
+  activeTab: 'editor' | 'upload' | 'lectures' | 'analytics' | 'flashcards' | 'chat' | 'rooms' | 'leaderboard' | 'grammar-drill' | 'story-mode' | 'exchange' | 'pronunciation' | 'dictation' | 'conjugation' | 'reading';
   generationMode: 'quiz' | 'lecture';
   isGenerating: boolean;
   questions: Question[];
@@ -136,6 +137,9 @@ interface AppState {
   mistakeLog: { category: string; count: number; examples: { original: string; corrected: string; explanation: string }[] }[];
   grammarMode: 'strict' | 'fluency';
   savedPhrases: { id: string; phrase: string; translation: string; language: Language; date: string }[];
+  savedArticles: ReadingArticle[];
+  addSavedArticle: (a: ReadingArticle) => void;
+  removeSavedArticle: (id: string) => void;
   weeklyStats: { sessionsThisWeek: number; wordsThisWeek: number; correctionsThisWeek: number; accuracyThisWeek: number };
 
   totalPoints: number;
@@ -175,6 +179,7 @@ interface AppState {
   setGrammarMode: (mode: 'strict' | 'fluency') => void;
   addSavedPhrase: (phrase: { id: string; phrase: string; translation: string; language: Language; date: string }) => void;
   removeSavedPhrase: (id: string) => void;
+  setSavedArticles: (articles: ReadingArticle[]) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -206,6 +211,7 @@ export const useAppStore = create<AppState>()(
       mistakeLog: [],
       grammarMode: 'strict',
       savedPhrases: [],
+      savedArticles: [],
       weeklyStats: { sessionsThisWeek: 0, wordsThisWeek: 0, correctionsThisWeek: 0, accuracyThisWeek: 0 },
       totalPoints: 0,
 
@@ -295,6 +301,13 @@ export const useAppStore = create<AppState>()(
         savedPhrases: state.savedPhrases.some(p => p.id === phrase.id) ? state.savedPhrases : [phrase, ...state.savedPhrases].slice(0, 100),
       })),
       removeSavedPhrase: (id) => set((state) => ({ savedPhrases: state.savedPhrases.filter(p => p.id !== id) })),
+      addSavedArticle: (article) => set((state) => ({
+        savedArticles: state.savedArticles.some(a => a.id === article.id)
+          ? state.savedArticles
+          : [article, ...state.savedArticles].slice(0, 30),
+      })),
+      removeSavedArticle: (id) => set((state) => ({ savedArticles: state.savedArticles.filter(a => a.id !== id) })),
+      setSavedArticles: (savedArticles) => set({ savedArticles }),
     }),
     {
       name: 'linguistai-store',
@@ -306,6 +319,7 @@ export const useAppStore = create<AppState>()(
         quizSettings: state.quizSettings,
         grammarMode: state.grammarMode,
         savedPhrases: state.savedPhrases,
+        savedArticles: state.savedArticles,
         totalPoints: state.totalPoints,
       }),
       // migrate stale data — ensure mistakeLog entries always have examples array

@@ -9,6 +9,7 @@ import {
 import { cn } from '../lib/utils';
 import { speakText } from '../services/voiceService';
 import { generateAnswerExplanation } from '../services/aiService';
+import { InteractiveText } from './WordBreakdown';
 
 // ── constants & helpers ───────────────────────────────────────────────────────
 const DIFFICULTY_ORDER: Difficulty[] = ['beginner', 'intermediate', 'advanced'];
@@ -709,6 +710,15 @@ const QuizView = () => {
                     💡 {explanation}
                   </motion.div>
                 )}
+                {/* word-by-word breakdown of the question — only after answering */}
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="p-3 bg-white rounded-xl border border-stone-100"
+                  onClick={(e) => e.stopPropagation()}>
+                  <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest mb-1.5">
+                    Break it down — tap any word
+                  </p>
+                  <InteractiveText text={currentQuestion.question} language={quizSettings.targetLanguage} className="block text-sm font-semibold text-stone-800" />
+                </motion.div>
                 <button onClick={handleNext}
                   className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-semibold hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
                   id="btn-next">

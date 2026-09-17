@@ -736,17 +736,38 @@ const FlashcardsView = () => {
   const { flashcards, updateFlashcard, removeFlashcard, setFlashcards, user, quizSettings } = useAppStore() as any;
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Load flashcards from DB on mount
+  // Load flashcards from DB on mount — falls back to the offline cache when
+  // the network fails, and syncs any ratings queued while offline.
   const [cardsLoading, setCardsLoading] = useState(true);
   useEffect(() => {
     if (!user) { setCardsLoading(false); return; }
+    let alive = true;
     import('../services/dbService').then(m =>
       m.getFlashcards(user.id).then((cards: any[]) => {
-        setFlashcards(cards);
-      }).catch(() => { })
-        .finally(() => setCardsLoading(false))
+        if (!alive) return;
+        if (cards.length > 0 || navigator.onLine) {
+          setFlashcards(cards);
+          import('../services/offlineDeck').then(o => o.saveDeckCache(user.id, cards)).catch(() => { });
+        } else {
+          // offline with empty remote — use the cached deck
+          import('../services/offlineDeck').then(o => setFlashcards(o.loadDeckCache(user.id))).catch(() => { });
+        }
+      }).catch(() => {
+        if (alive) import('../services/offlineDeck').then(o => setFlashcards(o.loadDeckCache(user.id))).catch(() => { });
+      }).finally(() => { if (alive) setCardsLoading(false); })
     );
+    import('../services/offlineDeck').then(o => o.flushReviewQueue(user.id)).catch(() => { });
+    const onOnline = () => { import('../services/offlineDeck').then(o => o.flushReviewQueue(user.id)).catch(() => { }); };
+    window.addEventListener('online', onOnline);
+    return () => { alive = false; window.removeEventListener('online', onOnline); };
   }, [user?.id]);
+
+  // keep the offline cache fresh on every deck mutation
+  useEffect(() => {
+    if (user && flashcards.length > 0) {
+      import('../services/offlineDeck').then(o => o.saveDeckCache(user.id, flashcards)).catch(() => { });
+    }
+  }, [flashcards]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [viewMode, setViewMode] = useState<'study' | 'list'>('study');
@@ -799,8 +820,13 @@ const FlashcardsView = () => {
   const [importText, setImportText] = useState('');
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
-  const [extracted, setExtracted] = useState<{ word: string; translation: string; exists: boolean }[]>([]);
+  const [extracted, setExtracted] = useState<{ word: string; translation: string; exists: boolean; language?: string }[]>([]);
   const [importSelected, setImportSelected] = useState<Set<string>>(new Set());
+  const [importMode, setImportMode] = useState<'ai' | 'code'>('ai');
+  const [codeInput, setCodeInput] = useState('');
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareCode, setShareCode] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // ── Streak + Daily goal (Supabase) ────────────────────────────────────
   const DAILY_GOALS = [10, 20, 50];
@@ -859,6 +885,7 @@ const FlashcardsView = () => {
     statsRef.current = next;
     setStreak(newStreak);
     setDailyProgress(newDailyCount);
+    import('../services/activityLog').then(m => m.logActivity(1)).catch(() => { });
     import('../services/dbService').then(m =>
       m.upsertUserStats(user.id, {
         streak_count: newStreak,
@@ -984,20 +1011,47 @@ const FlashcardsView = () => {
   const handleDifficulty = (d: 'easy' | 'medium' | 'hard') => {
     if (!currentCard) return;
     const now = new Date();
-    // Always set next review to midnight of the target day so cards appear at start of day
+    // ── Adaptive scheduling ──
+    // easy: exponential growth 2 → 4 → 8 → 16 → 32 → 48 days (capped 60)
+    // hard: gentle reset — interval stays short (2 days), streak decays but isn't wiped
+    // again: card stays due RIGHT NOW so it re-queues later in this session
+    const prevStreak = currentCard.easyStreak || 0;
+    let easyStreak: number;
+    if (d === 'easy') {
+      easyStreak = prevStreak + 1;
+    } else if (d === 'hard') {
+      easyStreak = Math.max(0, prevStreak - 1);
+    } else {
+      easyStreak = 0;
+    }
     const next = new Date();
-    const daysToAdd = d === 'easy' ? 4 : d === 'medium' ? 2 : 1;
-    next.setDate(now.getDate() + daysToAdd);
-    next.setHours(0, 0, 0, 0);
+    if (d === 'medium') {
+      next.setMinutes(next.getMinutes() + 10); // due again today, in 10 minutes
+    } else {
+      const daysToAdd = d === 'easy'
+        ? Math.min(60, Math.round(2 * Math.pow(1.9, Math.min(easyStreak - 1, 6))))
+        : 2;
+      next.setDate(now.getDate() + Math.max(1, daysToAdd));
+      next.setHours(0, 0, 0, 0);
+    }
     // track hard count on card for smart shuffle + easyStreak for confidence meter
     const hardCount = d === 'hard' ? (currentCard.hardCount || 0) + 1 : (currentCard.hardCount || 0);
-    const easyStreak = d === 'easy' ? (currentCard.easyStreak || 0) + 1 : 0;
     const reviewHistory = [...((currentCard.reviewHistory || []) as ('easy' | 'again' | 'hard')[]), d === 'medium' ? 'again' : d].slice(-10);
     updateFlashcard(currentCard.id, { nextReview: next.toISOString(), lastReviewed: now.toISOString(), hardCount, easyStreak, reviewHistory });
     if (user) {
+      const review = {
+        cardId: currentCard.id,
+        nextReview: next.toISOString(),
+        lastReviewed: now.toISOString(),
+        hardCount, easyStreak,
+        reviewHistory: reviewHistory as ('easy' | 'again' | 'hard')[],
+      };
       import('../services/dbService').then(m =>
-        m.updateFlashcardReview(currentCard.id, user.id, next.toISOString(), now.toISOString(), hardCount, easyStreak, reviewHistory as ('easy' | 'again' | 'hard')[])
-      ).catch(() => { });
+        m.updateFlashcardReview(review.cardId, user.id, review.nextReview, review.lastReviewed, hardCount, easyStreak, review.reviewHistory)
+      ).catch(() => {
+        // offline / request failed — queue for sync when connection returns
+        import('../services/offlineDeck').then(m => m.queueReview(user.id, review)).catch(() => { });
+      });
     }
 
     // accumulate session stats
@@ -1022,7 +1076,8 @@ const FlashcardsView = () => {
 
       if (hardRoundIds !== null) {
         // ── hard round ──
-        const remaining = dueCards.filter((f: any) => f.id !== ratedId);
+        // 'again' keeps the card in the round — it comes back later this session
+        const remaining = d === 'medium' ? dueCards : dueCards.filter((f: any) => f.id !== ratedId);
         if (remaining.length === 0) {
           // hard round complete → all done
           setHardRoundDone(true);
@@ -1036,7 +1091,8 @@ const FlashcardsView = () => {
         const newHardIds = new Set<string>();
         // we don't have a persistent set yet, so we track via a ref below
         // For simplicity: after rating, check remaining due cards
-        const remaining = baseDue.filter((f: any) => f.id !== ratedId);
+        // 'again' keeps the card in the round — it comes back later this session
+        const remaining = d === 'medium' ? baseDue : baseDue.filter((f: any) => f.id !== ratedId);
         if (remaining.length === 0) {
           // first pass done — check if any hard cards exist (nextReview = tomorrow = 1 day)
           // We can't know which were rated hard from this pass without tracking,
@@ -1242,13 +1298,13 @@ const FlashcardsView = () => {
   };
 
   const handleImportAdd = () => {
-    const toAdd = extracted.filter(w => importSelected.has(w.word) && !w.exists);
+    const toAdd = extracted.filter(w => !w.exists && isSelected(w));
     toAdd.forEach(w => {
       const newCard = {
         id: crypto.randomUUID(),
         word: w.word,
         translation: w.translation,
-        language: importLang,
+        language: (w.language || importLang) as any,
         nextReview: new Date().toISOString(),
         lastReviewed: null,
       };
@@ -1266,6 +1322,99 @@ const FlashcardsView = () => {
   const closeImport = () => {
     setImportOpen(false);
     setImportError(null);
+  };
+
+  // ── Deck share codes (portable base64 — send via any messaging app) ─────
+  const buildShareCode = (cards: any[]) => {
+    const compact = cards.map(c => ({ w: c.word, t: c.translation, l: c.language }));
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
+    return `LIDECK1-${b64}`;
+  };
+
+  const decodeShareCode = (code: string): { word: string; translation: string; language: string }[] | null => {
+    try {
+      const raw = code.trim();
+      if (!raw.startsWith('LIDECK1-')) return null;
+      const json = decodeURIComponent(escape(atob(raw.slice('LIDECK1-'.length).trim())));
+      const arr = JSON.parse(json);
+      if (!Array.isArray(arr)) return null;
+      return arr.filter((c: any) => c && c.w && c.t).map((c: any) => ({ word: String(c.w), translation: String(c.t), language: String(c.l || importLang) }));
+    } catch {
+      return null;
+    }
+  };
+
+  const dedupeRows = (rows: { word: string; translation: string; language?: string }[]) => {
+    const seen = new Set<string>();
+    return rows.map(w => {
+      const lang = w.language || importLang;
+      const key = `${lang}:${w.word.toLowerCase().replace(/[.,!?;:«»"'-]/g, '').trim()}`;
+      const exists = seen.has(key) || flashcards.some((f: any) =>
+        f.word.toLowerCase().replace(/[.,!?;:«»"'-]/g, '').trim() === w.word.toLowerCase().replace(/[.,!?;:«»"'-]/g, '').trim() && f.language === lang);
+      seen.add(key);
+      return { word: w.word, translation: w.translation, exists, language: lang };
+    });
+  };
+
+  const handleDecodeCode = () => {
+    const cards = decodeShareCode(codeInput);
+    if (!cards || cards.length === 0) {
+      setImportError('That code doesn\'t look like a LinguistAI deck. Copy the full code starting with LIDECK1-');
+      return;
+    }
+    const rows = dedupeRows(cards);
+    setExtracted(rows);
+    setImportSelected(new Set(rows.filter(r => !r.exists).map(r => `${r.language}:${r.word}`)));
+    setImportError(null);
+  };
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = String(reader.result || '');
+        const rows: { word: string; translation: string; language?: string }[] = [];
+        text.split(/\r?\n/).forEach(line => {
+          if (!line.trim()) return;
+          // comma, semicolon or tab separated: word,translation
+          const m = line.match(/^(.+?)[,;\t](.+)$/);
+          if (m) rows.push({ word: m[1].trim().replace(/^"|"$/g, ''), translation: m[2].trim().replace(/^"|"$/g, ''), language: importLang });
+          else rows.push({ word: line.trim(), translation: '', language: importLang });
+        });
+        if (rows.length === 0) { setImportError('No rows found — use one "word,translation" per line.'); return; }
+        const deduped = dedupeRows(rows);
+        setExtracted(deduped);
+        setImportSelected(new Set(deduped.filter(r => !r.exists).map(r => `${r.language}:${r.word}`)));
+        setImportError(null);
+      } catch {
+        setImportError('Could not read that file.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const openShareModal = () => {
+    setShareCode(buildShareCode(flashcards));
+    setCopied(false);
+    setShareOpen(true);
+  };
+
+  const copyShareCode = () => {
+    navigator.clipboard?.writeText(shareCode).then(() => setCopied(true)).catch(() => { });
+  };
+
+  // selected-set uses language:word keys when rows may span languages
+  const isSelected = (w: { word: string; language?: string }) => importSelected.has(`${w.language || importLang}:${w.word}`) || importSelected.has(w.word);
+  const toggleSelected = (w: { word: string; language?: string }) => {
+    const key = `${w.language || importLang}:${w.word}`;
+    setImportSelected(prev => {
+      const s = new Set(prev);
+      if (s.has(key)) s.delete(key); else s.add(key);
+      return s;
+    });
   };
 
   const sortedFilteredCards = (() => {
@@ -2113,6 +2262,12 @@ const FlashcardsView = () => {
               <Upload size={12} /> Import
             </button>
 
+            {/* Share */}
+            <button onClick={openShareModal}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border bg-white text-stone-400 border-stone-200 hover:border-indigo-300 hover:text-indigo-600 transition-colors">
+              <Link2 size={12} /> Share
+            </button>
+
             {/* Export */}
             <button onClick={exportCSV}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border bg-white text-stone-400 border-stone-200 hover:border-emerald-300 hover:text-emerald-600 transition-colors">
@@ -2235,19 +2390,64 @@ const FlashcardsView = () => {
             </div>
 
             <div className="px-6 py-5 space-y-4 overflow-y-auto">
-              <textarea
-                value={importText}
-                onChange={(e) => { setImportText(e.target.value); setImportError(null); }}
-                rows={6}
-                placeholder={`Paste French or English text here…\n\nExamples:\n• chien, maison, manger\n• Le sandwich est trop petit pour moi.\n• A whole article or page of notes`}
-                className="w-full px-4 py-3 text-sm rounded-2xl border border-stone-200 focus:outline-none focus:border-emerald-400 resize-none bg-stone-50"
-              />
+              {/* mode tabs */}
+              <div className="flex gap-1 bg-stone-100 p-1 rounded-xl w-fit">
+                {([['ai', 'AI text'], ['code', 'Share code / CSV']] as const).map(([m, label]) => (
+                  <button key={m} onClick={() => { setImportMode(m); setImportError(null); }}
+                    className={cn('px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all',
+                      importMode === m ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600')}>
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-              <button onClick={handleExtract} disabled={importing || !importText.trim()}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-stone-900 text-white text-xs font-bold rounded-2xl hover:bg-stone-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                {importing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                {importing ? 'Extracting words…' : 'Extract words'}
-              </button>
+              {importMode === 'ai' ? (
+                <>
+                  <textarea
+                    value={importText}
+                    onChange={(e) => { setImportText(e.target.value); setImportError(null); }}
+                    rows={6}
+                    placeholder={`Paste French or English text here…\n\nExamples:\n• chien, maison, manger\n• Le sandwich est trop petit pour moi.\n• A whole article or page of notes`}
+                    className="w-full px-4 py-3 text-sm rounded-2xl border border-stone-200 focus:outline-none focus:border-emerald-400 resize-none bg-stone-50"
+                  />
+
+                  <button onClick={handleExtract} disabled={importing || !importText.trim()}
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-stone-900 text-white text-xs font-bold rounded-2xl hover:bg-stone-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    {importing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    {importing ? 'Extracting words…' : 'Extract words'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-[11px] font-bold text-stone-500 mb-1.5">Paste a deck share code</p>
+                    <textarea
+                      value={codeInput}
+                      onChange={(e) => { setCodeInput(e.target.value); setImportError(null); }}
+                      rows={3}
+                      placeholder="LIDECK1-…"
+                      className="w-full px-4 py-3 text-xs font-mono rounded-2xl border border-stone-200 focus:outline-none focus:border-emerald-400 resize-none bg-stone-50"
+                    />
+                    <button onClick={handleDecodeCode} disabled={!codeInput.trim()}
+                      className="mt-2 w-full flex items-center justify-center gap-2 py-3 bg-stone-900 text-white text-xs font-bold rounded-2xl hover:bg-stone-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                      <Link2 size={13} /> Load shared deck
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-stone-100" />
+                    <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest">or</span>
+                    <div className="flex-1 h-px bg-stone-100" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-stone-500 mb-1.5">Import a CSV / text file</p>
+                    <p className="text-[10px] text-stone-400 mb-2">One card per line: <span className="font-mono">word,translation</span> (comma, semicolon or tab separated).</p>
+                    <label className="w-full flex items-center justify-center gap-2 py-3 bg-stone-100 text-stone-500 text-xs font-bold rounded-2xl hover:bg-stone-200 transition-colors cursor-pointer">
+                      <Upload size={13} /> Choose .csv / .txt file
+                      <input type="file" accept=".csv,.txt,.tsv,text/csv,text/plain" onChange={handleFileImport} className="hidden" />
+                    </label>
+                  </div>
+                </>
+              )}
 
               {importError && (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-xs font-medium">
@@ -2258,6 +2458,7 @@ const FlashcardsView = () => {
               {extracted.length > 0 && (() => {
                 const newOnes = extracted.filter(w => !w.exists);
                 const inDeck = extracted.filter(w => w.exists);
+                const selectedCount = extracted.filter(w => !w.exists && isSelected(w)).length;
                 return (
                   <div className="space-y-3">
                     <p className="text-[11px] font-bold text-stone-400">
@@ -2268,7 +2469,7 @@ const FlashcardsView = () => {
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {extracted.map((w, i) => {
-                        const selected = importSelected.has(w.word);
+                        const selected = isSelected(w);
                         if (w.exists) {
                           return (
                             <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-stone-50 text-stone-300 border border-stone-100 cursor-default">
@@ -2280,11 +2481,7 @@ const FlashcardsView = () => {
                         }
                         return (
                           <button key={i}
-                            onClick={() => setImportSelected(prev => {
-                              const s = new Set(prev);
-                              s.has(w.word) ? s.delete(w.word) : s.add(w.word);
-                              return s;
-                            })}
+                            onClick={() => toggleSelected(w)}
                             className={cn('inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all',
                               selected
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
@@ -2296,14 +2493,50 @@ const FlashcardsView = () => {
                         );
                       })}
                     </div>
-                    <button onClick={handleImportAdd} disabled={importSelected.size === 0}
+                    <button onClick={handleImportAdd} disabled={selectedCount === 0}
                       className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-white text-xs font-bold rounded-2xl hover:bg-emerald-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                       <Plus size={14} />
-                      Add {importSelected.size} card{importSelected.size !== 1 ? 's' : ''} to deck
+                      Add {selectedCount} card{selectedCount !== 1 ? 's' : ''} to deck
                     </button>
                   </div>
                 );
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Share modal: portable deck code ── */}
+      {shareOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm"
+          onClick={() => setShareOpen(false)}>
+          <div className="bg-white rounded-3xl border border-stone-100 shadow-2xl w-full max-w-lg"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+              <div>
+                <p className="font-black text-stone-900">Share your deck</p>
+                <p className="text-[11px] text-stone-400 mt-0.5">
+                  {flashcards.length} cards · send the code to a friend, they import it from Flashcards → Import
+                </p>
+              </div>
+              <button onClick={() => setShareOpen(false)}
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-stone-300 hover:text-stone-600 hover:bg-stone-100 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-3">
+              <textarea readOnly value={shareCode} rows={4}
+                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                className="w-full px-4 py-3 text-[10px] font-mono rounded-2xl border border-stone-200 bg-stone-50 resize-none focus:outline-none"
+              />
+              <button onClick={copyShareCode} disabled={flashcards.length === 0}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-stone-900 text-white text-xs font-bold rounded-2xl hover:bg-stone-700 transition-colors disabled:opacity-40">
+                {copied ? <CheckCircle2 size={13} /> : <Link2 size={13} />}
+                {copied ? 'Copied to clipboard!' : 'Copy share code'}
+              </button>
+              <p className="text-[10px] text-stone-400 text-center">
+                Big decks make long codes — for hundreds of cards, use Export (CSV) instead.
+              </p>
             </div>
           </div>
         </div>

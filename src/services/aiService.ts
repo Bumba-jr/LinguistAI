@@ -507,6 +507,79 @@ Rules:
   return words;
 };
 
+// ── Conjugation trainer (#3) ──────────────────────────────────────────────────
+export interface ConjugationQuestion {
+  pronoun: string;      // e.g. "je", "nous"
+  verb: string;         // dictionary form, e.g. "prendre"
+  answer: string;       // correct conjugated form, e.g. "prends"
+  tense: string;        // e.g. "present"
+  translation: string;  // English of the conjugated form, e.g. "I take"
+}
+export const generateConjugationDrill = async (
+  verb: string,
+  targetLanguage: Language,
+  count = 10
+): Promise<ConjugationQuestion[]> => {
+  const system = `You are a ${targetLanguage} grammar drill generator. The student practises conjugating ONE verb.
+Return ONLY valid JSON: {"questions":[{"pronoun":"subject pronoun or person label","verb":"the dictionary form","answer":"the correct conjugated form for that pronoun","tense":"present","translation":"short English gloss of pronoun + verb, e.g. 'we take'"}]}
+Rules:
+- Exactly ${count} questions covering DIFFERENT persons — je/tu/il-elle/nous/vous/ils-elles (or ${targetLanguage}-appropriate person labels). If ${count} exceeds the persons, repeat persons with the same correct answers.
+- "answer" is the conjugated form ONLY (no pronoun). Accuracy is critical.
+- "pronoun" uses standard ${targetLanguage} subject pronouns.`;
+  const raw = await chat(system, `Verb: "${verb}"`, 1500);
+  const d = parseJSON(raw);
+  return (Array.isArray(d.questions) ? d.questions : [])
+    .filter((q: any) => q && q.answer && q.pronoun)
+    .map((q: any) => ({
+      pronoun: String(q.pronoun), verb: String(q.verb || verb),
+      answer: String(q.answer).trim().toLowerCase(), tense: String(q.tense || 'present'),
+      translation: String(q.translation || ''),
+    }))
+    .slice(0, count);
+};
+
+// ── Graded reading library (#5) ──────────────────────────────────────────────
+export interface ReadingArticle {
+  id: string;
+  title: string;
+  level: string; // A1…C1
+  language: Language;
+  topic: string;
+  paragraphs: { text: string; translation: string }[];
+  questions: { question: string; options: string[]; answer: string; translation?: string }[];
+  createdAt: string;
+}
+export const generateReadingArticle = async (
+  targetLanguage: Language,
+  level: string,
+  topic?: string
+): Promise<ReadingArticle> => {
+  const system = `You write graded reading material for ${targetLanguage} learners. Return ONLY valid JSON:
+{"title":"string in ${targetLanguage}","paragraphs":[{"text":"3-5 sentence paragraph in ${targetLanguage}","translation":"full English translation of that paragraph"}],"questions":[{"question":"comprehension question in ENGLISH about the text","options":["4 options in English"],"answer":"the correct option exactly"}]}
+Rules:
+- CEFR level ${level}: vocabulary and grammar MUST match ${level} (${level === 'A1' ? 'very basic everyday words, present tense only' : level === 'A2' ? 'common vocabulary, present + passé composé' : level === 'B1' ? 'wider vocabulary, past/future tenses, opinions' : level === 'B2' ? 'abstract topics, idiomatic language, complex sentences' : 'near-native richness, nuance and register'}).
+- 3-4 paragraphs telling one coherent story or article on the given topic.
+- 4 comprehension questions; each has exactly 4 options and ONE correct "answer" matching an option exactly.
+- Text must be natural ${targetLanguage}, never translated-sounding.`;
+  const user = `Level: ${level}. Topic: ${topic || 'an interesting everyday story'}.`;
+  const raw = await chat(system, user, 3000);
+  const d = parseJSON(raw);
+  return {
+    id: `read-${Date.now()}`,
+    title: d.title || 'Untitled',
+    level,
+    language: targetLanguage,
+    topic: topic || 'story',
+    paragraphs: (Array.isArray(d.paragraphs) ? d.paragraphs : [])
+      .filter((p: any) => p && p.text)
+      .map((p: any) => ({ text: String(p.text), translation: String(p.translation || '') })),
+    questions: (Array.isArray(d.questions) ? d.questions : [])
+      .filter((q: any) => q && q.question && Array.isArray(q.options))
+      .map((q: any) => ({ question: String(q.question), options: q.options.map(String), answer: String(q.answer) })),
+    createdAt: new Date().toISOString(),
+  };
+};
+
 // Extract flashcard-worthy vocabulary from arbitrary pasted text — a word
 // list, sentences, or a whole article. English input is translated into the
 // target language so every card ends up as ${targetLanguage} → English.
