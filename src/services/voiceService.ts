@@ -41,9 +41,12 @@ const getBestVoice = (lang: string): SpeechSynthesisVoice | null => {
   return matches[0];
 };
 
-// ── HD neural TTS via the OpenAI proxy, with automatic fallback ─────────────
-// The proxy key may have no credits — the first call detects that and every
-// subsequent speak() goes straight to the browser's best voice, no delay.
+// ── HD neural TTS providers, with automatic fallback ─────────────────────────
+// 1) Edge/Azure neural voices via /api/edge-tts — free, natural, all languages
+// 2) OpenAI TTS via /api/openai — natural, needs credits on the key
+// 3) Browser SpeechSynthesis with the best installed voice
+// Failed providers are remembered per session so later calls skip them.
+let edgeTtsState: 'unknown' | 'ok' | 'failed' = 'unknown';
 let hdTtsState: 'unknown' | 'ok' | 'failed' = 'unknown';
 let currentAudio: HTMLAudioElement | null = null;
 let currentAudioEnd: (() => void) | null = null;
@@ -63,7 +66,38 @@ const stopHD = () => {
   }
 };
 
-const speakHD = async (text: string, lang: string, onEnd?: () => void, rate = 0.88): Promise<boolean> => {
+const playBlob = (blob: Blob, onEnd?: () => void) => {
+  stopHD();
+  const audio = new Audio(URL.createObjectURL(blob));
+  currentAudio = audio;
+  currentAudioEnd = onEnd ?? null;
+  audio.onended = () => {
+    URL.revokeObjectURL(audio.src);
+    if (currentAudio === audio) { currentAudio = null; currentAudioEnd = null; }
+    onEnd?.();
+  };
+  audio.onerror = () => onEnd?.();
+  return audio.play();
+};
+
+const speakEdge = async (text: string, lang: string, onEnd?: () => void, rate = 0.88): Promise<boolean> => {
+  if (edgeTtsState === 'failed') return false;
+  try {
+    const url = `/api/edge-tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}&slow=${rate < 0.7 ? '1' : '0'}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`edge-tts ${res.status}`);
+    const blob = await res.blob();
+    if (!blob.type.startsWith('audio')) throw new Error('Not audio');
+    await playBlob(blob, onEnd);
+    edgeTtsState = 'ok';
+    return true;
+  } catch {
+    edgeTtsState = 'failed'; // remember — don't retry the dead path every time
+    return false;
+  }
+};
+
+const speakOpenAI = async (text: string, lang: string, onEnd?: () => void, rate = 0.88): Promise<boolean> => {
   if (hdTtsState === 'failed') return false;
   try {
     const res = await fetch('/api/openai/v1/audio/speech', {
@@ -82,18 +116,7 @@ const speakHD = async (text: string, lang: string, onEnd?: () => void, rate = 0.
     if (!res.ok) throw new Error(`TTS ${res.status}`);
     const blob = await res.blob();
     if (!blob.type.startsWith('audio')) throw new Error('Not audio');
-
-    stopHD();
-    const audio = new Audio(URL.createObjectURL(blob));
-    currentAudio = audio;
-    currentAudioEnd = onEnd ?? null;
-    audio.onended = () => {
-      URL.revokeObjectURL(audio.src);
-      if (currentAudio === audio) { currentAudio = null; currentAudioEnd = null; }
-      onEnd?.();
-    };
-    audio.onerror = () => onEnd?.();
-    await audio.play();
+    await playBlob(blob, onEnd);
     hdTtsState = 'ok';
     return true;
   } catch {
@@ -150,30 +173,15 @@ export const speakText = (text: string, lang = 'French', onEnd?: () => void, rat
     doSpeak(text, lang, onEnd, rate);
   };
 
-  // HD neural voice first (realistic), browser voices as fallback
-  if (hdTtsState !== 'failed') {
-    stopHD();
-    window.speechSynthesis.cancel();
-    speakHD(text, lang, onEnd, rate).then(ok => { if (!ok) browserSpeak(); });
-    return;
-  }
-
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) {
+  // Neural voices first (realistic), browser voices as last resort
+  const tryProviders = async () => {
+    if (await speakEdge(text, lang, onEnd, rate)) return;
+    if (await speakOpenAI(text, lang, onEnd, rate)) return;
     browserSpeak();
-  } else {
-    // Voices not loaded yet — wait then speak
-    const handler = () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', handler);
-      browserSpeak();
-    };
-    window.speechSynthesis.addEventListener('voiceschanged', handler);
-    // Fallback if event never fires
-    setTimeout(() => {
-      window.speechSynthesis.removeEventListener('voiceschanged', handler);
-      browserSpeak();
-    }, 600);
-  }
+  };
+  stopHD();
+  window.speechSynthesis.cancel();
+  tryProviders();
 };
 
 export const getBestVoiceExport = getBestVoice;
