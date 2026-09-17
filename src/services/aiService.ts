@@ -1,9 +1,15 @@
 import { Question, QuestionType, Difficulty, Lecture, Language } from "../store/useAppStore";
 
-const MODEL = "llama-3.1-8b-instant";
-const MODEL_LARGE = "llama-3.3-70b-versatile";
-const MODEL_FALLBACK = "gemma2-9b-it";
+// Groq decommissioned the llama-3.x/gemma chat models — these are the
+// replacements verified against the live /api/groq proxy (Sept 2026).
+const MODEL = "qwen/qwen3.8-27b";
+const MODEL_LARGE = "openai/gpt-oss-120b";
+const MODEL_FALLBACK = "openai/gpt-oss-20b";
 const OPENAI_MODEL = "gpt-4o";
+
+// gpt-oss models are reasoning models: they spend completion tokens thinking
+// before answering, so they need an explicit low effort to stay in budget.
+const isReasoningModel = (model: string) => model.startsWith("openai/gpt-oss");
 
 // OpenAI chat — used for quiz generation and explanations
 const chatOpenAI = async (system: string, user: string, maxTokens = 2048): Promise<string> => {
@@ -44,6 +50,7 @@ const chat = async (system: string, user: string, maxTokens = 8192, large = fals
         model,
         temperature: 0.3,
         max_tokens: maxTokens,
+        ...(isReasoningModel(model) ? { reasoning_effort: 'low' } : {}),
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: system },
@@ -323,13 +330,13 @@ Return JSON exactly:
 {"questions":[{"question":"string","translation":"string","type":"${type === 'mixed' ? 'multiple_choice|fill_in_the_blank|pronunciation' : type}","options":["string","string","string","string"],"answer":"string"}]}`;
 
   const userPrompt = `Generate questions based on this content. The student is a ${difficulty} learner${difficulty === 'beginner' ? ' — every question MUST have a clear English "translation" field that explains what the question is asking in plain English' : difficulty === 'intermediate' ? ' — include an English "translation" hint for complex questions' : ' — no English translations needed, the student is advanced'}.\n\n${content}`;
-  // Use GPT-4o for quiz generation, fall back to Groq large model
+  // Groq is primary — the OpenAI key currently has no credits; it stays as fallback
   let raw: string;
   try {
-    raw = await chatOpenAI(system, userPrompt, 2048);
-  } catch (err: any) {
-    console.warn('[quiz] OpenAI failed, falling back to Groq:', err?.message);
     raw = await chat(system, userPrompt, 2048, true);
+  } catch (err: any) {
+    console.warn('[quiz] Groq failed, falling back to OpenAI:', err?.message);
+    raw = await chatOpenAI(system, userPrompt, 2048);
   }
   const result = parseJSON(raw);
   const questions = Array.isArray(result.questions) ? result.questions : [];
@@ -401,9 +408,9 @@ Keep it under 80 words. ${isAdvanced ? '' : 'Use plain English. When mentioning 
   try {
     let raw: string;
     try {
-      raw = await chatOpenAI(system, `Question: "${question}"\nCorrect answer: "${correctAnswer}"\nStudent answered: "${userAnswer}"`, 400);
-    } catch {
       raw = await chat(system, `Question: "${question}"\nCorrect answer: "${correctAnswer}"\nStudent answered: "${userAnswer}"`, 400, true);
+    } catch {
+      raw = await chatOpenAI(system, `Question: "${question}"\nCorrect answer: "${correctAnswer}"\nStudent answered: "${userAnswer}"`, 400);
     }
     const d = parseJSON(raw);
     return d.explanation || '';
@@ -755,8 +762,8 @@ Every question must test a DIFFERENT aspect or example of the rule. No repeats.
 Rules: answer MUST be one of the 4 options exactly. All options same language type. No circular questions.`;
   try {
     let raw: string;
-    try { raw = await chatOpenAI(system, `Generate ${count} grammar drill questions for: ${grammarRule}`, 2048); }
-    catch { raw = await chat(system, `Generate ${count} grammar drill questions for: ${grammarRule}`, 2048, true); }
+    try { raw = await chat(system, `Generate ${count} grammar drill questions for: ${grammarRule}`, 2048, true); }
+    catch { raw = await chatOpenAI(system, `Generate ${count} grammar drill questions for: ${grammarRule}`, 2048); }
     const result = parseJSON(raw);
     return (Array.isArray(result.questions) ? result.questions : []).map((q: any, i: number) => ({
       id: `drill-${i}-${Date.now()}`,
@@ -813,7 +820,7 @@ If the transcription matches the target words closely (even without accents/punc
 Score guide: 90-100 = excellent, 75-89 = good, 55-74 = needs work, below 55 = significant errors.
 Only add corrections for genuinely mispronounced words. If the student got it right, return empty corrections array.`;
   try {
-    const raw = await chatOpenAI(system, `Target: "${targetPhrase}"\nTranscribed: "${spokenText}"\nLanguage: ${targetLanguage}`, 512);
+    const raw = await chat(system, `Target: "${targetPhrase}"\nTranscribed: "${spokenText}"\nLanguage: ${targetLanguage}`, 512, true);
     const d = parseJSON(raw);
     return { score: d.score ?? 0, feedback: d.feedback ?? '', corrections: d.corrections ?? [] };
   } catch {
@@ -887,6 +894,7 @@ Exactly ${count} phrases, no more, no less.`;
       model: MODEL_LARGE,
       temperature: 0.9,
       max_tokens: 2048,
+      ...(isReasoningModel(MODEL_LARGE) ? { reasoning_effort: 'low' } : {}),
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: system },
