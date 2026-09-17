@@ -138,6 +138,8 @@ export default function App() {
   const [userMeta, setUserMeta] = useState<{ firstName: string } | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [placementDismissed, setPlacementDismissed] = useState(false);
+  // hooks must run on every render — call before any early returns below
+  const placementShow = usePlacementGate(user?.id);
 
   const isSupabaseConfigured =
     (import.meta.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL) &&
@@ -303,7 +305,6 @@ export default function App() {
   }
 
   // First-run placement test — sets quiz/tutor difficulty for new users
-  const placementShow = usePlacementGate(user?.id);
   if (placementShow && !placementDismissed) {
     return <PlacementTest
       onFinish={(score, difficulty) => {
