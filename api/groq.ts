@@ -10,13 +10,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'VITE_GROQ_API_KEY is not set' });
     }
 
+    // Multipart (audio uploads for Whisper) must be forwarded as the raw body
+    // with its original boundary — JSON.stringify would corrupt it.
+    const contentType = String(req.headers['content-type'] || '');
+    const isMultipart = contentType.includes('multipart/form-data');
+
+    const headers: Record<string, string> = {
+        'Authorization': `Bearer ${apiKey}`,
+    };
+    let body: any;
+    if (isMultipart) {
+        headers['Content-Type'] = contentType;
+        // Vercel leaves unparsed content types as a Buffer on req.body
+        body = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body as any);
+    } else {
+        headers['Content-Type'] = 'application/json';
+        body = req.method !== 'GET' ? JSON.stringify(req.body) : undefined;
+    }
+
     const response = await fetch(groqUrl, {
         method: req.method ?? 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-        },
-        body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined,
+        headers,
+        body,
     });
 
     const data = await response.json();

@@ -8,6 +8,7 @@ import {
 import { cn } from '../lib/utils';
 import { speakText } from '../services/voiceService';
 import { scorePronunciation, generatePronunciationPhrases, translateToLanguage } from '../services/aiService';
+import { recordAndTranscribe } from '../services/speechService';
 import { Language } from '../store/useAppStore';
 
 const LANG_CODES: Record<string, string> = {
@@ -278,6 +279,7 @@ const PracticeScreen = ({
     const [customInput, setCustomInput] = useState('');
     const [addingPhrase, setAddingPhrase] = useState(false);
     const recognitionRef = useRef<any>(null);
+    const whisperRef = useRef<{ promise: Promise<string>; stop: () => void } | null>(null);
 
     const totalOriginal = initialPhrases.length;
     const remaining = queue.length;
@@ -304,26 +306,30 @@ const PracticeScreen = ({
     };
 
     const stopListening = () => {
+        whisperRef.current?.stop();
         recognitionRef.current?.stop();
         recognitionRef.current = null;
         setIsListening(false);
     };
 
+    // Record with MediaRecorder and transcribe via Whisper (Groq) — far more
+    // accurate for accented learner speech than browser recognition.
     const listen = useCallback(() => {
         if (isListening) { stopListening(); return; }
-        const SR = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-        if (!SR) { setError('Speech recognition not supported. Use Chrome or Edge.'); return; }
         setError(null);
         setSpokenText('');
-        const rec = new SR();
-        rec.lang = LANG_CODES[lang] || 'fr-FR';
-        rec.continuous = false;
-        rec.interimResults = false;
-        rec.onstart = () => setIsListening(true);
-        rec.onresult = async (e: any) => {
-            const text = e.results[0][0].transcript;
+        setResult(null);
+        const rec = recordAndTranscribe(lang, {
+            maxMs: 8000,
+            onStateChange: (s) => {
+                if (s === 'recording') setIsListening(true);
+                if (s === 'processing') { setIsListening(false); setLoading(true); }
+            },
+        });
+        whisperRef.current = rec;
+        rec.promise.then(async (text) => {
+            whisperRef.current = null;
             setSpokenText(text);
-            setIsListening(false);
             setLoading(true);
             try {
                 const r = await scorePronunciation(current.phrase, text, lang);
@@ -339,14 +345,11 @@ const PracticeScreen = ({
             } finally {
                 setLoading(false);
             }
-        };
-        rec.onerror = (e: any) => {
-            if (e.error !== 'aborted') setError(`Mic error: ${e.error}. Check browser permissions.`);
+        }).catch(() => {
+            whisperRef.current = null;
             setIsListening(false);
-        };
-        rec.onend = () => setIsListening(false);
-        recognitionRef.current = rec;
-        rec.start();
+            setError('Could not capture audio. Check browser permissions and try again.');
+        });
     }, [current, lang, isListening, results]);
 
     // Next = skip/remove card regardless of score

@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { speakText } from '../services/voiceService';
 import { getWordDetails, gradePronunciation, getRelatedWords, getWordEtymology, getSimilarConfusableWords, getWordUsageTips } from '../services/aiService';
+import { recordAndTranscribe } from '../services/speechService';
+import { WordBreakdown } from './WordBreakdown';
 import { cn } from '../lib/utils';
 
 type WordDetails = {
@@ -19,7 +21,7 @@ type WordDetails = {
   partOfSpeech?: string; gender?: string; plural?: string;
   conjugations?: { form: string; value: string }[];
   culturalNote?: string; commonMistakes?: string;
-  alternatives: { text: string; register: string; notes: string }[];
+  alternatives: { text: string; register: string; notes: string; english?: string }[];
   examples: { target: string; english: string }[];
 };
 
@@ -767,8 +769,6 @@ const FlashcardsView = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [pronResult, setPronResult] = useState<{ verdict: 'correct' | 'close' | 'wrong'; feedback: string; tip?: string } | null>(null);
   const [pronLoading, setPronLoading] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recognitionRef = useRef<any>(null);
   // smart shuffle
   const [shuffled, setShuffled] = useState(false);
   // cache: id → WordDetails
@@ -1051,38 +1051,33 @@ const FlashcardsView = () => {
     }, 50);
   };
 
-  // ── Pronunciation recording via Web Speech API ──────────────────────────
+  // ── Pronunciation recording — Whisper via Groq, Web Speech fallback ──────
+  const whisperRecRef = useRef<{ promise: Promise<string>; stop: () => void } | null>(null);
   const handleRecord = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentCard) return;
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) { setPronResult({ verdict: 'wrong', feedback: 'Speech recognition not supported in this browser.' }); return; }
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-      return;
-    }
-    const rec = new SpeechRecognition();
-    const lm: Record<string, string> = { French: 'fr-FR', Spanish: 'es-ES', German: 'de-DE', Italian: 'it-IT', Japanese: 'ja-JP', Portuguese: 'pt-PT', Chinese: 'zh-CN' };
-    rec.lang = lm[currentCard.language] || 'en-US';
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-    recognitionRef.current = rec;
-    setIsRecording(true);
+    // second tap stops the recording → transcription + grading run
+    if (whisperRecRef.current) { whisperRecRef.current.stop(); return; }
     setPronResult(null);
-    rec.onresult = async (event: any) => {
-      const spoken = event.results[0][0].transcript;
-      setIsRecording(false);
+    setIsRecording(true);
+    const rec = recordAndTranscribe(currentCard.language, {
+      maxMs: 6000,
+      onStateChange: (s) => { if (s === 'processing') { setIsRecording(false); setPronLoading(true); } },
+    });
+    whisperRecRef.current = rec;
+    rec.promise.then(async (spoken) => {
+      whisperRecRef.current = null;
       setPronLoading(true);
       try {
-        const result = await gradePronunciation(spoken, currentCard.word, currentCard.language);
-        setPronResult(result);
+        setPronResult(await gradePronunciation(spoken, currentCard.word, currentCard.language));
       } catch { setPronResult({ verdict: 'wrong', feedback: 'Could not grade pronunciation.' }); }
       finally { setPronLoading(false); }
-    };
-    rec.onerror = () => { setIsRecording(false); setPronResult({ verdict: 'wrong', feedback: 'Could not capture audio. Try again.' }); };
-    rec.onend = () => setIsRecording(false);
-    rec.start();
+    }).catch(() => {
+      whisperRecRef.current = null;
+      setIsRecording(false);
+      setPronLoading(false);
+      setPronResult({ verdict: 'wrong', feedback: 'Could not capture audio. Try again.' });
+    });
   };
 
   // ── Write mode checker ──────────────────────────────────────────────────
@@ -1540,30 +1535,14 @@ const FlashcardsView = () => {
               )}
               {isFlipped && (
                 <div className="flex items-center justify-center gap-3 mb-3 text-[11px] text-stone-300">
-                  <span>Rate how well you knew it, then continue</span>
+                  <span>Choose Hard, Again or Easy to move to the next card</span>
                 </div>
               )}
 
-              {/* card */}
+              {/* card — tap flips; the ONLY way to advance is a difficulty rating */}
               <div
                 className="w-full cursor-pointer"
                 onClick={writeMode ? undefined : handleFlip}
-                onTouchStart={(e) => {
-                  const t = e.touches[0];
-                  (e.currentTarget as any)._tx = t.clientX;
-                  (e.currentTarget as any)._ty = t.clientY;
-                }}
-                onTouchEnd={(e) => {
-                  if (!isFlipped) return;
-                  const dx = e.changedTouches[0].clientX - (e.currentTarget as any)._tx;
-                  const dy = e.changedTouches[0].clientY - (e.currentTarget as any)._ty;
-                  if (Math.abs(dx) > Math.abs(dy)) {
-                    if (dx > 60) handleDifficulty('easy');
-                    else if (dx < -60) handleDifficulty('hard');
-                  } else if (dy < -60) {
-                    handleDifficulty('medium');
-                  }
-                }}
               >
                 {!isFlipped ? (
                   /* ── FRONT ── */
@@ -1786,6 +1765,29 @@ const FlashcardsView = () => {
                     {/* body */}
                     {extra && !isFetching && (
                       <div className="px-6 py-5 space-y-5">
+                        {/* quick info chips */}
+                        {(extra.partOfSpeech || extra.gender || extra.pronunciation || extra.plural) && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {extra.partOfSpeech && <span className="px-2.5 py-1 bg-white/10 rounded-lg text-[10px] font-black text-white/70 uppercase tracking-wider">{extra.partOfSpeech}</span>}
+                            {extra.gender && <span className="px-2.5 py-1 bg-violet-500/20 rounded-lg text-[10px] font-black text-violet-300 uppercase tracking-wider">{extra.gender}</span>}
+                            {extra.pronunciation && <span className="px-2.5 py-1 bg-white/5 rounded-lg text-[11px] font-mono text-white/50 tracking-wider">{extra.pronunciation}</span>}
+                            {extra.plural && <span className="px-2.5 py-1 bg-white/5 rounded-lg text-[10px] font-bold text-white/50">plural: {extra.plural}</span>}
+                          </div>
+                        )}
+
+                        {/* English summary — what the word means and when to use it */}
+                        {extra.summary && (
+                          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                            <p className="text-[10px] font-black text-emerald-400/70 uppercase tracking-[0.15em] mb-1.5">What it means</p>
+                            <p className="text-white/85 text-sm leading-relaxed">{extra.summary}</p>
+                          </div>
+                        )}
+
+                        {/* word-by-word breakdown with hover/tap tooltips */}
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <WordBreakdown text={currentCard.word} language={currentCard.language} dark />
+                        </div>
+
                         {extra.notes && (
                           <p className="text-xs text-white/35 italic leading-relaxed border-l-2 border-white/10 pl-3">{extra.notes}</p>
                         )}
@@ -1801,7 +1803,10 @@ const FlashcardsView = () => {
                               {extra.alternatives.filter((a: any) => a.register === 'formal').map((alt: any, i: number) => (
                                 <div key={i} className="bg-blue-500/10 border border-blue-500/10 rounded-2xl p-4">
                                   <div className="flex items-start justify-between gap-2 mb-1">
-                                    <p className="text-white font-bold text-base">{alt.text}</p>
+                                    <div className="min-w-0">
+                                      <p className="text-white font-bold text-base">{alt.text}</p>
+                                      {alt.english && <p className="text-blue-200/50 text-xs">= {alt.english}</p>}
+                                    </div>
                                     <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); speakText(alt.text, currentCard.language); }} className="text-blue-400/50 hover:text-blue-300 transition-colors shrink-0"><Volume2 size={14} /></button>
                                   </div>
                                   {alt.notes && <p className="text-blue-200/60 text-xs leading-relaxed">{alt.notes}</p>}
@@ -1822,7 +1827,10 @@ const FlashcardsView = () => {
                               {extra.alternatives.filter((a: any) => a.register === 'informal').map((alt: any, i: number) => (
                                 <div key={i} className="bg-amber-500/10 border border-amber-500/10 rounded-2xl p-4">
                                   <div className="flex items-start justify-between gap-2 mb-1">
-                                    <p className="text-white font-bold text-base">{alt.text}</p>
+                                    <div className="min-w-0">
+                                      <p className="text-white font-bold text-base">{alt.text}</p>
+                                      {alt.english && <p className="text-amber-200/50 text-xs">= {alt.english}</p>}
+                                    </div>
                                     <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); speakText(alt.text, currentCard.language); }} className="text-amber-400/50 hover:text-amber-300 transition-colors shrink-0"><Volume2 size={14} /></button>
                                   </div>
                                   {alt.notes && <p className="text-amber-200/60 text-xs leading-relaxed">{alt.notes}</p>}
@@ -1843,7 +1851,10 @@ const FlashcardsView = () => {
                               {extra.alternatives.filter((a: any) => a.register !== 'formal' && a.register !== 'informal').map((alt: any, i: number) => (
                                 <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-4">
                                   <div className="flex items-start justify-between gap-2 mb-1">
-                                    <p className="text-white/80 font-bold text-base">{alt.text}</p>
+                                    <div className="min-w-0">
+                                      <p className="text-white/80 font-bold text-base">{alt.text}</p>
+                                      {alt.english && <p className="text-white/40 text-xs">= {alt.english}</p>}
+                                    </div>
                                     <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); speakText(alt.text, currentCard.language); }} className="text-white/20 hover:text-white/60 transition-colors shrink-0"><Volume2 size={14} /></button>
                                   </div>
                                   {alt.notes && <p className="text-white/40 text-xs leading-relaxed">{alt.notes}</p>}
@@ -1889,6 +1900,24 @@ const FlashcardsView = () => {
                           <div className="bg-red-500/8 border border-red-500/10 rounded-2xl p-4">
                             <p className="text-[10px] font-black text-red-400/60 uppercase tracking-[0.15em] mb-1.5">Common mistake</p>
                             <p className="text-red-200/60 text-xs leading-relaxed">{extra.commonMistakes}</p>
+                          </div>
+                        )}
+
+                        {/* conjugations */}
+                        {extra.conjugations && extra.conjugations.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                              <p className="text-[10px] font-black text-violet-400/80 uppercase tracking-[0.15em]">Conjugations</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {extra.conjugations.slice(0, 8).map((c: any, i: number) => (
+                                <div key={i} className="flex items-center justify-between bg-white/5 border border-white/5 rounded-xl px-3 py-2">
+                                  <span className="text-[9px] text-white/35 font-black uppercase tracking-wider">{c.form}</span>
+                                  <span className="font-bold text-white/85 text-xs">{c.value}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>

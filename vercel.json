@@ -3,6 +3,10 @@
         {
             "source": "/api/groq/(.*)",
             "destination": "/api/groq"
+        },
+        {
+            "source": "/api/openai/(.*)",
+            "destination": "/api/openai"
         }
     ]
 }

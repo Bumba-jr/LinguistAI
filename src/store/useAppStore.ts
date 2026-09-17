@@ -170,6 +170,7 @@ interface AppState {
   setChatSessions: (sessions: ChatSession[]) => void;
   removeChatSession: (id: string) => void;
   updateDifficultyScore: (delta: number) => void;
+  setDifficultyScore: (score: number) => void;
   logMistake: (category: string, example?: { original: string; corrected: string; explanation: string }) => void;
   setGrammarMode: (mode: 'strict' | 'fluency') => void;
   addSavedPhrase: (phrase: { id: string; phrase: string; translation: string; language: Language; date: string }) => void;
@@ -276,6 +277,7 @@ export const useAppStore = create<AppState>()(
       updateDifficultyScore: (delta) => set((state) => ({
         difficultyScore: Math.max(0, Math.min(100, state.difficultyScore + delta)),
       })),
+      setDifficultyScore: (score) => set({ difficultyScore: Math.max(0, Math.min(100, score)) }),
       logMistake: (category, example) => set((state) => {
         const existing = state.mistakeLog.find(m => m.category === category);
         const newExample = example ? [example] : [];

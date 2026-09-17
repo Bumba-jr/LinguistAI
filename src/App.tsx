@@ -1,25 +1,28 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import gsap from 'gsap';
 import { useAppStore } from './store/useAppStore';
 import Editor from './components/Editor';
 import FileUpload from './components/FileUpload';
 import QuizSettings from './components/QuizSettings';
 import QuizView from './components/QuizView';
-import LectureView from './components/LectureView';
-import AnalyticsView from './components/AnalyticsView';
-import FlashcardsView from './components/FlashcardsView';
-import ChatView from './components/ChatView';
-import StudyRoomsView from './components/StudyRoomsView';
 import FloatingNotes from './components/FloatingNotes';
-import LeaderboardView from './components/LeaderboardView';
-import StoryModeView from './components/StoryModeView';
-import GrammarDrillView from './components/GrammarDrillView';
-import LanguageExchangeView from './components/LanguageExchangeView';
+// Heavy views are code-split so the initial bundle stays small — each tab
+// loads its own chunk on first visit.
+const LectureView = lazy(() => import('./components/LectureView'));
+const AnalyticsView = lazy(() => import('./components/AnalyticsView'));
+const FlashcardsView = lazy(() => import('./components/FlashcardsView'));
+const ChatView = lazy(() => import('./components/ChatView'));
+const StudyRoomsView = lazy(() => import('./components/StudyRoomsView'));
+const LeaderboardView = lazy(() => import('./components/LeaderboardView'));
+const StoryModeView = lazy(() => import('./components/StoryModeView'));
+const GrammarDrillView = lazy(() => import('./components/GrammarDrillView'));
+const LanguageExchangeView = lazy(() => import('./components/LanguageExchangeView'));
+const PronunciationPracticeView = lazy(() => import('./components/PronunciationPracticeView'));
 import {
   BookOpen, Upload, GraduationCap, User as UserIcon,
   BarChart2, Layers, MessageSquare, Users, Home,
   FileText, Zap, ArrowRight, Clock, Trash2, Play, Trophy,
-  BookMarked, Sparkles, Users2, Mic
+  BookMarked, Sparkles, Users2, Mic, Loader2
 } from 'lucide-react';
 import AuthPage from './components/AuthPage';
 import { getAuthRedirectUrl } from './lib/auth-config';
@@ -29,9 +32,43 @@ import { supabase } from './lib/supabase';
 import { getStats, getSavedLectures, getFlashcards, getQuizHistory, getLectureProgress } from './services/dbService';
 import { offlineCache } from './lib/offlineCache';
 import { scheduleFlashcardReminder, scheduleDailyReminder } from './lib/notifications';
-import PronunciationPracticeView from './components/PronunciationPracticeView';
 import NotificationSettings from './components/NotificationSettings';
 import { GlobalCallManager } from './components/GlobalCallManager';
+import PlacementTest from './components/PlacementTest';
+
+// Decide once per signed-in user whether the first-run placement test should
+// show. Existing users (with quiz/flashcard history) are marked as done.
+const usePlacementGate = (userId?: string) => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    if (!userId) return;
+    if (localStorage.getItem('linguistai-placement-done')) return;
+    let alive = true;
+    Promise.all([
+      import('./services/dbService').then(m => m.getQuizHistory(userId)).catch(() => []),
+      import('./services/dbService').then(m => m.getFlashcards(userId)).catch(() => []),
+    ]).then(([qh, fc]) => {
+      if (!alive) return;
+      if ((qh?.length ?? 0) > 0 || (fc?.length ?? 0) > 0) {
+        localStorage.setItem('linguistai-placement-done', '1');
+      } else {
+        setShow(true);
+      }
+    });
+    return () => { alive = false; };
+  }, [userId]);
+  return show;
+};
+
+// Suspense wrapper for the lazily-loaded tab views
+const LazyPage = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={
+    <div className="max-w-2xl mx-auto w-full py-24 flex items-center justify-center gap-3 text-stone-300">
+      <Loader2 size={24} className="animate-spin" />
+      <span className="text-sm font-medium">Loading…</span>
+    </div>
+  }>{children}</Suspense>
+);
 
 // ── Floating message notification button ─────────────────────────────────────
 const FloatingMessageButton = ({ count, onClick }: { count: number; onClick: () => void }) => {
@@ -100,6 +137,7 @@ export default function App() {
   const [stats, setStats] = useState<{ totalQuizzes: number; avgAccuracy: string; totalQuestions: number } | null>(null);
   const [userMeta, setUserMeta] = useState<{ firstName: string } | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [placementDismissed, setPlacementDismissed] = useState(false);
 
   const isSupabaseConfigured =
     (import.meta.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL) &&
@@ -264,6 +302,20 @@ export default function App() {
     return <AuthPage />;
   }
 
+  // First-run placement test — sets quiz/tutor difficulty for new users
+  const placementShow = usePlacementGate(user?.id);
+  if (placementShow && !placementDismissed) {
+    return <PlacementTest
+      onFinish={(score, difficulty) => {
+        useAppStore.getState().setDifficultyScore(score);
+        useAppStore.getState().updateQuizSettings({ difficulty });
+        localStorage.setItem('linguistai-placement-done', '1');
+        setPlacementDismissed(true);
+      }}
+      onSkip={() => { localStorage.setItem('linguistai-placement-done', '1'); setPlacementDismissed(true); }}
+    />;
+  }
+
   const navItems = [
     { id: 'editor', label: 'Dashboard', icon: Home },
     { id: 'lectures', label: 'Lectures', icon: BookOpen },
@@ -279,19 +331,19 @@ export default function App() {
   ];
 
   const renderContent = () => {
-    if (activeTab === 'analytics') return <AnalyticsView />;
-    if (activeTab === 'flashcards') return <FlashcardsView />;
-    if (activeTab === 'chat') return <ChatView />;
-    if (activeTab === 'rooms') return <StudyRoomsView />;
-    if (activeTab === 'leaderboard') return <LeaderboardView />;
-    if (activeTab === 'grammar-drill') return <GrammarDrillView />;
-    if (activeTab === 'story-mode') return <StoryModeView />;
-    if (activeTab === 'exchange') return <LanguageExchangeView />;
-    if (activeTab === 'pronunciation') return <PronunciationPracticeView />;
+    if (activeTab === 'analytics') return <LazyPage><AnalyticsView /></LazyPage>;
+    if (activeTab === 'flashcards') return <LazyPage><FlashcardsView /></LazyPage>;
+    if (activeTab === 'chat') return <LazyPage><ChatView /></LazyPage>;
+    if (activeTab === 'rooms') return <LazyPage><StudyRoomsView /></LazyPage>;
+    if (activeTab === 'leaderboard') return <LazyPage><LeaderboardView /></LazyPage>;
+    if (activeTab === 'grammar-drill') return <LazyPage><GrammarDrillView /></LazyPage>;
+    if (activeTab === 'story-mode') return <LazyPage><StoryModeView /></LazyPage>;
+    if (activeTab === 'exchange') return <LazyPage><LanguageExchangeView /></LazyPage>;
+    if (activeTab === 'pronunciation') return <LazyPage><PronunciationPracticeView /></LazyPage>;
 
     if (activeTab === 'lectures') {
       // Active lecture open → show it
-      if (lectures) return <LectureView />;
+      if (lectures) return <LazyPage><LectureView /></LazyPage>;
       // Lectures library
       return (
         <div className="max-w-4xl mx-auto w-full py-8 px-4 space-y-8">

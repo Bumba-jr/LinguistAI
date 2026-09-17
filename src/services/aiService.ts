@@ -11,15 +11,13 @@ const OPENAI_MODEL = "gpt-4o";
 // before answering, so they need an explicit low effort to stay in budget.
 const isReasoningModel = (model: string) => model.startsWith("openai/gpt-oss");
 
-// OpenAI chat — used for quiz generation and explanations
+// OpenAI chat — used for quiz generation and explanations.
+// Goes through the /api/openai serverless proxy so the key never ships in the bundle.
 const chatOpenAI = async (system: string, user: string, maxTokens = 2048): Promise<string> => {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OpenAI API key not configured');
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const res = await fetch('/api/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: OPENAI_MODEL,
@@ -427,14 +425,19 @@ export const getWordDetails = async (
   partOfSpeech: string; gender?: string; plural?: string;
   conjugations?: { form: string; value: string }[];
   culturalNote?: string; commonMistakes?: string;
-  alternatives: { text: string; register: string; notes: string }[];
+  alternatives: { text: string; register: string; notes: string; english?: string }[];
   examples: { target: string; english: string }[];
 }> => {
-  const system = `You are a ${targetLanguage} language expert. Return ONLY valid JSON with these fields:
-{"summary":"string","register":"formal|informal|neutral","notes":"string","pronunciation":"string","partOfSpeech":"string","gender":"string","plural":"string","conjugations":[{"form":"string","value":"string"}],"culturalNote":"string","commonMistakes":"string","alternatives":[{"text":"string","register":"string","notes":"string"}],"examples":[{"target":"string","english":"string"}]}
-Provide 2-3 alternatives, 2-3 examples, conjugations only for verbs.`;
+  // CRITICAL: the learner is an ENGLISH speaker studying ${targetLanguage}.
+  // Every explanation field MUST be written in plain English.
+  const system = `You are a ${targetLanguage} language expert teaching an ENGLISH-speaking student.
+ALL explanation fields (summary, notes, commonMistakes, culturalNote, alternative notes) MUST be written in ENGLISH. Never write explanations in ${targetLanguage} — the student cannot read ${targetLanguage} yet.
+${targetLanguage} text is ONLY allowed inside: the word itself, pronunciation, conjugation values, alternative "text" fields, and example "target" sentences (which must always have an "english" translation).
+Return ONLY valid JSON with these fields:
+{"summary":"2-3 sentence ENGLISH explanation of what this word means and when to use it","register":"formal|informal|neutral","notes":"short ENGLISH usage note","pronunciation":"IPA pronunciation","partOfSpeech":"noun|verb|adjective|adverb|phrase|etc","gender":"masculine|feminine or omit","plural":"plural form or omit","conjugations":[{"form":"pronoun/tense label","value":"conjugated form"}],"culturalNote":"short ENGLISH cultural note","commonMistakes":"ENGLISH description of the mistake English speakers make + the correct form","alternatives":[{"text":"${targetLanguage} alternative","english":"its ENGLISH meaning","register":"formal|informal|neutral","notes":"short ENGLISH note on when to use this variant"}],"examples":[{"target":"${targetLanguage} sentence","english":"full English translation"}]}
+Provide 2-4 alternatives (each MUST include "english"), 2-3 examples, conjugations only for verbs.`;
 
-  const raw = await chat(system, `Give me full details for the ${targetLanguage} word: "${word}". Do not use any other word.`, 1024);
+  const raw = await chat(system, `Give me full details for the ${targetLanguage} word: "${word}". Do not use any other word.`, 1500);
   const d = parseJSON(raw);
   return {
     summary: d.summary || "",
@@ -450,6 +453,33 @@ Provide 2-3 alternatives, 2-3 examples, conjugations only for verbs.`;
     alternatives: Array.isArray(d.alternatives) ? d.alternatives : [],
     examples: Array.isArray(d.examples) ? d.examples : [],
   };
+};
+
+// Word-by-word breakdown of a ${targetLanguage} word or sentence.
+// Every token gets its English meaning so learners can hover/tap each word.
+const breakdownCache = new Map<string, { word: string; translation: string; note?: string }[]>();
+export const getWordBreakdown = async (
+  text: string,
+  targetLanguage: Language
+): Promise<{ word: string; translation: string; note?: string }[]> => {
+  const key = `${targetLanguage}:${text}`;
+  const cached = breakdownCache.get(key);
+  if (cached) return cached;
+
+  const system = `You are a ${targetLanguage} linguistics expert. Break the given ${targetLanguage} text into its individual words.
+Return ONLY valid JSON: {"words":[{"word":"the ${targetLanguage} word exactly as it appears","translation":"the ENGLISH meaning of that single word","note":"optional 3-6 word ENGLISH grammar note (e.g. '1st person sing.', 'plural of X') or null"}]}
+Rules:
+- One entry per word in the same order as the text. Skip pure punctuation.
+- "translation" is ALWAYS English.
+- Keep grammar notes minimal — most words should have null.`;
+
+  const raw = await chat(system, `Break down this ${targetLanguage} text word by word:\n"${text}"`, 800);
+  const d = parseJSON(raw);
+  const words = (Array.isArray(d.words) ? d.words : [])
+    .filter((w: any) => w && w.word)
+    .map((w: any) => ({ word: String(w.word), translation: String(w.translation || ''), note: w.note || undefined }));
+  breakdownCache.set(key, words);
+  return words;
 };
 
 export const generateSessionSummary = async (
@@ -922,4 +952,31 @@ Return ONLY valid JSON: {"phrase":"translated text in ${targetLanguage}","transl
   const raw = await chat(system, `Translate to ${targetLanguage}: "${text}"`, 256);
   const d = parseJSON(raw);
   return { phrase: d.phrase || text, translation: d.translation || text };
+};
+
+// ── Whisper transcription via the /api/groq proxy ────────────────────────────
+// Groq's whisper-large-v3-turbo handles accented learner speech far better
+// than browser speech recognition.
+export const transcribeAudio = async (
+  audio: Blob,
+  language: Language | 'English'
+): Promise<string> => {
+  const langCodes: Record<string, string> = {
+    French: 'fr', Spanish: 'es', German: 'de', Italian: 'it',
+    Japanese: 'ja', Portuguese: 'pt', Chinese: 'zh', English: 'en',
+  };
+  const form = new FormData();
+  form.append('file', audio, 'recording.webm');
+  form.append('model', 'whisper-large-v3-turbo');
+  form.append('response_format', 'json');
+  const code = langCodes[language];
+  if (code) form.append('language', code);
+
+  const res = await fetch('/api/groq/openai/v1/audio/transcriptions', {
+    method: 'POST',
+    body: form, // let the browser set the multipart boundary
+  });
+  if (!res.ok) throw new Error(`Transcription error ${res.status}`);
+  const data = await res.json();
+  return (data.text || '').trim();
 };

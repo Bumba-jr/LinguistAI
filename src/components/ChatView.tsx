@@ -11,7 +11,7 @@ import {
   Trophy, ThumbsUp, Dumbbell, BookOpen, Languages, ArrowLeftRight,
   Pin, Link2, Hash, Pencil, BookMarked, AlertTriangle, PartyPopper,
   TrendingDown, Award, BadgeCheck, XCircle, BookOpenCheck, Lightbulb,
-  Stethoscope, Hotel, Phone, Heart, Siren,
+  Stethoscope, Hotel, Phone, Heart, Siren, Layers,
 } from 'lucide-react';
 import {
   generateChatResponse, generateSessionSummary, getWordOfTheDay,
@@ -1315,6 +1315,11 @@ const ChatView = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeakingId, setIsSpeakingId] = useState<number | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  // hands-free voice conversation: auto-speak the tutor's reply, then auto-listen
+  const [voiceMode, setVoiceMode] = useState(false);
+  // automatically save every new word the tutor highlights to the flashcard deck
+  const [autoSaveWords, setAutoSaveWords] = useState(false);
+  const startListeningRef = useRef<() => void>(() => { });
   const [selectedScenario, setSelectedScenario] = useState<Scenario>(SCENARIOS[0]);
   const [scenarioPicker, setScenarioPicker] = useState(false);
   const [expandedCorrection, setExpandedCorrection] = useState<number | null>(null);
@@ -1574,10 +1579,20 @@ const ChatView = () => {
         updateDifficultyScore(2);
       }
 
-      if (autoSpeak) {
+      if (autoSaveWords && result.newWords?.length) {
+        result.newWords.forEach(w => addWordToFlashcards(w));
+      }
+
+      if (autoSpeak || voiceMode) {
         const idx = allMsgs.length;
         setIsSpeakingId(idx);
-        speakText(result.reply, quizSettings.targetLanguage, () => setIsSpeakingId(null));
+        speakText(result.reply, quizSettings.targetLanguage, () => {
+          setIsSpeakingId(null);
+          // hands-free: listen again as soon as the tutor finishes speaking
+          if (voiceMode) startListeningRef.current();
+        });
+      } else if (voiceMode) {
+        startListeningRef.current();
       }
     } catch (err: any) {
       console.error('[ChatView] AI error:', err);
@@ -1666,6 +1681,13 @@ const ChatView = () => {
     r.start();
     recognitionRef.current = r;
   };
+
+  // keep a fresh reference so async flows (voice mode auto-listen) can trigger it
+  useEffect(() => {
+    startListeningRef.current = () => {
+      if (!isListening && !isLoading) toggleListen();
+    };
+  });
 
   const speakMessage = (content: string, idx: number) => {
     if (isSpeakingId === idx) { window.speechSynthesis.cancel(); setIsSpeakingId(null); return; }
@@ -1895,6 +1917,37 @@ const ChatView = () => {
                     </div>
                     <span className={cn('text-[10px] font-black px-2 py-0.5 rounded-lg', wordTooltipEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-400')}>
                       {wordTooltipEnabled ? 'On' : 'Off'}
+                    </span>
+                  </button>
+
+                  {/* Voice conversation — hands-free: tutor speaks, then listens */}
+                  <button onClick={() => {
+                    setVoiceMode(v => {
+                      const nv = !v;
+                      if (nv) { setAutoSpeak(true); setTimeout(() => startListeningRef.current(), 100); }
+                      else recognitionRef.current?.stop();
+                      return nv;
+                    });
+                  }}
+                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-stone-50 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <Mic size={13} className={voiceMode ? 'text-emerald-500' : 'text-stone-400'} />
+                      <span className="text-xs font-semibold text-stone-700">Voice Conversation</span>
+                    </div>
+                    <span className={cn('text-[10px] font-black px-2 py-0.5 rounded-lg', voiceMode ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-400')}>
+                      {voiceMode ? 'On' : 'Off'}
+                    </span>
+                  </button>
+
+                  {/* Auto-save new words to flashcards */}
+                  <button onClick={() => setAutoSaveWords(v => !v)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-stone-50 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <Layers size={13} className={autoSaveWords ? 'text-indigo-500' : 'text-stone-400'} />
+                      <span className="text-xs font-semibold text-stone-700">Auto-save New Words</span>
+                    </div>
+                    <span className={cn('text-[10px] font-black px-2 py-0.5 rounded-lg', autoSaveWords ? 'bg-indigo-50 text-indigo-600' : 'bg-stone-100 text-stone-400')}>
+                      {autoSaveWords ? 'On' : 'Off'}
                     </span>
                   </button>
 
