@@ -13,7 +13,7 @@ import {
 import { speakText } from '../services/voiceService';
 import { getWordDetails, gradePronunciation, getRelatedWords, getWordEtymology, getSimilarConfusableWords, getWordUsageTips } from '../services/aiService';
 import { recordAndTranscribe } from '../services/speechService';
-import { WordBreakdown } from './WordBreakdown';
+import { WordBreakdown, InteractiveText } from './WordBreakdown';
 import { cn } from '../lib/utils';
 
 type WordDetails = {
@@ -548,7 +548,7 @@ const WordDetailView = ({
                     return (
                       <div key={i} className="group flex items-start justify-between gap-3 pl-4 border-l-2 border-stone-100 hover:border-teal-400 transition-colors py-1">
                         <div className="flex-1 min-w-0 space-y-0.5">
-                          <p className="font-semibold text-stone-800 break-words">{ex.target}</p>
+                          <InteractiveText text={ex.target} language={card.language} className="block font-semibold text-stone-800 break-words" />
                           <p className="text-sm text-stone-400 break-words">{ex.english}</p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1539,10 +1539,12 @@ const FlashcardsView = () => {
                 </div>
               )}
 
-              {/* card — tap flips; the ONLY way to advance is a difficulty rating */}
+              {/* card — tap the FRONT to reveal. On the back, nothing flips on a
+                  stray tap: advancing happens ONLY via Hard/Again/Easy, and
+                  flipping back uses the explicit button below the card. */}
               <div
-                className="w-full cursor-pointer"
-                onClick={writeMode ? undefined : handleFlip}
+                className={cn('w-full', !isFlipped && !writeMode && 'cursor-pointer')}
+                onClick={writeMode || isFlipped ? undefined : handleFlip}
               >
                 {!isFlipped ? (
                   /* ── FRONT ── */
@@ -1876,7 +1878,7 @@ const FlashcardsView = () => {
                                 <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-4">
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1 min-w-0 space-y-1">
-                                      <p className="text-white font-semibold text-sm leading-relaxed">{ex.target}</p>
+                                      <InteractiveText text={ex.target} language={currentCard.language} dark className="block text-white font-semibold text-sm leading-relaxed" />
                                       <p className="text-white/40 text-xs leading-relaxed">{ex.english}</p>
                                     </div>
                                     <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); speakText(ex.target, currentCard.language); }} className="text-emerald-400/40 hover:text-emerald-400 transition-colors shrink-0 mt-0.5"><Volume2 size={14} /></button>
@@ -1924,7 +1926,10 @@ const FlashcardsView = () => {
                     )}
 
                     <div className="px-6 pb-5 text-center">
-                      <p className="text-white/15 text-xs">tap to flip back</p>
+                      <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleFlip(); }}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/40 text-xs font-bold hover:text-white/80 hover:bg-white/10 transition-colors">
+                        <RotateCcw size={12} /> Flip back
+                      </button>
                     </div>
                   </motion.div>
                 )}

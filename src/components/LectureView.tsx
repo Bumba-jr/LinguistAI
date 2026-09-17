@@ -10,6 +10,7 @@ import {
 import { cn } from '../lib/utils';
 import { speakText } from '../services/voiceService';
 import { translateWord, generateSectionQuiz } from '../services/aiService';
+import { InteractiveText } from './WordBreakdown';
 import { saveLecture } from '../services/dbService';
 
 type TranslationResult = {
@@ -762,7 +763,7 @@ const LectureView = () => {
                     {currentEx ? (
                       <div className="p-6 space-y-4">
                         <div className="text-center space-y-2">
-                          <p className="text-xl font-bold text-stone-900">{currentEx.target}</p>
+                          <InteractiveText text={currentEx.target} language={lectures!.language} className="text-xl font-bold text-stone-900" />
                           <p className="text-sm text-stone-400">{currentEx.english}</p>
                         </div>
                         <div className="flex items-center justify-center gap-3">
@@ -875,7 +876,7 @@ const LectureView = () => {
                           <div key={exIdx} className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm flex items-center justify-between gap-4 group hover:border-emerald-200 transition-colors">
                             <div className="space-y-1 flex-1">
                               <div className="text-lg font-semibold text-stone-900">
-                                <HoverableText text={ex.target} />
+                                <InteractiveText text={ex.target} language={lectures!.language} />
                               </div>
                               <div className="text-sm text-stone-400">{ex.english}</div>
                             </div>
@@ -921,7 +922,7 @@ const LectureView = () => {
                             <div key={pIdx} className="bg-white rounded-2xl border border-indigo-100 p-5 shadow-sm">
                               <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-1">{p.instruction}</p>
                               <p className="text-stone-800 font-semibold text-base mb-3">
-                                <HoverableText text={p.question} />
+                                <InteractiveText text={p.question} language={lectures!.language} />
                               </p>
                               <button onClick={() => toggleAnswer(key)}
                                 className="flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:text-indigo-700 transition-colors">

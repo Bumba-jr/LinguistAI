@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Server-side proxy for OpenAI — keeps OPENAI_API_KEY out of the browser bundle.
+// Handles both JSON APIs (chat) and binary responses (TTS audio).
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const openaiPath = (req.url ?? '').replace(/^\/api\/openai/, '') || '/';
     const openaiUrl = `https://api.openai.com${openaiPath}`;
@@ -18,6 +19,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
         body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined,
     });
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+        // Binary payload (e.g. audio/mpeg from TTS) — stream it through untouched
+        const buffer = await response.arrayBuffer();
+        res.setHeader('Content-Type', contentType);
+        return res.status(response.status).send(Buffer.from(buffer));
+    }
 
     const data = await response.json();
     return res.status(response.status).json(data);

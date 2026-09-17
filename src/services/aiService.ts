@@ -456,28 +456,53 @@ Provide 2-4 alternatives (each MUST include "english"), 2-3 examples, conjugatio
 };
 
 // Word-by-word breakdown of a ${targetLanguage} word or sentence.
-// Every token gets its English meaning so learners can hover/tap each word.
-const breakdownCache = new Map<string, { word: string; translation: string; note?: string }[]>();
+// Every token gets its English meaning plus, for multi-use words (conjugated
+// verbs, articles, pronouns…), the base dictionary form, an inflection table
+// and a short English explanation — so learners can hover any word.
+export interface BreakdownToken {
+  word: string;
+  translation: string;
+  note?: string;
+  base?: string;
+  baseTranslation?: string;
+  forms?: { form: string; value: string }[];
+  explanation?: string;
+}
+const breakdownCache = new Map<string, BreakdownToken[]>();
 export const getWordBreakdown = async (
   text: string,
   targetLanguage: Language
-): Promise<{ word: string; translation: string; note?: string }[]> => {
+): Promise<BreakdownToken[]> => {
   const key = `${targetLanguage}:${text}`;
   const cached = breakdownCache.get(key);
   if (cached) return cached;
 
-  const system = `You are a ${targetLanguage} linguistics expert. Break the given ${targetLanguage} text into its individual words.
-Return ONLY valid JSON: {"words":[{"word":"the ${targetLanguage} word exactly as it appears","translation":"the ENGLISH meaning of that single word","note":"optional 3-6 word ENGLISH grammar note (e.g. '1st person sing.', 'plural of X') or null"}]}
-Rules:
-- One entry per word in the same order as the text. Skip pure punctuation.
-- "translation" is ALWAYS English.
-- Keep grammar notes minimal — most words should have null.`;
+  const system = `You are a ${targetLanguage} linguistics expert teaching an ENGLISH-speaking student. Break the given ${targetLanguage} text into its individual words.
+Return ONLY valid JSON: {"words":[...]}
 
-  const raw = await chat(system, `Break down this ${targetLanguage} text word by word:\n"${text}"`, 800);
+Each word object:
+{"word":"the word exactly as it appears (keep punctuation attached to the preceding word, e.g. 'moi.' and 'plaît.')","translation":"ENGLISH meaning of this word as used in this sentence","note":"short ENGLISH grammar tag like '3rd person singular present of être' or 'partitive article' — null for plain nouns","base":"dictionary form if the word is conjugated/inflected (être for 'est'), else null","baseTranslation":"ENGLISH meaning of the base form, else null","forms":[{"form":"person/number/gender label","value":"inflected ${targetLanguage} form"}],"explanation":"1-2 sentence ENGLISH explanation of how the word is used and when its form changes — ALWAYS include for verbs, articles, prepositions, pronouns and adjectives; null for simple nouns"}
+
+Rules:
+- One entry per word, in the same order as the text. Skip standalone punctuation.
+- "translation", "note" and "explanation" are ALWAYS in English.
+- Conjugated verbs: "forms" = the present-tense table (je, tu, il/elle, nous, vous, ils/elles) — max 8 rows.
+- Articles/adjectives/possessives: "forms" = gender & number variants (le/la/les, mon/ma/mes, petit/petite/petits/petites).
+- Keep every string short — the tooltip must stay readable.`;
+
+  const raw = await chat(system, `Break down this ${targetLanguage} text word by word:\n"${text}"`, 2500);
   const d = parseJSON(raw);
   const words = (Array.isArray(d.words) ? d.words : [])
     .filter((w: any) => w && w.word)
-    .map((w: any) => ({ word: String(w.word), translation: String(w.translation || ''), note: w.note || undefined }));
+    .map((w: any) => ({
+      word: String(w.word),
+      translation: String(w.translation || ''),
+      note: w.note || undefined,
+      base: w.base || undefined,
+      baseTranslation: w.baseTranslation || undefined,
+      forms: Array.isArray(w.forms) && w.forms.length > 0 ? w.forms.slice(0, 8) : undefined,
+      explanation: w.explanation || undefined,
+    }));
   breakdownCache.set(key, words);
   return words;
 };

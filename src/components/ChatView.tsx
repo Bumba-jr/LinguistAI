@@ -18,6 +18,7 @@ import {
   generateChallenge, analyzeTone, generateCustomScenario, generateVocabQuiz, translateWord,
 } from '../services/aiService';
 import { speakText } from '../services/voiceService';
+import { InteractiveText } from './WordBreakdown';
 import { cn } from '../lib/utils';
 import type { ChatSession, Language } from '../store/useAppStore';
 import { saveChatSessionDB, getChatSessions, deleteChatSessionDB } from '../services/dbService';
@@ -1293,17 +1294,9 @@ const HoverWord = ({ word, language }: { word: string; language: Language }) => 
 
 const TokenizedText = ({ text, language, enabled }: { text: string; language: Language; enabled: boolean }) => {
   if (!enabled) return <span>{text}</span>;
-  // Split on spaces but keep punctuation attached to words
-  const tokens = text.split(/( +)/);
-  return (
-    <>
-      {tokens.map((token, i) =>
-        token.trim() === ''
-          ? <React.Fragment key={i}>{token}</React.Fragment>
-          : <React.Fragment key={i}><HoverWord word={token} language={language} /></React.Fragment>
-      )}
-    </>
-  );
+  // Sentence-level breakdown — one cached AI call gives every word its
+  // English meaning, grammar tag, inflection table and usage explanation.
+  return <InteractiveText text={text} language={language} />;
 };
 
 // ─── Main Component ────────────────────────────────────────────────────────

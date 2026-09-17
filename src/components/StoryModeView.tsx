@@ -5,6 +5,7 @@ import { BookOpen, Loader2, RotateCcw, Volume2, Star, AlertCircle } from 'lucide
 import { cn } from '../lib/utils';
 import { generateStoryStart, continueStory, StoryNode } from '../services/aiService';
 import { speakText } from '../services/voiceService';
+import { InteractiveText } from './WordBreakdown';
 
 const THEMES = [
     'A day at the market',
@@ -180,7 +181,11 @@ const StoryModeView = () => {
                         className="bg-white rounded-3xl border border-stone-100 shadow-sm p-6 space-y-3"
                     >
                         <div className="flex items-start justify-between gap-3">
-                            <p className="text-stone-800 leading-relaxed flex-1">{node.text}</p>
+                            <InteractiveText
+                                text={node.text}
+                                language={quizSettings.targetLanguage}
+                                className="text-stone-800 leading-relaxed flex-1"
+                            />
                             <button
                                 onClick={() => speakText(node.text, quizSettings.targetLanguage)}
                                 className="p-2 rounded-xl hover:bg-stone-100 text-stone-400 shrink-0"
