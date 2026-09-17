@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { getAuthRedirectUrl, getSiteUrl } from '../lib/auth-config';
 import { GraduationCap, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowRight, BookOpen, Sparkles, Languages, Check, Zap, Brain, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -687,7 +688,7 @@ export default function AuthPage() {
                 setTimeout(() => setMode('login'), 2000);
             } else {
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: window.location.origin,
+                    redirectTo: getSiteUrl(),
                 });
                 if (error) throw error;
                 setSubmitState('success');
@@ -707,7 +708,7 @@ export default function AuthPage() {
         setGoogleLoading(true);
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.origin },
+            options: { redirectTo: getAuthRedirectUrl() },
         });
         if (error) { setError(error.message); setGoogleLoading(false); }
     };

@@ -22,6 +22,7 @@ import {
   BookMarked, Sparkles, Users2, Mic
 } from 'lucide-react';
 import AuthPage from './components/AuthPage';
+import { getAuthRedirectUrl } from './lib/auth-config';
 import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
@@ -219,7 +220,7 @@ export default function App() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: getAuthRedirectUrl()
       }
     });
     if (error) console.error('Error signing in:', error.message);
