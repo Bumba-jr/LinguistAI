@@ -161,7 +161,7 @@ Return ONLY valid JSON with ALL of these fields, fully populated:
 {
  "title":"lesson title",
  "objective":"what the learner will be able to DO after this lesson",
- "vocabulary":[12-16 items, each {"fr":"word/phrase","en":"English","gender":"masculine/feminine for nouns, else omit","example":{"fr":"example sentence using it","en":"English"},"related":[{"fr":"related word","en":"meaning"}]} — include related words for at least 6 items],
+ "vocabulary":[12-16 items, each {"fr":"word/phrase","en":"English","gender":"FOR EVERY NOUN include 'masculine' or 'feminine' (never omit for nouns); omit for verbs/phrases","example":{"fr":"example sentence using it","en":"English"},"related":[{"fr":"related word","en":"meaning"}]} — include related words for at least 6 items],
  "pronunciation":[4-6 items {"fr":"word/phrase","approx":"simple honest English approximation (admit when imperfect)","en":"meaning"}],
  "grammar":{"rule":"the rule in one line","explanation":"4-6 sentences: the rule, the structure, WHY French does it this way, contrast with English","examples":[5-6 items {"fr":"example","en":"English","breakdown":["word = meaning", ...]} — vary: statement, negative, question, plural...],"commonMistakes":[3-4 items "the mistake English speakers make + the correct pattern"]},
  "transformations":[7-8 items showing the KEY verb of the lesson transformed: {"type":"Positive|Negative|Past|Past negative|Future|Future negative|Conditional|Question","fr":"transformed sentence","en":"English"} — all forms of the same core sentence],
