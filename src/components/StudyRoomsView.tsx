@@ -445,7 +445,7 @@ const RoomChat = ({ room, onLeave }: { room: StudyRoom; onLeave: () => void }) =
   const announcements = messages.filter(m => m.is_announcement);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] max-w-5xl mx-auto relative overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-180px)] sm:h-[calc(100vh-120px)] max-w-5xl mx-auto relative overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <button onClick={handleLeave} className="p-2 rounded-xl hover:bg-stone-100 text-stone-500 transition-colors">

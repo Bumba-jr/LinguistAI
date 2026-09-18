@@ -1858,7 +1858,7 @@ const ChatView = () => {
   const suggestions = getSuggestions();
 
   return (
-    <div className="max-w-4xl mx-auto w-full flex flex-col bg-white rounded-[40px] shadow-sm border border-stone-100 overflow-hidden relative" style={{ height: 'calc(100vh - 10rem)' }}>
+    <div className="max-w-4xl mx-auto w-full flex flex-col bg-white rounded-[40px] shadow-sm border border-stone-100 overflow-hidden relative" style={{ height: 'calc(100dvh - 15rem)' }}>
 
       {/* Header */}
       <div className="px-6 py-4 border-b border-stone-50 flex items-center justify-between bg-stone-50/50 shrink-0 gap-2 flex-wrap">

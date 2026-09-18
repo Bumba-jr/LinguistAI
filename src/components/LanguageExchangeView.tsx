@@ -294,7 +294,7 @@ const AIChat = ({ partner, myLanguage, partnerLanguage, myName, onBack }: {
     );
 
     return (
-        <div className="max-w-2xl mx-auto flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
+        <div className="max-w-2xl mx-auto flex flex-col h-[calc(100dvh-230px)] min-h-[440px] sm:h-[calc(100vh-180px)] sm:min-h-[500px]">
             <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
                 <button onClick={onBack} className="p-2 rounded-xl hover:bg-stone-100 text-stone-400"><ArrowLeft size={18} /></button>
                 <Avatar url={partner.avatar_url} name={partner.display_name} size={36} isAI />
@@ -890,7 +890,7 @@ const DirectChat = ({ partner, myId, myName, myAvatar, onBack, onlineUsers, lang
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
+        <div className="flex flex-col h-[calc(100dvh-230px)] min-h-[440px] sm:h-[calc(100vh-180px)] sm:min-h-[500px]">
             {/* Header */}
             <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
                 <button onClick={onBack} className="p-2 rounded-xl hover:bg-stone-100 text-stone-400 transition-all">

@@ -141,6 +141,7 @@ export default function App() {
   const [stats, setStats] = useState<{ totalQuizzes: number; avgAccuracy: string; totalQuestions: number } | null>(null);
   const [userMeta, setUserMeta] = useState<{ firstName: string } | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [placementDismissed, setPlacementDismissed] = useState(false);
   // hooks must run on every render — call before any early returns below
   const placementShow = usePlacementGate(user?.id);
@@ -605,13 +606,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] text-stone-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 flex">
-      {/* Sidebar Navigation */}
-      <aside className="w-20 lg:w-64 bg-white border-r border-stone-100 flex flex-col sticky top-0 h-screen z-50">
+      {/* Sidebar Navigation — desktop only; mobile uses the bottom bar below */}
+      <aside className="hidden lg:flex flex-col sticky top-0 h-screen z-50 bg-white border-r border-stone-100 w-64">
         <div className="p-6 flex items-center gap-3">
           <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200 flex-shrink-0">
             <GraduationCap className="text-white w-6 h-6" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-stone-800 hidden lg:block">
+          <h1 className="text-xl font-bold tracking-tight text-stone-800">
             Linguist<span className="text-emerald-500">AI</span>
           </h1>
         </div>
@@ -632,7 +633,7 @@ export default function App() {
                 "transition-transform group-hover:scale-110",
                 activeTab === item.id ? "text-emerald-600" : "text-stone-400"
               )} />
-              <span className="font-bold text-sm hidden lg:block">{item.label}</span>
+              <span className="font-bold text-sm">{item.label}</span>
             </button>
           ))}
         </nav>
@@ -646,7 +647,7 @@ export default function App() {
                   : <div className="w-full h-full flex items-center justify-center"><UserIcon size={20} className="text-stone-500" /></div>
                 }
               </div>
-              <div className="hidden lg:block overflow-hidden">
+              <div className="overflow-hidden">
                 <p className="text-xs font-bold text-stone-800 truncate">{user.email}</p>
                 <button onClick={handleSignOut} className="text-[10px] font-bold text-stone-400 hover:text-red-500 uppercase tracking-widest">Sign Out</button>
               </div>
@@ -654,7 +655,7 @@ export default function App() {
           ) : (
             <button
               onClick={handleSignIn}
-              className="w-full py-3 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 transition-all shadow-md hidden lg:block"
+              className="w-full py-3 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 transition-all shadow-md"
             >
               Sign In
             </button>
@@ -662,7 +663,18 @@ export default function App() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col">
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-sm">
+            <GraduationCap className="text-white w-5 h-5" />
+          </div>
+          <span className="font-bold tracking-tight text-stone-800">Linguist<span className="text-emerald-500">AI</span></span>
+        </div>
+        {user && <TotalPointsBadge />}
+      </div>
+
+      <div className="flex-1 flex flex-col min-w-0 pt-14 pb-20 lg:pt-0 lg:pb-0">
         {!isSupabaseConfigured && (
           <div className="bg-amber-50 border-b border-amber-100 px-6 py-2 text-center">
             <p className="text-xs font-medium text-amber-700">
@@ -678,7 +690,7 @@ export default function App() {
           </div>
         )}
 
-        <main className="flex-1 px-6 py-12 lg:px-12">
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-12 lg:py-12">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab + (hasLectures ? 'lecture' : hasQuestions ? 'quiz' : 'setup')}
@@ -692,7 +704,7 @@ export default function App() {
           </AnimatePresence>
         </main>
 
-        <footer className="border-t border-stone-100 py-8 px-12">
+        <footer className="border-t border-stone-100 py-6 px-4 lg:px-12 lg:py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-stone-400">
               © 2026 LinguistAI. Built for students, by AI.
@@ -705,6 +717,60 @@ export default function App() {
           </div>
         </footer>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur border-t border-stone-100" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="grid grid-cols-5">
+          {([
+            { id: 'editor', label: 'Home', icon: Home },
+            { id: 'flashcards', label: 'Cards', icon: Layers },
+            { id: 'chat', label: 'Tutor', icon: MessageSquare },
+            { id: 'tcf', label: 'TCF', icon: Flag },
+          ] as const).map(item => (
+            <button key={item.id} onClick={() => setActiveTab(item.id)}
+              className={cn('flex flex-col items-center gap-0.5 py-2.5 transition-colors',
+                activeTab === item.id ? 'text-emerald-600' : 'text-stone-400')}>
+              <item.icon size={20} />
+              <span className="text-[9px] font-black uppercase tracking-wider">{item.label}</span>
+            </button>
+          ))}
+          <button onClick={() => setMoreOpen(true)} className="flex flex-col items-center gap-0.5 py-2.5 text-stone-400">
+            <div className="w-5 h-5 rounded-full border-2 border-dotted border-current flex items-center justify-center text-[8px] font-black">•••</div>
+            <span className="text-[9px] font-black uppercase tracking-wider">More</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile "More" sheet — all sections + sign out */}
+      <AnimatePresence>
+        {moreOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="lg:hidden fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={() => setMoreOpen(false)}>
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={e => e.stopPropagation()}
+              className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl max-h-[82vh] overflow-y-auto p-5 pb-8">
+              <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
+              <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-3">All sections</p>
+              <div className="grid grid-cols-3 gap-2 mb-5">
+                {navItems.map(item => (
+                  <button key={item.id} onClick={() => { setActiveTab(item.id as any); setMoreOpen(false); }}
+                    className={cn('flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border transition-colors',
+                      activeTab === item.id ? 'border-emerald-400 bg-emerald-50 text-emerald-600' : 'border-stone-100 text-stone-500 bg-white')}>
+                    <item.icon size={20} />
+                    <span className="text-[9px] font-black uppercase tracking-wider text-center leading-tight px-1">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+              {user && (
+                <button onClick={handleSignOut}
+                  className="w-full py-3 rounded-2xl bg-stone-100 text-stone-500 text-xs font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-colors">
+                  Sign Out — {(user as any).email}
+                </button>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {user && <FloatingNotes userId={(user as any).id} contextLabel={lectures?.title} />}
       {/* Global call manager — handles incoming calls from any tab */}
       {user && <GlobalCallManager myId={(user as any).id} myName={(user as any).displayName || (user as any).email?.split('@')[0] || 'Me'} myAvatar={(user as any).avatarUrl || null} />}

@@ -176,7 +176,7 @@ const WordDetailView = ({
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }} className="min-h-full bg-[#f8f9fa]">
 
       {/* ── Top nav bar ── */}
-      <div className="sticky top-0 z-20 bg-white border-b border-stone-100 px-6 flex items-center justify-between h-14">
+      <div className="sticky top-0 z-20 bg-white border-b border-stone-100 px-4 sm:px-6 flex items-center justify-between h-14">
         <button onClick={onBack} className="flex items-center gap-2 text-stone-400 hover:text-stone-900 transition-colors group">
           <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
           <span className="text-sm font-bold">Deck</span>
@@ -203,7 +203,7 @@ const WordDetailView = ({
 
       {/* ── Hero header ── */}
       {/* Design toggle */}
-      <div className="flex items-center gap-2 px-8 pt-4 bg-white">
+      <div className="flex items-center gap-2 px-5 sm:px-8 pt-4 bg-white">
         <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest">Header style</span>
         {([1, 2] as const).map(n => (
           <button key={n} onClick={() => setHeaderDesign(n)}
@@ -233,7 +233,7 @@ const WordDetailView = ({
           }}>
           {/* subtle white fade at edges */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-transparent to-white/80 pointer-events-none" />
-          <div className="relative max-w-3xl mx-auto px-8 pt-8 pb-8">
+          <div className="relative max-w-3xl mx-auto px-5 sm:px-8 pt-8 pb-8">
             <div className="flex items-start justify-between gap-6">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -340,7 +340,7 @@ const WordDetailView = ({
           {/* fade: transparent top, white bottom so content is readable */}
           <div className="absolute inset-0 pointer-events-none"
             style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.95) 100%)' }} />
-          <div className="relative max-w-3xl mx-auto px-8 pt-8 pb-8">
+          <div className="relative max-w-3xl mx-auto px-5 sm:px-8 pt-8 pb-8">
             <div className="flex items-start justify-between gap-6">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -400,7 +400,7 @@ const WordDetailView = ({
           </div>
         </div>
       )}
-      <div className="max-w-3xl mx-auto px-8 py-8 space-y-4">
+      <div className="max-w-3xl mx-auto px-5 sm:px-8 py-8 space-y-4">
         {loading && (
           <div className="flex items-center justify-center gap-3 py-20 text-stone-300">
             <Loader2 size={24} className="animate-spin" />
@@ -1549,7 +1549,7 @@ const FlashcardsView = () => {
   };
 
   return (
-    <div className={cn('max-w-4xl mx-auto w-full py-8 px-4', focusMode && 'fixed inset-0 z-50 bg-white overflow-y-auto py-6')}>
+    <div className={cn('max-w-4xl mx-auto w-full py-8 px-4', focusMode && 'fixed inset-0 z-50 bg-white overflow-y-auto py-6 pb-24')}>
       {/* Header */}
       {!focusMode && (
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
