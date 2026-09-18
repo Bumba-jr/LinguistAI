@@ -38,7 +38,7 @@ const chatOpenAI = async (system: string, user: string, maxTokens = 2048): Promi
   return data.choices?.[0]?.message?.content || '';
 };
 
-const chat = async (system: string, user: string, maxTokens = 8192, large = false): Promise<string> => {
+export const chat = async (system: string, user: string, maxTokens = 8192, large = false): Promise<string> => {
   const primary = large ? MODEL_LARGE : MODEL;
   const tryModel = async (model: string) => {
     const res = await fetch('/api/groq/openai/v1/chat/completions', {
@@ -77,7 +77,7 @@ const chat = async (system: string, user: string, maxTokens = 8192, large = fals
   }
 };
 
-const parseJSON = (raw: string): any => {
+export const parseJSON = (raw: string): any => {
   let s = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
   const start = s.indexOf("{");
   const end = s.lastIndexOf("}");

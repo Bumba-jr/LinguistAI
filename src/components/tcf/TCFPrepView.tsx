@@ -1,0 +1,771 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useAppStore } from '../../store/useAppStore';
+import {
+    GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2,
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { InteractiveText } from '../WordBreakdown';
+import { speakText, stopSpeaking } from '../../services/voiceService';
+import {
+    TcfLevel, TCF_SYLLABUS, TCF_WRITING_TASKS, TCF_SPEAKING_TASKS,
+    generateTcfLesson, evaluateTcfWriting, evaluateTcfSpeaking,
+    practiceToScore, TcfLesson, TcfWritingFeedback, TcfSpeakingFeedback,
+} from '../../services/tcfService';
+import { LevelBar, TCFListeningTrainer, TCFReadingTrainer } from './TCFTrainers';
+import {
+    getTcfScores, addTcfScore, getCompletedLessons, markLessonComplete,
+    getNclcTarget, setNclcTarget, TcfScoreEntry,
+} from '../../services/tcfStorage';
+import { recordAndTranscribe } from '../../services/speechService';
+
+const LEVELS: TcfLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+type TcfTab = 'overview' | 'curriculum' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
+
+const SKILL_META = {
+    listening: { label: 'Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: '39 questions · 35 min · audio once' },
+    reading: { label: 'Reading', icon: BookOpenCheck, color: 'text-teal-500', bg: 'bg-teal-50', exam: '39 questions · 60 min' },
+    writing: { label: 'Writing', icon: PenLine, color: 'text-amber-500', bg: 'bg-amber-50', exam: '3 tasks · 60 min · /20' },
+    speaking: { label: 'Speaking', icon: Mic, color: 'text-rose-500', bg: 'bg-rose-50', exam: '3 tasks · 12 min' },
+} as const;
+
+// ── shared UI ────────────────────────────────────────────────────────────────
+const FrEn = ({ fr, en, dark = false }: { fr: string; en: string; dark?: boolean }) => (
+    <div className="space-y-0.5">
+        <InteractiveText text={fr} language="French" dark={dark}
+            className={cn('block font-semibold', dark ? 'text-white' : 'text-stone-900')} />
+        <p className={cn('text-sm', dark ? 'text-white/50' : 'text-stone-400')}>{en}</p>
+    </div>
+);
+
+const ExamBadge = () => (
+    <span className="text-[9px] font-black bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded-full uppercase tracking-widest">practice estimate</span>
+);
+
+// ── Overview tab ─────────────────────────────────────────────────────────────
+const Overview = ({ onGo }: { onGo: (t: TcfTab) => void }) => {
+    const scores = useMemo(() => getTcfScores(), []);
+    const target = getNclcTarget();
+    const latest = (skill: string) => scores.find(s => s.skill === skill);
+
+    return (
+        <div className="space-y-5">
+            {/* exam format */}
+            <div className="bg-white rounded-3xl border border-stone-100 p-6">
+                <h2 className="font-black text-stone-900 mb-1">The exam at a glance</h2>
+                <p className="text-xs text-stone-400 mb-4">Format per France Éducation international — 4 compulsory skills, no pass/fail, one level per skill.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(Object.keys(SKILL_META) as (keyof typeof SKILL_META)[]).map(sk => {
+                        const m = SKILL_META[sk];
+                        const last = latest(sk);
+                        return (
+                            <button key={sk} onClick={() => onGo(sk as TcfTab)}
+                                className="text-left bg-stone-50 hover:bg-stone-100 rounded-2xl p-4 transition-colors">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <m.icon size={15} className={m.color} />
+                                    <span className="font-black text-stone-800 text-sm">{m.label}</span>
+                                </div>
+                                <p className="text-[11px] text-stone-400 mb-2">{m.exam}</p>
+                                {last ? (
+                                    <p className="text-[11px] font-bold text-stone-600">
+                                        Last practice: {last.pct}% → est. {last.score} pts ({last.nclc}) <ExamBadge />
+                                    </p>
+                                ) : (
+                                    <p className="text-[11px] text-stone-300 italic">No practice yet — start a trainer</p>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* NCLC targets */}
+            <div className="bg-white rounded-3xl border border-stone-100 p-6">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div>
+                        <h2 className="font-black text-stone-900 flex items-center gap-2"><Target size={16} className="text-emerald-500" /> Your NCLC target</h2>
+                        <p className="text-xs text-stone-400 mt-0.5">Express Entry needs NCLC 7 minimum in all four skills.</p>
+                    </div>
+                    <div className="flex gap-1.5">
+                        {['7', '9', '10'].map(t => (
+                            <button key={t} onClick={() => setNclcTarget(t)}
+                                className={cn('px-3 py-1.5 rounded-xl text-xs font-black transition-colors',
+                                    target === t ? 'bg-emerald-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
+                                NCLC {t}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-bold text-stone-400">
+                    {(Object.keys(SKILL_META) as (keyof typeof SKILL_META)[]).map(sk => {
+                        const last = latest(sk);
+                        const est = last ? practiceToScore(last.pct) : null;
+                        const meets = est && parseInt(est.nclc) >= parseInt(target) ? true : est?.nclc === '10+' && target !== '10';
+                        return (
+                            <div key={sk} className={cn('rounded-2xl p-3', meets ? 'bg-emerald-50' : 'bg-stone-50')}>
+                                <p className="uppercase tracking-wider mb-1">{SKILL_META[sk].label}</p>
+                                <p className={cn('text-lg font-black', meets ? 'text-emerald-600' : 'text-stone-300')}>
+                                    {est ? est.nclc : '—'}
+                                </p>
+                                <p className="mt-0.5">{est ? `est. ${est.score}` : 'no data'}</p>
+                            </div>
+                        );
+                    })}
+                </div>
+                <p className="text-[10px] text-stone-300 mt-3 flex items-center gap-1">
+                    <AlertTriangle size={10} /> All numbers on this page are practice estimates — not official TCF scores.
+                </p>
+            </div>
+
+            {/* quick actions */}
+            <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => onGo('curriculum')} className="bg-white rounded-3xl border border-stone-100 p-5 text-left hover:border-emerald-300 transition-colors">
+                    <BookOpen size={18} className="text-emerald-500 mb-2" />
+                    <p className="font-black text-stone-900 text-sm">Curriculum A1 → C2</p>
+                    <p className="text-xs text-stone-400 mt-0.5">Structured lessons: vocabulary, grammar, sentence building, mini-tests</p>
+                </button>
+                <button onClick={() => onGo('progress')} className="bg-white rounded-3xl border border-stone-100 p-5 text-left hover:border-emerald-300 transition-colors">
+                    <Trophy size={18} className="text-amber-500 mb-2" />
+                    <p className="font-black text-stone-900 text-sm">Progress</p>
+                    <p className="text-xs text-stone-400 mt-0.5">{scores.length} practice result{scores.length !== 1 ? 's' : ''} tracked</p>
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// ── Curriculum tab ───────────────────────────────────────────────────────────
+const Curriculum = ({ language }: { language: string }) => {
+    const [level, setLevel] = useState<TcfLevel>('A1');
+    const [openTopic, setOpenTopic] = useState<string | null>(null);
+    const [lesson, setLesson] = useState<TcfLesson | null>(null);
+    const [lessonKey, setLessonKey] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [answers, setAnswers] = useState<Record<number, string>>({});
+    const [done, setDone] = useState<string[]>(getCompletedLessons());
+
+    const openLesson = async (topic: { title: string; slug: string; focus: string }) => {
+        const key = `${level}:${topic.slug}`;
+        setOpenTopic(key);
+        setLesson(null); setAnswers({}); setError(null);
+        setLoading(true);
+        try {
+            const l = await generateTcfLesson(level, topic.title, topic.focus, language as any);
+            setLesson(l);
+            setLessonKey(key);
+        } catch {
+            setError('The AI is busy — try again in a moment.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const topics = TCF_SYLLABUS[level];
+
+    return (
+        <div className="space-y-5">
+            {/* level selector */}
+            <div className="flex gap-1.5 flex-wrap">
+                {LEVELS.map(l => (
+                    <button key={l} onClick={() => { setLevel(l); setOpenTopic(null); setLesson(null); }}
+                        className={cn('px-4 py-2 rounded-2xl text-sm font-black transition-colors',
+                            level === l ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-400')}>
+                        {l}
+                    </button>
+                ))}
+            </div>
+
+            {error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm">
+                    <AlertTriangle size={14} /> {error}
+                </div>
+            )}
+
+            {/* topic list */}
+            {!lesson && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {topics.map(t => {
+                        const key = `${level}:${t.slug}`;
+                        const isDone = done.includes(key);
+                        const isOpen = openTopic === key;
+                        return (
+                            <button key={t.slug} onClick={() => openLesson(t)} disabled={loading}
+                                className="text-left bg-white rounded-3xl border border-stone-100 p-5 hover:border-emerald-300 transition-colors disabled:opacity-50 relative">
+                                {isDone && <CheckCircle2 size={16} className="absolute top-4 right-4 text-emerald-500" />}
+                                <p className="font-black text-stone-900 text-sm pr-6">{t.title}</p>
+                                <p className="text-xs text-stone-400 mt-1">{t.focus}</p>
+                                <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest mt-3">
+                                    {isOpen && loading ? 'Generating lesson…' : `${level} · Lesson`}
+                                </p>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
+            {loading && !lesson && (
+                <div className="flex items-center justify-center gap-3 py-8 text-stone-400">
+                    <Loader2 size={20} className="animate-spin" /> Writing your {level} lesson…
+                </div>
+            )}
+
+            {/* lesson renderer */}
+            {lesson && (
+                <div className="space-y-5">
+                    <button onClick={() => { setLesson(null); setOpenTopic(null); }}
+                        className="flex items-center gap-2 text-sm font-bold text-stone-400 hover:text-stone-800 transition-colors">
+                        <RotateCcw size={14} /> Back to topics
+                    </button>
+
+                    <div className="bg-white rounded-3xl border border-stone-100 p-6">
+                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{level} · TCF Canada curriculum</p>
+                        <h1 className="text-2xl font-black text-stone-900 mb-2">{lesson.title}</h1>
+                        <div className="flex items-start gap-2 bg-emerald-50 rounded-2xl p-3">
+                            <Target size={14} className="text-emerald-600 mt-0.5 shrink-0" />
+                            <p className="text-sm text-emerald-800"><span className="font-black">Objective: </span>{lesson.objective}</p>
+                        </div>
+                    </div>
+
+                    {/* vocabulary */}
+                    <LessonSection title="Vocabulary" icon={<BookOpen size={13} />}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                            {lesson.vocabulary.map((v, i) => (
+                                <div key={i} className="flex items-baseline justify-between gap-2 border-b border-stone-50 pb-1.5">
+                                    <FrEn fr={v.fr} en={v.en} />
+                                    <button onClick={() => speakText(v.fr, 'French')} className="text-stone-300 hover:text-emerald-500 shrink-0"><Volume2 size={13} /></button>
+                                </div>
+                            ))}
+                        </div>
+                    </LessonSection>
+
+                    {/* pronunciation */}
+                    {lesson.pronunciation?.length > 0 && (
+                        <LessonSection title="Pronunciation" icon={<Headphones size={13} />}>
+                            <div className="space-y-2">
+                                {lesson.pronunciation.map((p, i) => (
+                                    <div key={i} className="flex items-center gap-3 bg-stone-50 rounded-xl px-3 py-2">
+                                        <span className="font-bold text-stone-800 text-sm">{p.fr}</span>
+                                        <span className="text-xs font-mono text-violet-500">/{p.approx}/</span>
+                                        <span className="text-xs text-stone-400 flex-1">{p.en}</span>
+                                        <button onClick={() => speakText(p.fr, 'French')} className="text-stone-300 hover:text-emerald-500"><Volume2 size={13} /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        </LessonSection>
+                    )}
+
+                    {/* grammar */}
+                    <LessonSection title="Grammar" icon={<BookOpenCheck size={13} />}>
+                        <p className="text-sm font-bold text-stone-800 mb-1">{lesson.grammar.rule}</p>
+                        <p className="text-sm text-stone-600 leading-relaxed mb-4">{lesson.grammar.explanation}</p>
+                        <div className="space-y-3">
+                            {lesson.grammar.examples.map((ex, i) => (
+                                <div key={i} className="bg-stone-50 rounded-2xl p-4 space-y-1.5">
+                                    <FrEn fr={ex.fr} en={ex.en} />
+                                    {ex.breakdown?.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 pt-1">
+                                            {ex.breakdown.map((b, bi) => (
+                                                <span key={bi} className="text-[10px] font-bold bg-white text-stone-500 border border-stone-100 px-2 py-0.5 rounded-lg">{b}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        {lesson.grammar.commonMistakes?.length > 0 && (
+                            <div className="mt-4 bg-red-50 border border-red-100 rounded-2xl p-4">
+                                <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">Common mistakes</p>
+                                <ul className="space-y-1.5">
+                                    {lesson.grammar.commonMistakes.map((m, i) => (
+                                        <li key={i} className="text-xs text-red-700 flex gap-1.5"><XCircle size={12} className="shrink-0 mt-0.5" />{m}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </LessonSection>
+
+                    {/* sentence building */}
+                    <LessonSection title="Sentence building — from short to full" icon={<PenLine size={13} />}>
+                        <div className="space-y-2">
+                            {lesson.sentenceBuilding.map((s, i) => (
+                                <div key={i} className="flex items-center gap-3">
+                                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 text-[10px] font-black flex items-center justify-center shrink-0">{i + 1}</span>
+                                    <FrEn fr={s.fr} en={s.en} />
+                                </div>
+                            ))}
+                        </div>
+                    </LessonSection>
+
+                    {/* practice + translation */}
+                    <LessonSection title="Practice & translation" icon={<CheckCircle2 size={13} />}>
+                        <div className="space-y-3 mb-5">
+                            {lesson.practice.map((ex, i) => {
+                                const picked = answers[`p${i}`];
+                                return (
+                                    <div key={i} className="bg-stone-50 rounded-2xl p-4">
+                                        <p className="text-xs font-bold text-stone-500 mb-1">{ex.instruction}</p>
+                                        <InteractiveText text={ex.question} language="French" className="block text-sm font-semibold text-stone-800" />
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <button onClick={() => setAnswers(prev => ({ ...prev, [`p${i}`]: 'revealed' }))}
+                                                className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
+                                                {picked ? `Answer: ${ex.answer}` : 'Reveal answer'}
+                                            </button>
+                                            <button onClick={() => speakText(ex.answer, 'French')} className="text-stone-300 hover:text-emerald-500"><Volume2 size={12} /></button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Translate EN → FR (active recall — try first!)</p>
+                        <div className="space-y-3">
+                            {lesson.translationPractice.map((t, i) => {
+                                const picked = answers[`t${i}`];
+                                return (
+                                    <div key={i} className="bg-stone-50 rounded-2xl p-4">
+                                        <p className="text-sm font-semibold text-stone-800 mb-1.5">{t.en}</p>
+                                        <button onClick={() => setAnswers(prev => ({ ...prev, [`t${i}`]: 'revealed' }))}
+                                            className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
+                                            {picked ? 'Hide' : 'Show the French'}
+                                        </button>
+                                        {picked && <div className="mt-1.5"><FrEn fr={t.fr} en="" /></div>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </LessonSection>
+
+                    {/* free production */}
+                    <LessonSection title="Free production" icon={<Mic size={13} />}>
+                        <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4 text-sm text-violet-800">{lesson.freeProduction}</div>
+                    </LessonSection>
+
+                    {/* mini test */}
+                    <LessonSection title="Mini test" icon={<Trophy size={13} />}>
+                        <div className="space-y-4">
+                            {lesson.miniTest.map((q, i) => {
+                                const picked = answers[`m${i}`];
+                                const right = picked === q.answer;
+                                return (
+                                    <div key={i}>
+                                        <InteractiveText text={q.question} language="French" className="block text-sm font-bold text-stone-800 mb-2" />
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {q.options.map((opt, oi) => (
+                                                <button key={oi} onClick={() => { if (picked === undefined) setAnswers(prev => ({ ...prev, [`m${i}`]: opt })); }}
+                                                    className={cn('text-left px-3 py-2 rounded-xl border text-xs font-medium transition-all',
+                                                        picked === undefined ? 'bg-white border-stone-200 text-stone-700 hover:border-emerald-300'
+                                                            : opt === q.answer ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                                                                : opt === picked ? 'bg-red-50 border-red-200 text-red-500' : 'bg-white border-stone-100 text-stone-400')}>
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {Object.keys(answers).filter(k => k.startsWith('m')).length === lesson.miniTest.length && (
+                            <button onClick={() => { markLessonComplete(lessonKey); setDone(getCompletedLessons()); }}
+                                className="w-full mt-5 py-3.5 bg-emerald-500 text-white text-sm font-bold rounded-2xl hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2">
+                                <CheckCircle2 size={15} /> Mark lesson complete
+                            </button>
+                        )}
+                    </LessonSection>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const LessonSection = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
+    <div className="bg-white rounded-3xl border border-stone-100 p-6">
+        <div className="flex items-center gap-2 mb-4">
+            <div className="w-6 h-6 bg-stone-100 rounded-lg flex items-center justify-center text-stone-500">{icon}</div>
+            <h2 className="text-[11px] font-black text-stone-500 uppercase tracking-[0.15em]">{title}</h2>
+        </div>
+        {children}
+    </div>
+);
+
+// ── Writing trainer ──────────────────────────────────────────────────────────
+const WritingTrainer = ({ level, onLevelChange }: { level: TcfLevel; onLevelChange: (l: TcfLevel) => void }) => {
+    const [taskId, setTaskId] = useState(TCF_WRITING_TASKS[0].id);
+    const task = TCF_WRITING_TASKS.find(t => t.id === taskId)!;
+    const [text, setText] = useState('');
+    const [timeLeft, setTimeLeft] = useState(task.minutes * 60);
+    const [timerOn, setTimerOn] = useState(false);
+    const [evaluating, setEvaluating] = useState(false);
+    const [feedback, setFeedback] = useState<TcfWritingFeedback | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => { setTimeLeft(task.minutes * 60); setTimerOn(false); setFeedback(null); }, [taskId]);
+
+    useEffect(() => {
+        if (!timerOn) return;
+        const t = setInterval(() => setTimeLeft(s => { if (s <= 1) { clearInterval(t); setTimerOn(false); return 0; } return s - 1; }), 1000);
+        return () => clearInterval(t);
+    }, [timerOn]);
+
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+
+    const submit = async () => {
+        if (words < 10) { setError('Write more before submitting.'); return; }
+        setEvaluating(true); setError(null);
+        try {
+            const fb = await evaluateTcfWriting(task.label, task.guide, task.minWords, text, level);
+            setFeedback(fb);
+            const pct = Math.round((fb.score20 / 20) * 100);
+            const est = practiceToScore(pct);
+            addTcfScore({ pct, skill: 'writing', label: `${level} ${task.label}`, nclc: est.nclc, score: est.score });
+        } catch {
+            setError('Evaluation failed — the AI may be busy. Try again.');
+        } finally { setEvaluating(false); }
+    };
+
+    const mm = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+    const ss = String(timeLeft % 60).padStart(2, '0');
+
+    return (
+        <div className="space-y-5">
+            <LevelBar level={level} onLevelChange={onLevelChange} />
+            <div className="bg-white rounded-3xl border border-stone-100 p-6">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <div className="flex gap-1.5 flex-wrap">
+                        {TCF_WRITING_TASKS.map(t => (
+                            <button key={t.id} onClick={() => setTaskId(t.id)}
+                                className={cn('px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors',
+                                    taskId === t.id ? 'bg-amber-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
+                                Task {t.id.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setTimerOn(t => !t)}
+                            className={cn('px-3 py-1.5 rounded-xl text-[11px] font-black tabular-nums transition-colors',
+                                timerOn ? 'bg-red-500 text-white animate-pulse' : timeLeft < task.minutes * 60 ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500')}>
+                            {mm}:{ss}
+                        </button>
+                        <span className="text-[10px] font-bold text-stone-300">{words} words{task.maxWords ? ` (max ${task.maxWords})` : ` (min ${task.minWords})`}</span>
+                    </div>
+                </div>
+                <p className="text-[11px] font-black text-amber-500 uppercase tracking-widest mb-1">{task.label}</p>
+                <p className="text-sm text-stone-800 font-semibold mb-1">{task.prompt}</p>
+                <p className="text-xs text-stone-400">{task.guide}</p>
+            </div>
+
+            <textarea value={text} onChange={e => setText(e.target.value)} rows={12}
+                placeholder="Write your answer in French…"
+                className="w-full px-5 py-4 text-sm rounded-3xl border border-stone-200 focus:outline-none focus:border-amber-400 bg-white resize-y" />
+
+            {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
+
+            {!feedback && (
+                <button onClick={submit} disabled={evaluating || words < 10}
+                    className="w-full py-3.5 bg-stone-900 text-white text-sm font-bold rounded-2xl hover:bg-stone-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+                    {evaluating ? <><Loader2 size={15} className="animate-spin" /> Your examiner is grading…</> : <><PenLine size={15} /> Submit for evaluation</>}
+                </button>
+            )}
+
+            {feedback && (
+                <div className="space-y-4">
+                    <div className="bg-white rounded-3xl border border-stone-100 p-6 text-center">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Practice estimate</p>
+                        <p className="text-4xl font-black text-amber-500 my-1">{feedback.score20}<span className="text-lg text-stone-300">/20</span></p>
+                        <p className="text-sm font-bold text-stone-700">Estimated level: <span className="text-emerald-600">{feedback.estimatedLevel}</span></p>
+                        <p className="text-xs text-stone-400 mt-1">{feedback.taskCompletion}</p>
+                    </div>
+                    {feedback.corrections?.length > 0 && (
+                        <LessonSection title={`Corrections (${feedback.corrections.length})`} icon={<AlertTriangle size={13} />}>
+                            <div className="space-y-3">
+                                {feedback.corrections.map((c, i) => (
+                                    <div key={i} className="bg-stone-50 rounded-2xl p-4 space-y-1">
+                                        <p className="text-sm text-red-400 line-through">{c.original}</p>
+                                        <p className="text-sm font-bold text-emerald-600">{c.corrected}</p>
+                                        <p className="text-xs text-stone-400">{c.why}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </LessonSection>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <LessonSection title="Strengths" icon={<CheckCircle2 size={13} />}>
+                            <ul className="space-y-1.5">{feedback.strengths?.map((s, i) => (
+                                <li key={i} className="text-xs text-stone-600 flex gap-1.5"><CheckCircle2 size={12} className="text-emerald-500 shrink-0 mt-0.5" />{s}</li>))}</ul>
+                        </LessonSection>
+                        <LessonSection title="Next attempt" icon={<Target size={13} />}>
+                            <ul className="space-y-1.5">{feedback.improvements?.map((s, i) => (
+                                <li key={i} className="text-xs text-stone-600 flex gap-1.5"><Target size={12} className="text-amber-500 shrink-0 mt-0.5" />{s}</li>))}</ul>
+                        </LessonSection>
+                    </div>
+                    <button onClick={() => { setFeedback(null); setText(''); }}
+                        className="w-full py-3.5 bg-stone-900 text-white text-sm font-bold rounded-2xl hover:bg-stone-700 transition-colors flex items-center justify-center gap-2">
+                        <RotateCcw size={14} /> New attempt
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ── Speaking trainer ─────────────────────────────────────────────────────────
+const SpeakingTrainer = ({ level, language, onLevelChange }: { level: TcfLevel; language: string; onLevelChange: (l: TcfLevel) => void }) => {
+    const [taskId, setTaskId] = useState(TCF_SPEAKING_TASKS[0].id);
+    const task = TCF_SPEAKING_TASKS.find(t => t.id === taskId)!;
+    const [prep, setPrep] = useState(0);
+    const [recState, setRecState] = useState<'idle' | 'recording' | 'processing' | 'done'>('idle');
+    const [transcript, setTranscript] = useState('');
+    const [feedback, setFeedback] = useState<TcfSpeakingFeedback | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const recRef = useRef<{ promise: Promise<string>; stop: () => void } | null>(null);
+    const prepTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    useEffect(() => { setPrep(0); setRecState('idle'); setTranscript(''); setFeedback(null); setError(null); }, [taskId]);
+    useEffect(() => () => { if (prepTimer.current) clearInterval(prepTimer.current); stopSpeaking(); }, []);
+
+    const startPrep = () => {
+        setPrep(task.id === 's1' ? 0 : 60);
+        prepTimer.current = setInterval(() => setPrep(p => {
+            if (p <= 1) { clearInterval(prepTimer.current!); return 0; }
+            return p - 1;
+        }), 1000);
+    };
+
+    const toggleRecord = () => {
+        if (recState === 'recording') { recRef.current?.stop(); return; }
+        setError(null); setTranscript(''); setFeedback(null);
+        setRecState('recording');
+        const rec = recordAndTranscribe(language as any, {
+            maxMs: Math.min(task.seconds, 180) * 1000,
+            onStateChange: (s) => { if (s === 'processing') setRecState('processing'); },
+        });
+        recRef.current = rec;
+        rec.promise.then(async (t) => {
+            setTranscript(t);
+            setRecState('done');
+            setFeedback(null);
+            try {
+                const fb = await evaluateTcfSpeaking(task.label, task.guide, task.prompt, t, level);
+                setFeedback(fb);
+                // rough speaking estimate from transcript length + level
+                const words = t.split(/\s+/).filter(Boolean).length;
+                const pct = Math.min(95, 30 + Math.round(words / 2));
+                const est = practiceToScore(pct);
+                addTcfScore({ pct, skill: 'speaking', label: `${level} ${task.label}`, nclc: est.nclc, score: est.score });
+            } catch {
+                setError('Evaluation failed — the AI may be busy. Your transcript is saved below.');
+            }
+        }).catch(() => {
+            setRecState('idle');
+            setError('Could not record or transcribe. Check microphone permissions and try again.');
+        });
+    };
+
+    const mm = String(Math.floor(prep / 60)).padStart(2, '0');
+    const ss = String(prep % 60).padStart(2, '0');
+
+    return (
+        <div className="space-y-5">
+            <LevelBar level={level} onLevelChange={onLevelChange} />
+            <div className="bg-white rounded-3xl border border-stone-100 p-6">
+                <div className="flex gap-1.5 flex-wrap mb-3">
+                    {TCF_SPEAKING_TASKS.map(t => (
+                        <button key={t.id} onClick={() => setTaskId(t.id)}
+                            className={cn('px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors',
+                                taskId === t.id ? 'bg-rose-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
+                            Task {t.id.slice(1)}
+                        </button>
+                    ))}
+                </div>
+                <p className="text-[11px] font-black text-rose-500 uppercase tracking-widest mb-1">{task.label}</p>
+                <InteractiveText text={task.prompt} language="French" className="block text-sm font-semibold text-stone-800 mb-1" />
+                <p className="text-xs text-stone-400">{task.guide}</p>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-stone-100 p-6 text-center space-y-4">
+                {task.id !== 's1' && prep === 0 && recState === 'idle' && (
+                    <button onClick={startPrep} className="px-5 py-2.5 bg-stone-100 text-stone-600 text-xs font-bold rounded-2xl hover:bg-stone-200 transition-colors">
+                        Give me 1 minute of preparation time
+                    </button>
+                )}
+                {prep > 0 && (
+                    <div className="text-center">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Preparation</p>
+                        <p className="text-3xl font-black tabular-nums text-violet-500">{mm}:{ss}</p>
+                    </div>
+                )}
+                <button onClick={toggleRecord} disabled={recState === 'processing'}
+                    className={cn('w-24 h-24 rounded-full mx-auto flex items-center justify-center transition-all shadow-xl',
+                        recState === 'recording' ? 'bg-red-500 text-white scale-110 animate-pulse' : recState === 'processing' ? 'bg-stone-200 text-stone-400' : 'bg-rose-500 text-white hover:bg-rose-600')}>
+                    {recState === 'recording' ? <><StopCircleIcon /> </> : <Mic size={34} />}
+                </button>
+                <p className="text-xs font-bold text-stone-400">
+                    {recState === 'idle' && 'Tap the mic and speak until you are done'}
+                    {recState === 'recording' && 'Recording — tap to stop'}
+                    {recState === 'processing' && 'Transcribing with Whisper…'}
+                    {recState === 'done' && 'Answer recorded'}
+                </p>
+            </div>
+
+            {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
+
+            {transcript && (
+                <div className="bg-white rounded-3xl border border-stone-100 p-5">
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Your transcript (from speech-to-text)</p>
+                    <p className="text-sm text-stone-700 leading-relaxed">{transcript || <span className="italic text-stone-300">(nothing was transcribed)</span>}</p>
+                </div>
+            )}
+
+            {feedback && (
+                <div className="space-y-4">
+                    <div className="bg-white rounded-3xl border border-stone-100 p-6 text-center">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Practice estimate</p>
+                        <p className="text-2xl font-black text-rose-500 my-1">Level {feedback.estimatedLevel}</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <LessonSection title="Strengths" icon={<CheckCircle2 size={13} />}>
+                            <ul className="space-y-1.5">{feedback.strengths?.map((s, i) => (
+                                <li key={i} className="text-xs text-stone-600 flex gap-1.5"><CheckCircle2 size={12} className="text-emerald-500 shrink-0 mt-0.5" />{s}</li>))}</ul>
+                        </LessonSection>
+                        <LessonSection title="Fluency tips" icon={<Target size={13} />}>
+                            <ul className="space-y-1.5">{feedback.fluencyTips?.map((s, i) => (
+                                <li key={i} className="text-xs text-stone-600 flex gap-1.5"><Target size={12} className="text-rose-400 shrink-0 mt-0.5" />{s}</li>))}</ul>
+                        </LessonSection>
+                    </div>
+                    {feedback.transcriptCorrections?.length > 0 && (
+                        <LessonSection title="Corrections from your transcript" icon={<AlertTriangle size={13} />}>
+                            <div className="space-y-3">
+                                {feedback.transcriptCorrections.map((c, i) => (
+                                    <div key={i} className="bg-stone-50 rounded-2xl p-4 space-y-1">
+                                        <p className="text-sm text-red-400 line-through">{c.original}</p>
+                                        <p className="text-sm font-bold text-emerald-600">{c.corrected}</p>
+                                        <p className="text-xs text-stone-400">{c.why}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </LessonSection>
+                    )}
+                    <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4 text-sm text-violet-800">
+                        <span className="font-black">Next attempt: </span>{feedback.nextAttempt}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+const StopCircleIcon = () => <Square size={30} fill="currentColor" />;
+
+// ── Progress tab ─────────────────────────────────────────────────────────────
+const Progress = ({ scores }: { scores: TcfScoreEntry[] }) => {
+    if (scores.length === 0) {
+        return (
+            <div className="bg-white rounded-3xl border border-stone-100 p-10 text-center">
+                <Trophy size={32} className="mx-auto text-stone-200 mb-3" />
+                <p className="font-bold text-stone-500">No practice results yet</p>
+                <p className="text-xs text-stone-400 mt-1">Complete a trainer exercise and your estimated level appears here.</p>
+            </div>
+        );
+    }
+    return (
+        <div className="space-y-4">
+            {(Object.keys(SKILL_META) as (keyof typeof SKILL_META)[]).map(sk => {
+                const items = scores.filter(s => s.skill === sk).slice(0, 6);
+                if (items.length === 0) return null;
+                const m = SKILL_META[sk];
+                return (
+                    <div key={sk} className="bg-white rounded-3xl border border-stone-100 p-5">
+                        <div className="flex items-center gap-2 mb-3">
+                            <m.icon size={15} className={m.color} />
+                            <p className="font-black text-stone-800 text-sm">{m.label}</p>
+                            <span className="text-[10px] text-stone-300 ml-auto">{items.length} result{items.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="space-y-2">
+                            {items.map((s, i) => {
+                                const est = practiceToScore(s.pct);
+                                const isLatest = i === 0;
+                                return (
+                                    <div key={i} className={cn('flex items-center gap-3 rounded-2xl px-4 py-2.5', isLatest ? 'bg-stone-900' : 'bg-stone-50')}>
+                                        <span className={cn('text-xs font-black w-12', isLatest ? 'text-white' : 'text-stone-800')}>{s.pct}%</span>
+                                        <span className={cn('text-[11px] flex-1 truncate', isLatest ? 'text-white/60' : 'text-stone-400')}>{s.label} · {new Date(s.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}</span>
+                                        <span className={cn('text-[10px] font-black px-2 py-0.5 rounded-full', isLatest ? 'bg-white/10 text-white' : 'bg-stone-200 text-stone-500')}>
+                                            est. NCLC {s.nclc}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })}
+            <p className="text-[10px] text-stone-300 text-center flex items-center justify-center gap-1">
+                <AlertTriangle size={10} /> Practice estimates only — not official TCF Canada results.
+            </p>
+        </div>
+    );
+};
+
+// ── Portal shell ─────────────────────────────────────────────────────────────
+const TCFPrepView = () => {
+    const { quizSettings } = useAppStore() as any;
+    const language = quizSettings?.targetLanguage || 'French';
+    const [tab, setTab] = useState<TcfTab>('overview');
+    const [level, setLevel] = useState<TcfLevel>('A2');
+    const [scores, setScores] = useState<TcfScoreEntry[]>(getTcfScores());
+
+    useEffect(() => { setScores(getTcfScores()); }, [tab]);
+
+    const TABS: { id: TcfTab; label: string; icon: any }[] = [
+        { id: 'overview', label: 'Overview', icon: Flag },
+        { id: 'curriculum', label: 'Learn', icon: BookOpen },
+        { id: 'listening', label: 'Listening', icon: Headphones },
+        { id: 'reading', label: 'Reading', icon: BookOpenCheck },
+        { id: 'writing', label: 'Writing', icon: PenLine },
+        { id: 'speaking', label: 'Speaking', icon: Mic },
+        { id: 'progress', label: 'Progress', icon: Trophy },
+    ];
+
+    return (
+        <div className="max-w-3xl mx-auto w-full py-8 px-4">
+            {/* header */}
+            <div className="flex items-center justify-between mb-5">
+                <div>
+                    <h1 className="text-2xl font-black text-stone-900 flex items-center gap-2">
+                        <GraduationCap size={24} className="text-emerald-600" /> TCF Canada
+                    </h1>
+                    <p className="text-stone-400 text-sm mt-0.5">Exam prep portal — train all four skills toward NCLC {getNclcTarget()}</p>
+                </div>
+                <Flag size={28} className="text-red-500" />
+            </div>
+
+            {/* tabs */}
+            <div className="flex gap-1 bg-stone-100 p-1 rounded-2xl mb-6 overflow-x-auto">
+                {TABS.map(t => (
+                    <button key={t.id} onClick={() => setTab(t.id)}
+                        className={cn('flex-1 min-w-fit px-3 py-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 whitespace-nowrap',
+                            tab === t.id ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600')}>
+                        <t.icon size={12} /> {t.label}
+                    </button>
+                ))}
+            </div>
+
+            {tab === 'overview' && <Overview onGo={setTab} />}
+            {tab === 'curriculum' && <Curriculum language={language} />}
+            {tab === 'listening' && (
+                <TCFListeningTrainer level={level} onLevelChange={setLevel} onDone={(pct, label) => {
+                    const est = practiceToScore(pct);
+                    addTcfScore({ pct, skill: 'listening', label, nclc: est.nclc, score: est.score });
+                }} />
+            )}
+            {tab === 'reading' && (
+                <TCFReadingTrainer level={level} onLevelChange={setLevel} onDone={(pct, label) => {
+                    const est = practiceToScore(pct);
+                    addTcfScore({ pct, skill: 'reading', label, nclc: est.nclc, score: est.score });
+                }} />
+            )}
+            {tab === 'writing' && <WritingTrainer level={level} onLevelChange={setLevel} />}
+            {tab === 'speaking' && <SpeakingTrainer level={level} language={language} onLevelChange={setLevel} />}
+            {tab === 'progress' && <Progress scores={scores} />}
+        </div>
+    );
+};
+
+export default TCFPrepView;

@@ -127,7 +127,7 @@ interface AppState {
   user: User | null;
   notes: string;
   extractedText: string;
-  activeTab: 'editor' | 'upload' | 'lectures' | 'analytics' | 'flashcards' | 'chat' | 'rooms' | 'leaderboard' | 'grammar-drill' | 'story-mode' | 'exchange' | 'pronunciation' | 'dictation' | 'conjugation' | 'reading';
+  activeTab: 'editor' | 'upload' | 'lectures' | 'analytics' | 'flashcards' | 'chat' | 'rooms' | 'leaderboard' | 'grammar-drill' | 'story-mode' | 'exchange' | 'pronunciation' | 'dictation' | 'conjugation' | 'reading' | 'tcf';
   generationMode: 'quiz' | 'lecture';
   isGenerating: boolean;
   questions: Question[];
