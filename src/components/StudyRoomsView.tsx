@@ -5,7 +5,7 @@ import {
   Users, Plus, Globe, Lock, Search, X, Send, ArrowLeft,
   Trash2, Crown, Loader2, MessageSquare, Unlock, Pin, Megaphone,
   Reply, Bot, CheckCheck, CornerUpLeft, Mic, MessageCircle,
-  BookOpen, Trash, Volume2
+  BookOpen, Trash, Volume2, Share2, Check
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -1004,6 +1004,41 @@ const StudyRoomsView = () => {
     setActiveRoom(room);
   };
 
+  // Invite links: #join=<roomId> or ?room=<roomId> auto-join after rooms load
+  const [copiedRoom, setCopiedRoom] = useState<string | null>(null);
+  const inviteLink = (roomId: string) =>
+    `${window.location.origin}${window.location.pathname}#join=${roomId}`;
+
+  const shareRoom = async (roomId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(inviteLink(roomId));
+      setCopiedRoom(roomId);
+      setTimeout(() => setCopiedRoom(null), 1800);
+    } catch { /* clipboard unavailable */ }
+  };
+
+  useEffect(() => {
+    const hash = window.location.hash || '';
+    const params = new URLSearchParams(window.location.search);
+    const joinId = hash.match(/#join=([\w-]+)/)?.[1] || params.get('room');
+    if (!joinId) return;
+    let alive = true;
+    (async () => {
+      // wait for the room list, then auto-join
+      for (let t = 0; t < 10 && alive; t++) {
+        const room = rooms.find(r => r.id === joinId);
+        if (room) {
+          if (myId) await handleJoin(room);
+          window.history.replaceState({}, '', window.location.pathname);
+          return;
+        }
+        await new Promise(r => setTimeout(r, 400));
+      }
+    })();
+    return () => { alive = false; };
+  }, [rooms, myId]);
+
   const handleCreate = async () => {
     if (!myId || !form.name.trim()) return;
     setCreating(true);
@@ -1113,9 +1148,9 @@ const StudyRoomsView = () => {
               const isFull = count >= maxCap;
 
               return (
-                <motion.div key={room.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                  onClick={() => handleJoin(room)}
-                  className="group bg-white rounded-3xl border border-stone-100 shadow-sm hover:shadow-lg hover:border-stone-200 transition-all cursor-pointer overflow-hidden flex flex-col">
+                                                <motion.div key={room.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                                                  onClick={() => handleJoin(room)}
+                                                  className="group relative bg-white rounded-3xl border border-stone-100 shadow-sm hover:shadow-lg hover:border-stone-200 transition-all cursor-pointer overflow-hidden flex flex-col">
 
                   {/* Top color bar with difficulty ring on flag */}
                   <div className="h-1.5 w-full" style={{ background: langColor }} />
@@ -1224,17 +1259,23 @@ const StudyRoomsView = () => {
                           {count}/{maxCap} {isFull ? '· Full' : ''}
                         </span>
 
-                        {/* Activity status */}
-                        {isActive
-                          ? <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-500"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />Live</span>
-                          : room.last_message
-                            ? <span className="text-[9px] text-stone-300">{Math.round(lastMsgMs / 60000)}m ago</span>
-                            : null}
-                      </div>
-                      <span className={cn('text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity',
-                        isFull && !isJoined ? 'text-red-400' : 'text-emerald-600')}>
-                        {isFull && !isJoined ? 'Full' : isJoined ? 'Open →' : 'Join →'}
-                      </span>
+                      {/* Activity status */}
+                      {isActive
+                        ? <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-500"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />Live</span>
+                        : room.last_message
+                          ? <span className="text-[9px] text-stone-300">{Math.round(lastMsgMs / 60000)}m ago</span>
+                          : null}
+                    </div>
+                    {/* Share invite — copies a join link for classmates */}
+                    <button onClick={(e) => shareRoom(room.id, e)}
+                      className="absolute top-14 right-4 p-1.5 rounded-xl bg-white/90 border border-stone-100 text-stone-300 hover:text-indigo-500 hover:border-indigo-200 transition-all opacity-0 group-hover:opacity-100 z-10"
+                      title={copiedRoom === room.id ? 'Invite link copied!' : 'Copy invite link'}>
+                      {copiedRoom === room.id ? <Check size={12} className="text-emerald-500" /> : <Share2 size={12} />}
+                    </button>
+                    <span className={cn('text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity',
+                      isFull && !isJoined ? 'text-red-400' : 'text-emerald-600')}>
+                      {isFull && !isJoined ? 'Full' : isJoined ? 'Open →' : 'Join →'}
+                    </span>
                     </div>
                   </div>
                 </motion.div>

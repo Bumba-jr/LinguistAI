@@ -73,6 +73,10 @@ const LeaderboardView = () => {
     useEffect(() => { fetchLeaderboard(); }, []);
 
     const myUserId = (user as any)?.id;
+    const nextTier = [
+        { label: 'Learner', min: 50 }, { label: 'Advanced', min: 200 }, { label: 'Expert', min: 500 },
+        { label: 'Master', min: 1000 }, { label: 'Legend', min: 2000 },
+    ].find(t => t.min > totalPoints);
 
     useEffect(() => {
         if (!myUserId || totalPoints === 0) return;
@@ -140,6 +144,12 @@ const LeaderboardView = () => {
                                 <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                             </button>
                         </motion.div>
+                    )}
+                    {nextTier && myUserId && (
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+                            className="text-white/30 text-xs font-medium">
+                            {nextTier.min - totalPoints} pts to {nextTier.label} {totalPoints > 0 && totalPoints < 50 ? '🔥 keep going' : ''}
+                        </motion.p>
                     )}
                 </div>
 
