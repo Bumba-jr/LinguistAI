@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion } from 'motion/react';
-import { BookOpen, Loader2, RotateCcw, Volume2, Star, AlertCircle } from 'lucide-react';
+import { BookOpen, Loader2, RotateCcw, Volume2, Square, Star, AlertCircle, Plus, Check } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { generateStoryStart, continueStory, StoryNode } from '../services/aiService';
-import { speakText } from '../services/voiceService';
+import { speakText, stopSpeaking } from '../services/voiceService';
 import { InteractiveText } from './WordBreakdown';
 
 const THEMES = [
@@ -19,16 +19,22 @@ const THEMES = [
 ];
 
 const StoryModeView = () => {
-    const { quizSettings, addPoints } = useAppStore();
+    const { quizSettings, addPoints, addFlashcard, flashcards, user } = useAppStore() as any;
     const [theme, setTheme] = useState('');
     const [customTheme, setCustomTheme] = useState('');
     const [nodes, setNodes] = useState<StoryNode[]>([]);
+    const [chosenPath, setChosenPath] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [finished, setFinished] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [totalVocab, setTotalVocab] = useState<{ word: string; translation: string }[]>([]);
     const [showTranslation, setShowTranslation] = useState<Record<string, boolean>>({});
+    const [speakingKey, setSpeakingKey] = useState<string | null>(null);
+    const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
     const bottomRef = useRef<HTMLDivElement>(null);
+
+    // Stop any playing audio when leaving the section
+    useEffect(() => () => stopSpeaking(), []);
 
     // Scroll to bottom whenever nodes update
     useEffect(() => {
@@ -36,6 +42,41 @@ const StoryModeView = () => {
             setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100);
         }
     }, [nodes, loading]);
+
+    const normKey = (word: string) => word.toLowerCase().replace(/[.,!?;:«»"'-]/g, '').trim();
+
+    const saveWord = (v: { word: string; translation: string }) => {
+        const key = normKey(v.word);
+        if (savedKeys.has(key)) return;
+        const newCard = {
+            id: crypto.randomUUID(),
+            word: v.word,
+            translation: v.translation,
+            language: quizSettings.targetLanguage,
+            nextReview: new Date().toISOString(),
+            lastReviewed: null,
+        };
+        addFlashcard(newCard);
+        if (user) {
+            import('../services/dbService').then(m => m.upsertFlashcard(user.id, newCard)).catch(() => { });
+        }
+        setSavedKeys(prev => new Set(prev).add(key));
+    };
+
+    const isSaved = (word: string) =>
+        savedKeys.has(normKey(word)) ||
+        flashcards.some((f: any) => normKey(f.word) === normKey(word) && f.language === quizSettings.targetLanguage);
+
+    const toggleListen = (key: string, text: string) => {
+        if (speakingKey === key) {
+            stopSpeaking();
+            setSpeakingKey(null);
+            return;
+        }
+        stopSpeaking();
+        setSpeakingKey(key);
+        speakText(text, quizSettings.targetLanguage, () => setSpeakingKey(prev => (prev === key ? null : prev)));
+    };
 
     const startStory = async () => {
         const t = customTheme.trim() || theme;
@@ -46,6 +87,7 @@ const StoryModeView = () => {
             const node = await generateStoryStart(quizSettings.targetLanguage, quizSettings.difficulty, t);
             if (!node.text) throw new Error('Empty story response');
             setNodes([node]);
+            setChosenPath([]);
             setTotalVocab(node.vocabulary ?? []);
         } catch (err: any) {
             setError(err?.message || 'Failed to start story. Check your API key and try again.');
@@ -59,7 +101,10 @@ const StoryModeView = () => {
         setError(null);
         setLoading(true);
         try {
-            const history = nodes.map(n => n.text).join('\n\n');
+            // Include the player's past choices so the AI keeps the story coherent
+            const history = nodes
+                .map((n, i) => `[Scene ${i + 1}]\n${n.text}${chosenPath[i] ? `\nPlayer chose: ${chosenPath[i]}` : ''}`)
+                .join('\n\n');
             const next = await continueStory(
                 quizSettings.targetLanguage,
                 quizSettings.difficulty,
@@ -69,6 +114,7 @@ const StoryModeView = () => {
             );
             if (!next.text) throw new Error('Empty continuation response');
             setNodes(prev => [...prev, next]);
+            setChosenPath(prev => [...prev, choiceText]);
             setTotalVocab(prev => [
                 ...prev,
                 ...(next.vocabulary ?? []).filter(v => !prev.some(p => p.word === v.word)),
@@ -77,6 +123,7 @@ const StoryModeView = () => {
             if (next.isEnding || (next.choices ?? []).length === 0) {
                 setFinished(true);
                 addPoints(50);
+                import('../services/activityLog').then(m => m.logActivity(1)).catch(() => { });
             }
         } catch (err: any) {
             setError(err?.message || 'Failed to continue story. Try again.');
@@ -85,12 +132,20 @@ const StoryModeView = () => {
         }
     };
 
+    const saveAllVocab = () => {
+        totalVocab.forEach(v => saveWord(v));
+    };
+
     const reset = () => {
+        stopSpeaking();
         setNodes([]);
+        setChosenPath([]);
         setFinished(false);
         setTheme('');
         setCustomTheme('');
         setTotalVocab([]);
+        setSavedKeys(new Set());
+        setSpeakingKey(null);
         setError(null);
     };
 
@@ -106,7 +161,8 @@ const StoryModeView = () => {
                     </div>
                     <h1 className="text-3xl font-black text-stone-900">Story Mode</h1>
                     <p className="text-stone-400">
-                        An interactive story in {quizSettings.targetLanguage}. Make choices, learn vocabulary, earn 50 pts for finishing.
+                        An interactive story in {quizSettings.targetLanguage}. Make choices, tap any word for its meaning,
+                        and tap the green chips to save new vocabulary to your deck. Finishing earns 50 pts.
                     </p>
                 </div>
 
@@ -187,11 +243,14 @@ const StoryModeView = () => {
                                 className="text-stone-800 leading-relaxed flex-1"
                             />
                             <button
-                                onClick={() => speakText(node.text, quizSettings.targetLanguage)}
-                                className="p-2 rounded-xl hover:bg-stone-100 text-stone-400 shrink-0"
-                                title="Listen"
+                                onClick={() => toggleListen(node.id + i, node.text)}
+                                className={cn(
+                                    'p-2 rounded-xl hover:bg-stone-100 shrink-0 transition-colors',
+                                    speakingKey === node.id + i ? 'bg-emerald-100 text-emerald-700' : 'text-stone-400'
+                                )}
+                                title={speakingKey === node.id + i ? 'Stop' : 'Listen'}
                             >
-                                <Volume2 size={16} />
+                                {speakingKey === node.id + i ? <Square size={14} fill="currentColor" /> : <Volume2 size={16} />}
                             </button>
                         </div>
 
@@ -210,14 +269,26 @@ const StoryModeView = () => {
 
                         {(node.vocabulary ?? []).length > 0 && (
                             <div className="flex flex-wrap gap-1.5 pt-1">
-                                {node.vocabulary.map((v, vi) => (
-                                    <span
-                                        key={vi}
-                                        className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full font-bold"
-                                    >
-                                        {v.word} = {v.translation}
-                                    </span>
-                                ))}
+                                {node.vocabulary.map((v, vi) => {
+                                    const saved = isSaved(v.word);
+                                    return (
+                                        <button
+                                            key={vi}
+                                            onClick={() => saveWord(v)}
+                                            disabled={saved}
+                                            title={saved ? 'Already in your deck' : 'Save to flashcards'}
+                                            className={cn(
+                                                'text-[10px] px-2 py-0.5 rounded-full font-bold border transition-all',
+                                                saved
+                                                    ? 'bg-emerald-600 text-white border-emerald-600'
+                                                    : 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
+                                            )}
+                                        >
+                                            {saved ? <Check size={10} className="inline mr-0.5 -mt-0.5" /> : <Plus size={10} className="inline mr-0.5 -mt-0.5" />}
+                                            {v.word} = {v.translation}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
                     </motion.div>
@@ -247,14 +318,36 @@ const StoryModeView = () => {
                     </p>
                     {totalVocab.length > 0 && (
                         <div className="text-left bg-white rounded-2xl p-4 space-y-1.5">
-                            <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-2">Vocabulary learned</p>
-                            {totalVocab.map((v, i) => (
-                                <div key={i} className="flex items-center gap-2 text-sm">
-                                    <span className="font-bold text-stone-800">{v.word}</span>
-                                    <span className="text-stone-300">→</span>
-                                    <span className="text-stone-500">{v.translation}</span>
-                                </div>
-                            ))}
+                            <div className="flex items-center justify-between mb-2">
+                                <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Vocabulary learned</p>
+                                <button
+                                    onClick={saveAllVocab}
+                                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                                >
+                                    <Plus size={12} /> Save all to deck
+                                </button>
+                            </div>
+                            {totalVocab.map((v, i) => {
+                                const saved = isSaved(v.word);
+                                return (
+                                    <div key={i} className="flex items-center gap-2 text-sm">
+                                        <span className="font-bold text-stone-800">{v.word}</span>
+                                        <span className="text-stone-300">→</span>
+                                        <span className="text-stone-500 flex-1">{v.translation}</span>
+                                        <button
+                                            onClick={() => saveWord(v)}
+                                            disabled={saved}
+                                            title={saved ? 'Already in your deck' : 'Save to flashcards'}
+                                            className={cn(
+                                                'p-1 rounded-lg transition-colors',
+                                                saved ? 'text-emerald-600' : 'text-stone-300 hover:text-emerald-600 hover:bg-emerald-50'
+                                            )}
+                                        >
+                                            {saved ? <Check size={14} /> : <Plus size={14} />}
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                     <button

@@ -873,8 +873,12 @@ export const generateStoryStart = async (
   const system = `You are a ${targetLanguage} interactive story writer for language learners. Return ONLY valid JSON.
 Create the opening of an interactive story in ${targetLanguage} at ${difficulty} level with theme: "${theme}".
 {"id":"start","text":"story opening in ${targetLanguage} (3-4 sentences)","translation":"English translation","choices":[{"id":"a","text":"choice in ${targetLanguage}","translation":"English"},{"id":"b","text":"choice in ${targetLanguage}","translation":"English"},{"id":"c","text":"choice in ${targetLanguage}","translation":"English"}],"vocabulary":[{"word":"${targetLanguage} word","translation":"English"}]}
-Include 2-3 vocabulary items from the story text.`;
-  const raw = await chat(system, `Create a ${difficulty} ${targetLanguage} story about: ${theme}`, 1024, true);
+  Include 2-3 vocabulary items from the story text.
+  IMPORTANT: "translation" and every choice "translation" MUST be in English — the reader cannot read ${targetLanguage} yet.`;
+  const user = `Create a ${difficulty} ${targetLanguage} story about: ${theme}`;
+  let raw: string;
+  try { raw = await chat(system, user, 1024, true); }
+  catch { raw = await chatOpenAI(system, user, 1024); }
   const d = parseJSON(raw);
   return { id: 'start', text: d.text || '', translation: d.translation || '', choices: d.choices || [], vocabulary: d.vocabulary || [] };
 };
@@ -886,11 +890,15 @@ export const continueStory = async (
   choiceText: string,
   turnNumber: number
 ): Promise<StoryNode> => {
-  const isNearEnd = turnNumber >= 4;
+  const isNearEnd = turnNumber >= 6;
   const system = `You are a ${targetLanguage} interactive story writer. Return ONLY valid JSON.
-Continue the story based on the player's choice. ${isNearEnd ? 'This should be the final scene — wrap up the story.' : 'Continue the adventure with 2-3 more choices.'}
-{"id":"node-${turnNumber}","text":"continuation in ${targetLanguage} (3-4 sentences)","translation":"English translation","choices":${isNearEnd ? '[]' : '[{"id":"a","text":"choice","translation":"English"},{"id":"b","text":"choice","translation":"English"}]'},"vocabulary":[{"word":"word","translation":"English"}],"isEnding":${isNearEnd}}`;
-  const raw = await chat(system, `Story so far:\n${storyHistory}\n\nPlayer chose: "${choiceText}"`, 1024, true);
+Continue the story based on the player's choice. Stay consistent with EVERYTHING that happened before — characters, places, and the player's earlier choices must all carry forward. ${isNearEnd ? 'This should be the final scene — wrap up the story with a satisfying ending.' : 'Continue the adventure with 2-3 new choices.'}
+{"id":"node-${turnNumber}","text":"continuation in ${targetLanguage} (3-4 sentences)","translation":"English translation","choices":${isNearEnd ? '[]' : '[{"id":"a","text":"choice","translation":"English"},{"id":"b","text":"choice","translation":"English"}]'},"vocabulary":[{"word":"word","translation":"English"}],"isEnding":${isNearEnd}}
+IMPORTANT: "translation" and every choice "translation" MUST be in English — the reader cannot read ${targetLanguage} yet.`;
+  const user = `Story so far:\n${storyHistory}\n\nPlayer chose: "${choiceText}"`;
+  let raw: string;
+  try { raw = await chat(system, user, 1024, true); }
+  catch { raw = await chatOpenAI(system, user, 1024); }
   const d = parseJSON(raw);
   // Force ending if we're at/past turn 4, or if AI flagged it, or if no choices returned
   const forceEnding = isNearEnd || !!d.isEnding || (Array.isArray(d.choices) && d.choices.length === 0);
