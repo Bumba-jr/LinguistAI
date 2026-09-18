@@ -122,18 +122,23 @@ export const TCF_SYLLABUS: Record<TcfLevel, { title: string; slug: string; focus
     ],
 };
 
-// ── Lesson generation (follows the master lesson structure) ───────────────────
+// ── Lesson generation (follows the master lesson structure — LONG & DETAILED) ─
 export interface TcfLesson {
     title: string;
     objective: string;
-    vocabulary: { fr: string; en: string }[];
+    vocabulary: { fr: string; en: string; gender?: string; example?: { fr: string; en: string }; related?: { fr: string; en: string }[] }[];
     pronunciation: { fr: string; approx: string; en: string }[];
     grammar: { rule: string; explanation: string; examples: { fr: string; en: string; breakdown: string[] }[]; commonMistakes: string[] };
+    transformations: { type: string; fr: string; en: string }[];
     sentenceBuilding: { fr: string; en: string }[];
     practice: { instruction: string; question: string; answer: string }[];
     translationPractice: { en: string; fr: string }[];
+    reverseTranslation: { fr: string; en: string }[];
+    register: { informal: string; neutral: string; formal: string };
+    culture: string;
     freeProduction: string;
     miniTest: { question: string; options: string[]; answer: string }[];
+    review: string[];
 }
 
 export const generateTcfLesson = async (
@@ -142,26 +147,36 @@ export const generateTcfLesson = async (
     focus: string,
     language: Language = 'French'
 ): Promise<TcfLesson> => {
-    const system = `You are an expert French teacher preparing structured lessons for the TCF Canada exam. The student is an ENGLISH speaker at CEFR ${level}.
-Follow these NON-NEGOTIABLE rules:
-- Every French sentence/vocabulary item MUST have its English translation immediately with it.
-- For key grammar examples include a word-by-word breakdown array (e.g. ["je = I", "parle = speak", ...]).
-- Teach French STRUCTURE, never word-for-word English substitution — explain why French constructs ideas differently.
-- Do not teach content above ${level} level.
-Return ONLY valid JSON:
+    const system = `You are an expert French teacher creating a COMPLETE, LONG, DETAILED lesson for the TCF Canada exam. The student is an ENGLISH speaker at CEFR ${level}. This lesson is the student's main study material — it must be thorough enough to learn from alone. Do NOT be brief; depth and breadth are the requirement.
+
+ABSOLUTE RULES:
+- Every French sentence, phrase and word MUST be immediately followed by its English translation.
+- For every important grammar example, include a word-by-word breakdown array (["je = I", "parle = speak", ...]).
+- Teach French STRUCTURE, never word-for-word English substitution — when French constructs an idea differently from English (e.g. "J'ai besoin d'aide" = "I have need of help"), explain WHY.
+- Explain the reason behind every rule; never just state it.
+- Do not teach content above ${level} level, but be exhaustive WITHIN it.
+- Where Canadian/immigration context is useful (work, housing, services), include it and label it [Canada].
+
+Return ONLY valid JSON with ALL of these fields, fully populated:
 {
- "title":"lesson title","objective":"what the learner will be able to DO after this lesson",
- "vocabulary":[{"fr":"word/phrase","en":"English"}],
- "pronunciation":[{"fr":"word/phrase","approx":"simple honest English approximation","en":"meaning"}],
- "grammar":{"rule":"the rule in one line","explanation":"2-4 sentences: rule, structure, why French does it this way (contrast with English where useful)","examples":[{"fr":"example sentence","en":"English","breakdown":["word = meaning","word = meaning"]}],"commonMistakes":["mistake English speakers make + the correct pattern"]},
- "sentenceBuilding":[{"fr":"very short sentence","en":"English"},{"fr":"same sentence expanded","en":"English"},{"fr":"fully expanded sentence","en":"English"}],
- "practice":[{"instruction":"what to do","question":"fill-in/transform exercise","answer":"the answer"}],
- "translationPractice":[{"en":"English sentence to translate","fr":"correct French"}],
- "freeProduction":"a personal production task for the student",
- "miniTest":[{"question":"quick check question","options":["a","b","c","d"],"answer":"the correct option"}]
+ "title":"lesson title",
+ "objective":"what the learner will be able to DO after this lesson",
+ "vocabulary":[12-16 items, each {"fr":"word/phrase","en":"English","gender":"masculine/feminine for nouns, else omit","example":{"fr":"example sentence using it","en":"English"},"related":[{"fr":"related word","en":"meaning"}]} — include related words for at least 6 items],
+ "pronunciation":[4-6 items {"fr":"word/phrase","approx":"simple honest English approximation (admit when imperfect)","en":"meaning"}],
+ "grammar":{"rule":"the rule in one line","explanation":"4-6 sentences: the rule, the structure, WHY French does it this way, contrast with English","examples":[5-6 items {"fr":"example","en":"English","breakdown":["word = meaning", ...]} — vary: statement, negative, question, plural...],"commonMistakes":[3-4 items "the mistake English speakers make + the correct pattern"]},
+ "transformations":[7-8 items showing the KEY verb of the lesson transformed: {"type":"Positive|Negative|Past|Past negative|Future|Future negative|Conditional|Question","fr":"transformed sentence","en":"English"} — all forms of the same core sentence],
+ "sentenceBuilding":[4-5 items from very short to fully expanded, each {"fr":"...","en":"..."}],
+ "practice":[6 exercises {"instruction":"what to do (conjugate/transform/fill in)","question":"exercise in French","answer":"the answer"}] — progress from easy to harder,
+ "translationPractice":[6 items EN→FR {"en":"English sentence","fr":"correct French"}],
+ "reverseTranslation":[4 items FR→EN {"fr":"French sentence","en":"English"}],
+ "register":{"informal":"how this topic is expressed casually with friends, with an example","neutral":"the everyday standard version","formal":"the professional/exam version with an example"},
+ "culture":"a short cultural or [Canada]-context note connected to the lesson topic",
+ "freeProduction":"a personal production task with 3-4 guiding questions the student should answer",
+ "miniTest":[5 MCQs {"question":"question","options":["a","b","c","d"],"answer":"correct option"}] covering different parts of the lesson,
+ "review":["2-3 items to review from earlier in the level, tied to this lesson"]
 }
-Provide 8-10 vocabulary items, 3-4 pronunciation items, 3-4 grammar examples, 3 sentenceBuilding steps, 4 practice exercises, 4 translation items, 4 miniTest questions.`;
-    const raw = await chat(system, `Create a ${level} TCF Canada lesson: "${topicTitle}". Focus: ${focus}.`, 4000, true);
+Do not omit any field. Do not shorten. This is the student's textbook chapter.`;
+    const raw = await chat(system, `Create the complete ${level} TCF Canada lesson: "${topicTitle}". Focus: ${focus}.`, 8000, true);
     return parseJSON(raw);
 };
 

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
@@ -227,13 +227,34 @@ const Curriculum = ({ language }: { language: string }) => {
                         </div>
                     </div>
 
-                    {/* vocabulary */}
-                    <LessonSection title="Vocabulary" icon={<BookOpen size={13} />}>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                    {/* vocabulary — long & detailed */}
+                    <LessonSection title={`Vocabulary (${lesson.vocabulary.length} items)`} icon={<BookOpen size={13} />}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {lesson.vocabulary.map((v, i) => (
-                                <div key={i} className="flex items-baseline justify-between gap-2 border-b border-stone-50 pb-1.5">
-                                    <FrEn fr={v.fr} en={v.en} />
-                                    <button onClick={() => speakText(v.fr, 'French')} className="text-stone-300 hover:text-emerald-500 shrink-0"><Volume2 size={13} /></button>
+                                <div key={i} className="border border-stone-100 rounded-2xl p-3.5 space-y-1.5 bg-stone-50/50">
+                                    <div className="flex items-baseline justify-between gap-2">
+                                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                                            <InteractiveText text={v.fr} language="French" className="font-bold text-stone-900" />
+                                            {v.gender && (
+                                                <span className={cn('text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider',
+                                                    v.gender.toLowerCase().startsWith('f') ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600')}>
+                                                    {v.gender}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <button onClick={() => speakText(v.fr, 'French')} className="text-stone-300 hover:text-emerald-500 shrink-0"><Volume2 size={13} /></button>
+                                    </div>
+                                    <p className="text-sm text-stone-500">{v.en}</p>
+                                    {v.example && <FrEn fr={v.example.fr} en={v.example.en} />}
+                                    {v.related && v.related.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 pt-0.5">
+                                            {v.related.map((r, ri) => (
+                                                <span key={ri} className="text-[10px] font-bold bg-white text-stone-500 border border-stone-100 px-2 py-0.5 rounded-lg">
+                                                    {r.fr} = {r.en}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -285,6 +306,21 @@ const Curriculum = ({ language }: { language: string }) => {
                         )}
                     </LessonSection>
 
+                    {/* transformations — the master transformation system */}
+                    {lesson.transformations?.length > 0 && (
+                        <LessonSection title="Sentence transformations — one idea, every form" icon={<RotateCcw size={13} />}>
+                            <p className="text-xs text-stone-400 mb-3">The same core sentence in every tense and form. Notice what changes and why.</p>
+                            <div className="overflow-hidden rounded-2xl border border-stone-100">
+                                {lesson.transformations.map((t, i) => (
+                                    <div key={i} className={cn('flex items-start gap-3 px-4 py-2.5', i % 2 === 0 ? 'bg-white' : 'bg-stone-50')}>
+                                        <span className="text-[9px] font-black text-violet-500 uppercase tracking-wider w-24 shrink-0 pt-0.5">{t.type}</span>
+                                        <div className="flex-1 min-w-0"><FrEn fr={t.fr} en={t.en} /></div>
+                                    </div>
+                                ))}
+                            </div>
+                        </LessonSection>
+                    )}
+
                     {/* sentence building */}
                     <LessonSection title="Sentence building — from short to full" icon={<PenLine size={13} />}>
                         <div className="space-y-2">
@@ -297,7 +333,7 @@ const Curriculum = ({ language }: { language: string }) => {
                         </div>
                     </LessonSection>
 
-                    {/* practice + translation */}
+                    {/* translation practice — both directions */}
                     <LessonSection title="Practice & translation" icon={<CheckCircle2 size={13} />}>
                         <div className="space-y-3 mb-5">
                             {lesson.practice.map((ex, i) => {
@@ -318,7 +354,7 @@ const Curriculum = ({ language }: { language: string }) => {
                             })}
                         </div>
                         <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Translate EN → FR (active recall — try first!)</p>
-                        <div className="space-y-3">
+                        <div className="space-y-3 mb-5">
                             {lesson.translationPractice.map((t, i) => {
                                 const picked = answers[`t${i}`];
                                 return (
@@ -333,12 +369,62 @@ const Curriculum = ({ language }: { language: string }) => {
                                 );
                             })}
                         </div>
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Translate FR → EN</p>
+                        <div className="space-y-3">
+                            {lesson.reverseTranslation?.map((t, i) => {
+                                const picked = answers[`r${i}`];
+                                return (
+                                    <div key={i} className="bg-stone-50 rounded-2xl p-4">
+                                        <InteractiveText text={t.fr} language="French" className="block text-sm font-semibold text-stone-800 mb-1.5" />
+                                        <button onClick={() => setAnswers(prev => ({ ...prev, [`r${i}`]: 'revealed' }))}
+                                            className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
+                                            {picked ? 'Hide' : 'Show the English'}
+                                        </button>
+                                        {picked && <p className="text-sm text-stone-500 mt-1">{t.en}</p>}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </LessonSection>
+
+                    {/* register */}
+                    {lesson.register && (
+                        <LessonSection title="Register — same idea, three levels of formality" icon={<Languages size={13} />}>
+                            <div className="space-y-2.5">
+                                {[['Informal', lesson.register.informal, 'bg-blue-50 text-blue-800 border-blue-100'],
+                                  ['Neutral', lesson.register.neutral, 'bg-stone-50 text-stone-700 border-stone-100'],
+                                  ['Formal', lesson.register.formal, 'bg-violet-50 text-violet-800 border-violet-100']].map(([label, text, cls], i) => (
+                                    <div key={i} className={cn('rounded-2xl p-4 text-sm leading-relaxed border', cls as string)}>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">{label as string}</p>
+                                        {text as string}
+                                    </div>
+                                ))}
+                            </div>
+                        </LessonSection>
+                    )}
+
+                    {/* culture / Canada context */}
+                    {lesson.culture && (
+                        <LessonSection title="Culture & Canada context" icon={<Flag size={13} />}>
+                            <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-sm text-red-900 leading-relaxed">{lesson.culture}</div>
+                        </LessonSection>
+                    )}
 
                     {/* free production */}
                     <LessonSection title="Free production" icon={<Mic size={13} />}>
                         <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4 text-sm text-violet-800">{lesson.freeProduction}</div>
                     </LessonSection>
+
+                    {/* review */}
+                    {lesson.review?.length > 0 && (
+                        <LessonSection title="Review — keep these warm" icon={<RotateCcw size={13} />}>
+                            <ul className="space-y-1.5">
+                                {lesson.review.map((r, i) => (
+                                    <li key={i} className="text-xs text-stone-600 flex gap-1.5"><RotateCcw size={11} className="text-stone-300 shrink-0 mt-0.5" />{r}</li>
+                                ))}
+                            </ul>
+                        </LessonSection>
+                    )}
 
                     {/* mini test */}
                     <LessonSection title="Mini test" icon={<Trophy size={13} />}>
