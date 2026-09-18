@@ -532,11 +532,9 @@ const StoryModeView = () => {
                             onClick={() => makeChoice(choice.text)}
                             className="w-full text-left p-4 rounded-2xl border-2 border-stone-100 hover:border-emerald-400 hover:bg-emerald-50 transition-all group"
                         >
-                            <InteractiveText
-                                text={choice.text}
-                                language={quizSettings.targetLanguage}
-                                className="font-medium text-stone-800 group-hover:text-emerald-800"
-                            />
+                            {/* plain text on purpose — interactive tokens here would swallow
+                                taps (tooltip stopPropagation) and the choice would never fire */}
+                            <p className="font-medium text-stone-800 group-hover:text-emerald-800">{choice.text}</p>
                             {choice.translation && (
                                 <p className="text-xs text-stone-400 mt-0.5 italic">{choice.translation}</p>
                             )}
