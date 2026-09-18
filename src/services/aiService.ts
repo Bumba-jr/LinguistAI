@@ -571,7 +571,8 @@ Rules:
 - 4 comprehension questions; each has exactly 4 options and ONE correct "answer" matching an option exactly.
 - Text must be natural ${targetLanguage}, never translated-sounding.`;
   const user = `Level: ${level}. Topic: ${topic || 'an interesting everyday story'}. Length: ${paras} paragraphs / ~${words} words.`;
-  const raw = await chat(system, user, Math.min(8000, 1500 + Math.round(words * 5)));
+  // large model — it follows word-count constraints far better on long-form
+  const raw = await chat(system, user, Math.min(8000, 1500 + Math.round(words * 5)), true);
   const d = parseJSON(raw);
   return {
     id: `read-${Date.now()}`,
