@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { generateReadingArticle, type ReadingArticle } from '../services/aiService';
 import { InteractiveText } from './WordBreakdown';
-import { speakText } from '../services/voiceService';
+import { speakText, stopSpeaking } from '../services/voiceService';
 import { cn } from '../lib/utils';
 import {
-  Newspaper, Loader2, Volume2, Trash2, ArrowLeft, Sparkles, CheckCircle2, XCircle, Languages, RotateCcw,
+  Newspaper, Loader2, Volume2, Trash2, ArrowLeft, Sparkles, CheckCircle2, XCircle, Languages, RotateCcw, Square, Clock,
 } from 'lucide-react';
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
@@ -16,33 +16,65 @@ const LEVEL_COLOR: Record<string, string> = {
 };
 const TOPICS = ['Daily life', 'Travel', 'Food & cooking', 'Work & school', 'A mystery', 'Culture & history', 'Technology'];
 
+// default reading level from the placement-test difficulty
+const LEVEL_FOR_DIFFICULTY: Record<string, string> = {
+  beginner: 'A2', intermediate: 'B1', advanced: 'B2',
+};
+
 export default function ReadingLibraryView() {
   const { quizSettings, savedArticles, addSavedArticle, removeSavedArticle, addPoints } = useAppStore() as any;
   const language = quizSettings?.targetLanguage || 'French';
 
   // all hooks before any conditional returns
-  const [level, setLevel] = useState('A2');
+  const [level, setLevel] = useState(LEVEL_FOR_DIFFICULTY[quizSettings?.difficulty] || 'A2');
   const [topic, setTopic] = useState('');
+  const [customTopic, setCustomTopic] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openArticle, setOpenArticle] = useState<ReadingArticle | null>(null);
   const [showAllTranslations, setShowAllTranslations] = useState(false);
+  const [paraTranslation, setParaTranslation] = useState<Record<number, boolean>>({});
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [playingIdx, setPlayingIdx] = useState<number | 'all' | null>(null);
+  const playingAllRef = useRef(false);
+
+  const effectiveTopic = customTopic.trim() || topic;
+
+  // stop playback when leaving the section
+  useEffect(() => () => { playingAllRef.current = false; stopSpeaking(); }, []);
 
   const generate = async () => {
     setLoading(true);
     setError(null);
     try {
-      const article = await generateReadingArticle(language, level, topic.trim() || undefined);
+      const article = await generateReadingArticle(language, level, effectiveTopic || undefined);
       addSavedArticle(article);
       setOpenArticle(article);
       setAnswers({});
       setShowAllTranslations(false);
+      setParaTranslation({});
+      setPlayingIdx(null);
+      playingAllRef.current = false;
     } catch {
       setError('Could not generate the article — the AI may be busy. Try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // read the whole article: paragraphs sequentially, then the chain stops
+  const playWholeArticle = (a: ReadingArticle) => {
+    if (playingIdx === 'all') { playingAllRef.current = false; stopSpeaking(); setPlayingIdx(null); return; }
+    playingAllRef.current = true;
+    setPlayingIdx('all');
+    const playFrom = (i: number) => {
+      if (!playingAllRef.current || i >= a.paragraphs.length) { setPlayingIdx(null); return; }
+      setPlayingIdx(i);
+      speakText(a.paragraphs[i].text, a.language, () => {
+        setTimeout(() => playFrom(i + 1), 500);
+      });
+    };
+    playFrom(0);
   };
 
   // ── article reader ──
@@ -61,8 +93,19 @@ export default function ReadingLibraryView() {
           <h1 className="text-2xl font-black text-stone-900 leading-tight">{a.title}</h1>
           <span className={cn('px-2.5 py-1 rounded-lg text-[11px] font-black shrink-0', LEVEL_COLOR[a.level] || 'bg-stone-100 text-stone-500')}>{a.level}</span>
         </div>
-        <div className="flex items-center gap-3 mb-6">
-          <span className="text-xs text-stone-400">{a.language} · {a.paragraphs.length} paragraphs</span>
+        {(() => {
+          const words = a.paragraphs.reduce((s, p) => s + p.text.split(/\s+/).filter(Boolean).length, 0);
+          const mins = Math.max(1, Math.round(words / 150));
+          return (
+            <p className="text-xs text-stone-400 mb-3">{a.language} · {a.paragraphs.length} paragraphs · ~{words} words · {mins} min read</p>
+          );
+        })()}
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
+          <button onClick={() => playWholeArticle(a)}
+            className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors',
+              playingIdx === 'all' ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100')}>
+            {playingIdx === 'all' ? <><Square size={11} /> Stop</> : <><Volume2 size={12} /> Play article</>}
+          </button>
           <button onClick={() => setShowAllTranslations(v => !v)}
             className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
             <Languages size={12} /> {showAllTranslations ? 'Hide' : 'Show'} all translations
@@ -71,20 +114,30 @@ export default function ReadingLibraryView() {
 
         {/* paragraphs — every word interactive */}
         <div className="space-y-4 mb-8">
-          {a.paragraphs.map((p, i) => (
-            <div key={i} className="bg-white rounded-3xl border border-stone-100 p-5">
-              <div className="flex items-start justify-between gap-3">
-                <InteractiveText text={p.text} language={a.language} className="text-stone-800 leading-relaxed flex-1" />
-                <button onClick={() => speakText(p.text, a.language)}
-                  className="p-2 rounded-xl hover:bg-stone-100 text-stone-400 hover:text-emerald-500 transition-colors shrink-0" title="Listen">
-                  <Volume2 size={15} />
-                </button>
+          {a.paragraphs.map((p, i) => {
+            const showPara = showAllTranslations || paraTranslation[i];
+            const isPlaying = playingIdx === i || playingIdx === 'all';
+            return (
+              <div key={i} className={cn('bg-white rounded-3xl border p-5 transition-colors', isPlaying ? 'border-emerald-300 bg-emerald-50/30' : 'border-stone-100')}>
+                <div className="flex items-start justify-between gap-3">
+                  <InteractiveText text={p.text} language={a.language} className="text-stone-800 leading-relaxed flex-1" />
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <button onClick={() => { stopSpeaking(); setPlayingIdx(playingIdx === i ? null : i); speakText(p.text, a.language, () => setPlayingIdx(pi => pi === i ? null : pi)); }}
+                      className={cn('p-2 rounded-xl transition-colors', isPlaying ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-stone-100 text-stone-400 hover:text-emerald-500')} title="Listen">
+                      {isPlaying ? <Loader2 size={15} className="animate-spin" /> : <Volume2 size={15} />}
+                    </button>
+                    <button onClick={() => setParaTranslation(prev => ({ ...prev, [i]: !prev[i] }))}
+                      className={cn('p-2 rounded-xl transition-colors', (showPara) ? 'bg-stone-100 text-stone-700' : 'hover:bg-stone-100 text-stone-400 hover:text-stone-600')} title="Translate this paragraph">
+                      <Languages size={15} />
+                    </button>
+                  </div>
+                </div>
+                {showPara && (
+                  <p className="text-xs text-stone-400 italic border-l-2 border-stone-200 pl-3 mt-3">{p.translation}</p>
+                )}
               </div>
-              {showAllTranslations && (
-                <p className="text-xs text-stone-400 italic border-l-2 border-stone-200 pl-3 mt-3">{p.translation}</p>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* comprehension quiz */}
@@ -132,10 +185,17 @@ export default function ReadingLibraryView() {
             })}
           </div>
           {answeredCount === a.questions.length && answeredCount > 0 && (
-            <button onClick={() => setAnswers({})}
-              className="mt-5 flex items-center gap-2 text-xs font-bold text-stone-400 hover:text-stone-600 transition-colors">
-              <RotateCcw size={12} /> Reset questions
-            </button>
+            <div className={cn('mt-5 p-4 rounded-2xl flex items-center gap-3',
+              correctCount === a.questions.length ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800')}>
+              {correctCount === a.questions.length ? <CheckCircle2 size={20} /> : <RotateCcw size={20} />}
+              <span className="text-sm font-bold flex-1">
+                Quiz complete — {correctCount}/{a.questions.length} correct · +{correctCount * 3} pts earned
+              </span>
+              <button onClick={() => setAnswers({})}
+                className="text-xs font-bold text-stone-500 hover:text-stone-700 transition-colors">
+                Retry
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -157,7 +217,8 @@ export default function ReadingLibraryView() {
 
       {/* generator */}
       <div className="bg-white rounded-3xl border border-stone-100 p-5 mb-8">
-        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-3">Generate a new article</p>
+        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Generate a new article</p>
+        <p className="text-[11px] text-stone-400 mb-3">Level preselected from your placement — change it any time.</p>
         <div className="flex items-center gap-1.5 mb-3 flex-wrap">
           {LEVELS.map(l => (
             <button key={l} onClick={() => setLevel(l)}
@@ -169,13 +230,19 @@ export default function ReadingLibraryView() {
         </div>
         <div className="flex items-center gap-1.5 mb-3 flex-wrap">
           {TOPICS.map(t => (
-            <button key={t} onClick={() => setTopic(t === topic ? '' : t)}
+            <button key={t} onClick={() => { setTopic(t === topic ? '' : t); setCustomTopic(''); }}
               className={cn('px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors',
                 topic === t ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-white text-stone-400 border-stone-200 hover:border-stone-300')}>
               {t}
             </button>
           ))}
         </div>
+        <input
+          value={customTopic}
+          onChange={e => { setCustomTopic(e.target.value); setTopic(''); }}
+          placeholder="Or write your own topic…"
+          className="w-full px-4 py-2.5 bg-stone-50 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-stone-200 text-stone-800 mb-3"
+        />
         {error && (
           <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-xs mb-3">
             <XCircle size={13} /> {error}
@@ -184,7 +251,7 @@ export default function ReadingLibraryView() {
         <button onClick={generate} disabled={loading}
           className="w-full flex items-center justify-center gap-2 py-3.5 bg-stone-900 text-white text-sm font-bold rounded-2xl hover:bg-stone-700 transition-colors disabled:opacity-50">
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-          {loading ? `Writing a ${level} article…` : `Generate ${level} article${topic ? ` · ${topic}` : ''}`}
+          {loading ? `Writing a ${level} article…` : `Generate ${level} article${effectiveTopic ? ` · ${effectiveTopic}` : ''}`}
         </button>
       </div>
 
