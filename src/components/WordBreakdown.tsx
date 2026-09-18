@@ -139,7 +139,13 @@ const BreakdownWord = ({ token, dark, language }: { token: BreakdownToken; dark:
     const tw = el.offsetWidth;
     const th = el.offsetHeight;
     const left = clamp(a.cx - tw / 2, 8, window.innerWidth - tw - 8);
-    const below = a.top - th - 12 < 8; // not enough room above → open downward
+    // choose the side with enough room; if neither fits, keep the roomier one
+    const roomAbove = a.top - 12;
+    const roomBelow = window.innerHeight - a.bottom - 12;
+    let below: boolean;
+    if (th <= roomAbove) below = false;
+    else if (th <= roomBelow) below = true;
+    else below = roomBelow > roomAbove;
     setRenderPos({
       top: below ? a.bottom + 10 : a.top - th - 10,
       left,
