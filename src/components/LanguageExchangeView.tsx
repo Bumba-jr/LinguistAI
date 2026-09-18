@@ -332,7 +332,7 @@ const AIChat = ({ partner, myLanguage, partnerLanguage, myName, onBack }: {
                         <div className={cn('max-w-[80%] space-y-1.5', msg.role === 'user' ? 'items-end flex flex-col' : 'items-start')}>
                             <div className={cn('px-4 py-3 rounded-2xl text-sm leading-relaxed', msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white border border-stone-100 shadow-sm text-stone-800 rounded-tl-sm')}>
                                 {msg.role === 'partner'
-                                    ? <InteractiveText text={msg.content} language={myLanguage} />
+                                    ? <InteractiveText text={msg.content} language={myLanguage as Language} />
                                     : msg.content}
                             </div>
                             {msg.translation && msg.role === 'partner' && <p className="text-xs text-stone-400 italic px-1">{msg.translation}</p>}
