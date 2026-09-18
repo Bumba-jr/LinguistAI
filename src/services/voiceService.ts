@@ -82,7 +82,8 @@ const playBlob = (blob: Blob, onEnd?: () => void) => {
     onEnd?.();
   };
   audio.onerror = () => onEnd?.();
-  return audio.play();
+  // play() can reject (no audio device / autoplay block) — that must still end the chain
+  return audio.play().catch(() => onEnd?.());
 };
 
 const speakEdge = async (text: string, lang: string, onEnd?: () => void, rate = 0.88, gender: 'female' | 'male' = 'female'): Promise<boolean> => {
@@ -157,17 +158,22 @@ const doSpeak = (text: string, lang: string, onEnd?: () => void, rate = 0.88) =>
   const voice = getBestVoice(lang);
   if (voice) utterance.voice = voice;
 
+  let ended = false;
+  const finish = () => { if (!ended) { ended = true; onEnd?.(); } };
   utterance.onstart = () => startKeepAlive();
-  utterance.onend = () => { if (onEnd) onEnd(); };
+  utterance.onend = finish;
   utterance.onerror = (e) => {
     // 'interrupted' fires when cancel() is called — not a real error
     if (e.error !== 'interrupted' && e.error !== 'canceled') {
       console.warn('[voiceService] SpeechSynthesis error:', e.error);
     }
-    if (onEnd) onEnd();
+    finish();
   };
 
   window.speechSynthesis.speak(utterance);
+  // watchdog — some environments never fire onend/onerror (no voices, muted);
+  // guarantee the callback so waiting UI (playing spinners) never gets stuck
+  setTimeout(finish, Math.max(4000, text.length * 120));
 };
 
 export const speakText = (text: string, lang = 'French', onEnd?: () => void, rate = 0.88, gender: 'female' | 'male' = 'female') => {
