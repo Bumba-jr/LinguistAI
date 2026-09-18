@@ -115,17 +115,21 @@ const BreakdownWord = ({ token, dark, language }: { token: BreakdownToken; dark:
   const tipRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<{ cx: number; top: number; bottom: number } | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeRef = useRef(false);
 
   const open = () => {
+    if (activeRef.current) return; // already open — never reset a positioned tooltip
     const r = btnRef.current?.getBoundingClientRect();
     if (!r) return;
     anchorRef.current = { cx: r.left + r.width / 2, top: r.top, bottom: r.bottom };
     setRenderPos(null);
     setActive(true);
+    activeRef.current = true;
   };
   const close = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
     setActive(false);
+    activeRef.current = false;
     setRenderPos(null);
     setPinned(false);
   };
@@ -183,7 +187,7 @@ const BreakdownWord = ({ token, dark, language }: { token: BreakdownToken; dark:
           open();
           setPinned(true); // clicked — tooltip stays for the actions
         }}
-        onMouseEnter={() => { if (!pinned) hoverTimer.current = setTimeout(open, 220); }}
+        onMouseEnter={() => { if (!pinned) hoverTimer.current = setTimeout(() => { if (!activeRef.current) open(); }, 220); }}
         onMouseLeave={() => { if (!pinned) close(); }}
         className={cn(
           'underline decoration-dotted underline-offset-[5px] decoration-[1.5px] transition-colors cursor-help',
