@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion } from 'motion/react';
-import { Zap, RotateCcw, CheckCircle2, XCircle, ChevronRight, Loader2, Trophy } from 'lucide-react';
+import { Zap, RotateCcw, CheckCircle2, XCircle, ChevronRight, Loader2, Trophy, AlertTriangle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { generateGrammarDrill } from '../services/aiService';
+import { InteractiveText } from './WordBreakdown';
 import { Question } from '../store/useAppStore';
 
 const GRAMMAR_RULES: Record<string, string[]> = {
@@ -26,17 +27,22 @@ const GrammarDrillView = () => {
     const [score, setScore] = useState(0);
     const [finished, setFinished] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const rules = GRAMMAR_RULES[quizSettings.targetLanguage] ?? GRAMMAR_RULES['French'];
 
     const startDrill = async () => {
         if (!selectedRule) return;
         setLoading(true);
+        setError(null);
         try {
             const qs = await generateGrammarDrill(quizSettings.targetLanguage, selectedRule, quizSettings.difficulty, 10);
+            if (qs.length === 0) throw new Error('empty');
             setQuestions(qs);
             setCurrent(0); setScore(0); setFinished(false); setSelected(null); setIsCorrect(null);
-        } catch { /* silent */ }
+        } catch {
+            setError('The AI is busy right now — wait a moment and try again.');
+        }
         finally { setLoading(false); }
     };
 
@@ -58,8 +64,13 @@ const GrammarDrillView = () => {
             <div className="text-center space-y-3">
                 <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mx-auto"><Zap size={38} className="text-rose-600" /></div>
                 <h1 className="text-3xl font-black text-stone-900">Grammar Drill</h1>
-                <p className="text-stone-400">20 rapid-fire questions on one grammar rule. +20 pts per correct answer.</p>
+                <p className="text-stone-400">10 rapid-fire questions on one grammar rule, with English hints and explanations. +20 pts per correct answer.</p>
             </div>
+            {error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm">
+                    <AlertTriangle size={15} className="shrink-0" /> {error}
+                </div>
+            )}
             <div>
                 <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-3">Choose a grammar rule</p>
                 <div className="grid grid-cols-1 gap-2 mb-6">
@@ -89,11 +100,12 @@ const GrammarDrillView = () => {
                 <div className="bg-amber-50 p-5 rounded-2xl"><p className="text-3xl font-black text-amber-600">+{score * 20}</p><p className="text-xs text-stone-400 mt-1">Points earned</p></div>
             </div>
             <div className="flex gap-3 justify-center">
-                <button onClick={() => { setQuestions([]); setSelectedRule(''); }} className="px-6 py-3 bg-stone-100 text-stone-700 rounded-2xl font-bold hover:bg-stone-200 transition-all">
+                <button onClick={() => { setQuestions([]); setSelectedRule(''); setError(null); }} className="px-6 py-3 bg-stone-100 text-stone-700 rounded-2xl font-bold hover:bg-stone-200 transition-all">
                     <RotateCcw size={16} className="inline mr-2" />New Rule
                 </button>
-                <button onClick={startDrill} className="px-6 py-3 bg-rose-600 text-white rounded-2xl font-bold hover:bg-rose-700 transition-all">
-                    Retry Same Rule
+                <button onClick={startDrill} disabled={loading}
+                    className="px-6 py-3 bg-rose-600 text-white rounded-2xl font-bold hover:bg-rose-700 transition-all disabled:opacity-50 flex items-center gap-2">
+                    {loading ? <><Loader2 size={16} className="animate-spin" /> Generating…</> : <><RotateCcw size={16} /> Retry Same Rule</>}
                 </button>
             </div>
         </div>
@@ -117,7 +129,7 @@ const GrammarDrillView = () => {
             <motion.div key={q.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                 className="bg-white rounded-3xl p-8 shadow-sm border border-stone-100">
                 <h2 className="text-2xl font-semibold text-stone-800 mb-2">{q.question}</h2>
-                {q.translation && quizSettings.difficulty !== 'advanced' && <p className="text-stone-400 italic text-sm mb-6">{q.translation}</p>}
+                {q.translation && <p className="text-stone-500 text-sm mb-6">{q.translation}</p>}
                 <div className="space-y-3 mb-6">
                     {q.options?.map((opt, i) => (
                         <button key={i} onClick={() => isCorrect === null && setSelected(opt)} disabled={isCorrect !== null}
@@ -140,6 +152,15 @@ const GrammarDrillView = () => {
                         <div className={cn('p-4 rounded-2xl flex items-center gap-3', isCorrect ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800')}>
                             {isCorrect ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
                             <span className="font-semibold">{isCorrect ? 'Correct! +20 pts' : `Incorrect. Answer: ${q.answer}`}</span>
+                        </div>
+                        {q.explanation && (
+                            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-sm text-amber-900 leading-relaxed">
+                                💡 {q.explanation}
+                            </div>
+                        )}
+                        <div className="p-4 bg-white border border-stone-100 rounded-2xl">
+                            <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest mb-1.5">Break it down — tap any word</p>
+                            <InteractiveText text={q.question} language={quizSettings.targetLanguage} className="block text-sm font-semibold text-stone-800" />
                         </div>
                         <button onClick={handleNext} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-semibold hover:bg-rose-700 transition-all flex items-center justify-center gap-2">
                             {current >= questions.length - 1 ? 'Finish' : 'Next'} <ChevronRight size={20} />

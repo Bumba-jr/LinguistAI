@@ -911,11 +911,14 @@ export const generateGrammarDrill = async (
   difficulty: Difficulty,
   count = 10
 ): Promise<Question[]> => {
-  const system = `You are an expert ${targetLanguage} grammar teacher. Return ONLY valid JSON.
-Generate exactly ${count} rapid-fire multiple choice questions ALL testing this specific grammar rule: "${grammarRule}" in ${targetLanguage} at ${difficulty} level.
+  const system = `You are an expert ${targetLanguage} grammar teacher teaching an ENGLISH-speaking student. Return ONLY valid JSON.
+Generate exactly ${count} multiple choice questions ALL testing this specific grammar rule: "${grammarRule}" in ${targetLanguage} at ${difficulty} level.
 Every question must test a DIFFERENT aspect or example of the rule. No repeats.
-{"questions":[{"question":"string","translation":"string","type":"multiple_choice","options":["a","b","c","d"],"answer":"string"}]}
-Rules: answer MUST be one of the 4 options exactly. All options same language type. No circular questions.`;
+{"questions":[{"question":"the ${targetLanguage} question (fill-in-the-blank with ___ or choose-the-correct-sentence)","translation":"full ENGLISH translation of the question + what is being tested, e.g. 'Yesterday, I ___ to the market. (passé composé vs imparfait)'","type":"multiple_choice","options":["a","b","c","d"],"answer":"string","explanation":"1-2 sentence ENGLISH explanation of WHY the correct answer is right — name the grammar rule and when to use that form"}]}
+Rules:
+- answer MUST be one of the 4 options exactly.
+- All options same language type. No circular questions (answer never quoted in the question).
+- "translation" and "explanation" are ALWAYS in English — the student cannot read ${targetLanguage} explanations yet.`;
   try {
     let raw: string;
     try { raw = await chat(system, `Generate ${count} grammar drill questions for: ${grammarRule}`, 2048, true); }
@@ -928,6 +931,7 @@ Rules: answer MUST be one of the 4 options exactly. All options same language ty
       type: 'multiple_choice' as QuestionType,
       options: Array.isArray(q.options) ? q.options : [],
       answer: q.answer || '',
+      explanation: q.explanation || undefined,
     }));
   } catch { return []; }
 };

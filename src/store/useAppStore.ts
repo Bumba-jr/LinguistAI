@@ -55,6 +55,7 @@ export interface Question {
   answer: string;
   userAnswer?: string;
   isCorrect?: boolean;
+  explanation?: string;
 }
 
 export interface VocabularyItem {
