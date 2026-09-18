@@ -7,6 +7,7 @@ import {
     generateTcfListening, generateTcfReading,
     TcfListening, TcfReading, TcfLevel,
 } from '../../services/tcfService';
+import { logWeakness } from '../../services/tcfStorage';
 
 // ── shared exercise bits ─────────────────────────────────────────────────────
 export const LevelBar = ({ level, onLevelChange }: { level: TcfLevel; onLevelChange: (l: TcfLevel) => void }) => (
@@ -151,7 +152,7 @@ export const TCFListeningTrainer = ({ level, onLevelChange, onDone }: {
 
                     {ex.questions.map((q, i) => (
                         <div key={i}>
-                            <MCQ q={q} i={i} picked={answers[i]} onPick={opt => setAnswers(prev => ({ ...prev, [i]: opt }))} />
+                            <MCQ q={q} i={i} picked={answers[i]} onPick={opt => { setAnswers(prev => ({ ...prev, [i]: opt })); if (opt !== q.answer) logWeakness({ skill: 'listening', level, question: q.question, chosen: opt, answer: q.answer }); }} />
                         </div>
                     ))}
 
@@ -286,7 +287,7 @@ export const TCFReadingTrainer = ({ level, onLevelChange, onDone }: {
 
                     {ex.questions.map((q, i) => (
                         <div key={i}>
-                            <MCQ q={q} i={i} picked={answers[i]} onPick={opt => setAnswers(prev => ({ ...prev, [i]: opt }))} />
+                            <MCQ q={q} i={i} picked={answers[i]} onPick={opt => { setAnswers(prev => ({ ...prev, [i]: opt })); if (opt !== q.answer) logWeakness({ skill: 'reading', level, question: q.question, chosen: opt, answer: q.answer }); }} />
                         </div>
                     ))}
 

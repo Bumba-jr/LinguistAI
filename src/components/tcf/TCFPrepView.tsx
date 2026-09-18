@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
@@ -12,15 +12,17 @@ import {
     generateTcfLesson, evaluateTcfWriting, evaluateTcfSpeaking,
     practiceToScore, TcfLesson, TcfWritingFeedback, TcfSpeakingFeedback,
 } from '../../services/tcfService';
-import { LevelBar, TCFListeningTrainer, TCFReadingTrainer } from './TCFTrainers';
 import {
     getTcfScores, addTcfScore, getCompletedLessons, markLessonComplete,
-    getNclcTarget, setNclcTarget, TcfScoreEntry,
+    getNclcTarget, setNclcTarget, TcfScoreEntry, getWeakLog, getMocks,
+    setLastLesson, getLastLesson, cacheLesson, getCachedLesson,
 } from '../../services/tcfStorage';
 import { recordAndTranscribe } from '../../services/speechService';
+import { LevelBar, TCFListeningTrainer, TCFReadingTrainer } from './TCFTrainers';
+import { TCFMockExam } from './TCFMockExam';
 
 const LEVELS: TcfLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-type TcfTab = 'overview' | 'curriculum' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
+type TcfTab = 'overview' | 'curriculum' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
 
 const SKILL_META = {
     listening: { label: 'Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: '39 questions · 35 min · audio once' },
@@ -136,6 +138,7 @@ const Overview = ({ onGo }: { onGo: (t: TcfTab) => void }) => {
 
 // ── Curriculum tab ───────────────────────────────────────────────────────────
 const Curriculum = ({ language }: { language: string }) => {
+    const { addFlashcard, user } = useAppStore() as any;
     const [level, setLevel] = useState<TcfLevel>('A1');
     const [openTopic, setOpenTopic] = useState<string | null>(null);
     const [lesson, setLesson] = useState<TcfLesson | null>(null);
@@ -144,16 +147,24 @@ const Curriculum = ({ language }: { language: string }) => {
     const [error, setError] = useState<string | null>(null);
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [done, setDone] = useState<string[]>(getCompletedLessons());
+    const [savedVocab, setSavedVocab] = useState<Set<string>>(new Set());
+    const last = getLastLesson();
 
     const openLesson = async (topic: { title: string; slug: string; focus: string }) => {
         const key = `${level}:${topic.slug}`;
         setOpenTopic(key);
         setLesson(null); setAnswers({}); setError(null);
+        setSavedVocab(new Set());
+        setLastLesson(level, topic.slug, topic.title);
+        // cached lessons reopen instantly and identically
+        const cached = getCachedLesson<TcfLesson>(key);
+        if (cached) { setLesson(cached); setLessonKey(key); return; }
         setLoading(true);
         try {
             const l = await generateTcfLesson(level, topic.title, topic.focus, language as any);
             setLesson(l);
             setLessonKey(key);
+            cacheLesson(key, l);
         } catch {
             setError('The AI is busy — try again in a moment.');
         } finally {
@@ -161,10 +172,61 @@ const Curriculum = ({ language }: { language: string }) => {
         }
     };
 
+    const saveAllVocab = () => {
+        if (!lesson) return;
+        lesson.vocabulary.forEach(v => {
+            if (savedVocab.has(v.fr)) return;
+            const card = {
+                id: crypto.randomUUID(),
+                word: v.fr,
+                translation: v.en,
+                language: 'French' as const,
+                nextReview: new Date().toISOString(),
+                lastReviewed: null,
+            };
+            addFlashcard(card);
+            if (user) import('../../services/dbService').then(m => m.upsertFlashcard(user.id, card)).catch(() => { });
+            setSavedVocab(prev => new Set(prev).add(v.fr));
+        });
+    };
+
     const topics = TCF_SYLLABUS[level];
+    const levelPct = (l: TcfLevel) => Math.round(TCF_SYLLABUS[l].filter(t => done.includes(`${l}:${t.slug}`)).length / TCF_SYLLABUS[l].length * 100);
 
     return (
         <div className="space-y-5">
+            {/* roadmap A1 → C2 */}
+            <div className="bg-white rounded-3xl border border-stone-100 p-5">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Your path · A1 → C2</p>
+                    {last && !lesson && (
+                        <button onClick={() => {
+                            setLevel(last.level as TcfLevel);
+                            const topic = TCF_SYLLABUS[last.level as TcfLevel]?.find(t => t.slug === last.slug);
+                            if (topic) openLesson(topic);
+                        }} className="flex items-center gap-1 text-[11px] font-black text-emerald-600 hover:text-emerald-700">
+                            <Play size={11} /> Continue: {last.title}
+                        </button>
+                    )}
+                </div>
+                <div className="grid grid-cols-6 gap-1.5">
+                    {LEVELS.map(l => {
+                        const pct = levelPct(l);
+                        return (
+                            <button key={l} onClick={() => { setLevel(l); setOpenTopic(null); setLesson(null); }}
+                                className={cn('rounded-2xl p-2.5 text-center transition-all border-2',
+                                    level === l ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-100 bg-white hover:border-stone-300')}>
+                                <p className="text-xs font-black">{l}</p>
+                                <div className="h-1 bg-black/10 rounded-full overflow-hidden mt-1.5">
+                                    <div className={cn('h-full rounded-full', pct === 100 ? 'bg-emerald-400' : 'bg-emerald-300')} style={{ width: `${pct}%` }} />
+                                </div>
+                                <p className={cn('text-[8px] font-bold mt-1', level === l ? 'text-white/60' : 'text-stone-300')}>{pct}%</p>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
             {/* level selector */}
             <div className="flex gap-1.5 flex-wrap">
                 {LEVELS.map(l => (
@@ -229,6 +291,17 @@ const Curriculum = ({ language }: { language: string }) => {
 
                     {/* vocabulary — long & detailed */}
                     <LessonSection title={`Vocabulary (${lesson.vocabulary.length} items)`} icon={<BookOpen size={13} />}>
+                        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                            <p className="text-[11px] text-stone-400">Every item: French, gender, example, related words — tap any word for more.</p>
+                            <button onClick={saveAllVocab} disabled={savedVocab.size === lesson.vocabulary.length}
+                                className={cn('flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors',
+                                    savedVocab.size === lesson.vocabulary.length
+                                        ? 'bg-emerald-100 text-emerald-700 cursor-default'
+                                        : 'bg-emerald-500 text-white hover:bg-emerald-600')}>
+                                {savedVocab.size === lesson.vocabulary.length ? <CheckCircle2 size={12} /> : <Save size={12} />}
+                                {savedVocab.size === lesson.vocabulary.length ? 'All saved to deck' : `Save all ${lesson.vocabulary.length} to my deck`}
+                            </button>
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {lesson.vocabulary.map((v, i) => (
                                 <div key={i} className="border border-stone-100 rounded-2xl p-3.5 space-y-1.5 bg-stone-50/50">
@@ -742,7 +815,67 @@ const StopCircleIcon = () => <Square size={30} fill="currentColor" />;
 
 // ── Progress tab ─────────────────────────────────────────────────────────────
 const Progress = ({ scores }: { scores: TcfScoreEntry[] }) => {
-    if (scores.length === 0) {
+    const weak = useMemo(() => getWeakLog(), [scores]);
+    const mocks = useMemo(() => getMocks(), [scores]);
+    const weakTop = useMemo(() => {
+        const counts = new Map<string, { question: string; answer: string; skill: string; count: number }>();
+        weak.forEach(w => {
+            const key = `${w.skill}:${w.question}`;
+            const e = counts.get(key) || { question: w.question, answer: w.answer, skill: w.skill, count: 0 };
+            e.count++;
+            counts.set(key, e);
+        });
+        return [...counts.values()].sort((a, b) => b.count - a.count).slice(0, 6);
+    }, [weak]);
+
+    const weakPanel = weak.length > 0 && (
+        <div className="bg-white rounded-3xl border border-stone-100 p-5">
+            <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle size={15} className="text-red-400" />
+                <p className="font-black text-stone-800 text-sm">Your recurring weaknesses</p>
+                <span className="text-[10px] font-black bg-red-50 text-red-500 px-2 py-0.5 rounded-full">{weak.length} miss{weak.length !== 1 ? 'es' : ''}</span>
+            </div>
+            <div className="space-y-2">
+                {weakTop.map((w, i) => (
+                    <div key={i} className="bg-red-50/60 border border-red-100 rounded-2xl px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-stone-400 w-16 shrink-0">{w.skill}</span>
+                            <span className="text-xs font-bold text-stone-700 flex-1 min-w-0 truncate">{w.question}</span>
+                            <span className="text-[10px] font-black text-red-400 shrink-0">×{w.count}</span>
+                        </div>
+                        <p className="text-[11px] text-emerald-600 font-semibold mt-0.5 pl-[72px]">✓ {w.answer}</p>
+                    </div>
+                ))}
+            </div>
+            <p className="text-[10px] text-stone-300 mt-3">Re-drill the same level in Listening/Reading — these exact concepts will come up again.</p>
+        </div>
+    );
+
+    const mocksPanel = mocks.length > 0 && (
+        <div className="bg-white rounded-3xl border border-stone-100 p-5">
+            <div className="flex items-center gap-2 mb-3">
+                <FileCheck size={15} className="text-red-400" />
+                <p className="font-black text-stone-800 text-sm">Mock exam history</p>
+            </div>
+            <div className="space-y-2">
+                {mocks.slice(0, 5).map((m, i) => (
+                    <div key={i} className={cn('flex items-center gap-3 rounded-2xl px-4 py-2.5', i === 0 ? 'bg-stone-900' : 'bg-stone-50')}>
+                        <span className={cn('text-[11px] font-black', i === 0 ? 'text-white' : 'text-stone-700')}>
+                            {new Date(m.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                        </span>
+                        <span className={cn('text-[10px] flex-1', i === 0 ? 'text-white/50' : 'text-stone-400')}>
+                            L {m.listening.pct}% · R {m.reading.pct}% · W {m.writing.score20}/20 · S {m.speaking.level}
+                        </span>
+                        <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full', i === 0 ? 'bg-amber-400 text-stone-900' : 'bg-stone-200 text-stone-500')}>
+                            weak: {m.weakest}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
+    if (scores.length === 0 && weak.length === 0 && mocks.length === 0) {
         return (
             <div className="bg-white rounded-3xl border border-stone-100 p-10 text-center">
                 <Trophy size={32} className="mx-auto text-stone-200 mb-3" />
@@ -753,6 +886,8 @@ const Progress = ({ scores }: { scores: TcfScoreEntry[] }) => {
     }
     return (
         <div className="space-y-4">
+            {weakPanel}
+            {mocksPanel}
             {(Object.keys(SKILL_META) as (keyof typeof SKILL_META)[]).map(sk => {
                 const items = scores.filter(s => s.skill === sk).slice(0, 6);
                 if (items.length === 0) return null;
@@ -802,6 +937,7 @@ const TCFPrepView = () => {
     const TABS: { id: TcfTab; label: string; icon: any }[] = [
         { id: 'overview', label: 'Overview', icon: Flag },
         { id: 'curriculum', label: 'Learn', icon: BookOpen },
+        { id: 'mock', label: 'Mock Exam', icon: FileCheck },
         { id: 'listening', label: 'Listening', icon: Headphones },
         { id: 'reading', label: 'Reading', icon: BookOpenCheck },
         { id: 'writing', label: 'Writing', icon: PenLine },
@@ -835,6 +971,9 @@ const TCFPrepView = () => {
 
             {tab === 'overview' && <Overview onGo={setTab} />}
             {tab === 'curriculum' && <Curriculum language={language} />}
+            {tab === 'mock' && (
+                <TCFMockExam level={level} onLevelChange={setLevel} />
+            )}
             {tab === 'listening' && (
                 <TCFListeningTrainer level={level} onLevelChange={setLevel} onDone={(pct, label) => {
                     const est = practiceToScore(pct);

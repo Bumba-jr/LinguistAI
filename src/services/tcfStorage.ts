@@ -50,3 +50,85 @@ export const getNclcTarget = (): string => {
 export const setNclcTarget = (t: string) => {
     try { localStorage.setItem(TARGET_KEY, t); } catch { /* quota */ }
 };
+
+// ── weakness log — questions missed in trainers (master prompt §16) ──────────
+export interface TcfWeakEntry {
+    date: string;
+    skill: 'listening' | 'reading';
+    level: string;
+    question: string;
+    chosen: string;
+    answer: string;
+}
+
+const WEAK_KEY = 'linguistai-tcf-weak';
+
+export const getWeakLog = (): TcfWeakEntry[] => {
+    try {
+        const v = JSON.parse(localStorage.getItem(WEAK_KEY) || '[]');
+        return Array.isArray(v) ? v : [];
+    } catch { return []; }
+};
+
+export const logWeakness = (entry: Omit<TcfWeakEntry, 'date'>) => {
+    try {
+        const all = getWeakLog();
+        all.unshift({ ...entry, date: new Date().toISOString() });
+        localStorage.setItem(WEAK_KEY, JSON.stringify(all.slice(0, 80)));
+    } catch { /* quota */ }
+};
+
+// ── last curriculum position (resume) ────────────────────────────────────────
+const LAST_LESSON_KEY = 'linguistai-tcf-last-lesson';
+
+export const setLastLesson = (level: string, slug: string, title: string) => {
+    try { localStorage.setItem(LAST_LESSON_KEY, JSON.stringify({ level, slug, title, date: new Date().toISOString() })); } catch { /* quota */ }
+};
+
+export const getLastLesson = (): { level: string; slug: string; title: string; date: string } | null => {
+    try {
+        const v = JSON.parse(localStorage.getItem(LAST_LESSON_KEY) || 'null');
+        return v && v.level ? v : null;
+    } catch { return null; }
+};
+
+// ── lesson cache — instant, consistent reopening of generated lessons ────────
+const lessonCacheKey = (key: string) => `linguistai-tcf-lesson-${key}`;
+
+export const cacheLesson = (key: string, lesson: unknown) => {
+    try { localStorage.setItem(lessonCacheKey(key), JSON.stringify(lesson)); } catch { /* quota */ }
+};
+
+export const getCachedLesson = <T>(key: string): T | null => {
+    try {
+        const v = localStorage.getItem(lessonCacheKey(key));
+        return v ? (JSON.parse(v) as T) : null;
+    } catch { return null; }
+};
+
+// ── mock exam history ────────────────────────────────────────────────────────
+export interface TcfMockResult {
+    date: string;
+    listening: { pct: number; nclc: string };
+    reading: { pct: number; nclc: string };
+    writing: { score20: number; level: string };
+    speaking: { level: string };
+    weakest: string;
+}
+
+const MOCKS_KEY = 'linguistai-tcf-mocks';
+
+export const getMocks = (): TcfMockResult[] => {
+    try {
+        const v = JSON.parse(localStorage.getItem(MOCKS_KEY) || '[]');
+        return Array.isArray(v) ? v : [];
+    } catch { return []; }
+};
+
+export const saveMock = (r: TcfMockResult) => {
+    try {
+        const all = getMocks();
+        all.unshift(r);
+        localStorage.setItem(MOCKS_KEY, JSON.stringify(all.slice(0, 20)));
+    } catch { /* quota */ }
+};
