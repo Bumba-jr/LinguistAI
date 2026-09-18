@@ -558,17 +558,20 @@ export interface ReadingArticle {
 export const generateReadingArticle = async (
   targetLanguage: Language,
   level: string,
-  topic?: string
+  topic?: string,
+  length?: { paragraphs?: number; words?: number }
 ): Promise<ReadingArticle> => {
+  const paras = Math.min(12, Math.max(1, length?.paragraphs ?? 4));
+  const words = Math.min(900, Math.max(60, length?.words ?? 160));
   const system = `You write graded reading material for ${targetLanguage} learners. Return ONLY valid JSON:
-{"title":"string in ${targetLanguage}","paragraphs":[{"text":"3-5 sentence paragraph in ${targetLanguage}","translation":"full English translation of that paragraph"}],"questions":[{"question":"comprehension question in ENGLISH about the text","options":["4 options in English"],"answer":"the correct option exactly"}]}
+{"title":"string in ${targetLanguage}","paragraphs":[{"text":"paragraph in ${targetLanguage}","translation":"full English translation of that paragraph"}],"questions":[{"question":"comprehension question in ENGLISH about the text","options":["4 options in English"],"answer":"the correct option exactly"}]}
 Rules:
 - CEFR level ${level}: vocabulary and grammar MUST match ${level} (${level === 'A1' ? 'very basic everyday words, present tense only' : level === 'A2' ? 'common vocabulary, present + passé composé' : level === 'B1' ? 'wider vocabulary, past/future tenses, opinions' : level === 'B2' ? 'abstract topics, idiomatic language, complex sentences' : 'near-native richness, nuance and register'}).
-- 3-4 paragraphs telling one coherent story or article on the given topic.
+- LENGTH: exactly ${paras} paragraph${paras !== 1 ? 's' : ''}, together roughly ${words} words of ${targetLanguage} text (translations don't count). Stay within ±20%.
 - 4 comprehension questions; each has exactly 4 options and ONE correct "answer" matching an option exactly.
 - Text must be natural ${targetLanguage}, never translated-sounding.`;
-  const user = `Level: ${level}. Topic: ${topic || 'an interesting everyday story'}.`;
-  const raw = await chat(system, user, 3000);
+  const user = `Level: ${level}. Topic: ${topic || 'an interesting everyday story'}. Length: ${paras} paragraphs / ~${words} words.`;
+  const raw = await chat(system, user, Math.min(8000, 1500 + Math.round(words * 5)));
   const d = parseJSON(raw);
   return {
     id: `read-${Date.now()}`,

@@ -16,6 +16,12 @@ const LEVEL_COLOR: Record<string, string> = {
 };
 const TOPICS = ['Daily life', 'Travel', 'Food & cooking', 'Work & school', 'A mystery', 'Culture & history', 'Technology'];
 
+const LENGTH_PRESETS = [
+    { id: 'short', label: 'Short', paragraphs: 2, words: 80 },
+    { id: 'medium', label: 'Medium', paragraphs: 4, words: 160 },
+    { id: 'long', label: 'Long', paragraphs: 6, words: 260 },
+];
+
 // default reading level from the placement-test difficulty
 const LEVEL_FOR_DIFFICULTY: Record<string, string> = {
   beginner: 'A2', intermediate: 'B1', advanced: 'B2',
@@ -29,6 +35,8 @@ export default function ReadingLibraryView() {
   const [level, setLevel] = useState(LEVEL_FOR_DIFFICULTY[quizSettings?.difficulty] || 'A2');
   const [topic, setTopic] = useState('');
   const [customTopic, setCustomTopic] = useState('');
+  const [lengthId, setLengthId] = useState('medium');
+  const [customWords, setCustomWords] = useState(300);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openArticle, setOpenArticle] = useState<ReadingArticle | null>(null);
@@ -40,6 +48,16 @@ export default function ReadingLibraryView() {
 
   const effectiveTopic = customTopic.trim() || topic;
 
+  const lengthParam = (() => {
+    if (lengthId === 'custom') {
+      const w = Math.min(900, Math.max(60, customWords || 300));
+      return { words: w, paragraphs: Math.min(12, Math.max(1, Math.round(w / 50))) };
+    }
+    const p = LENGTH_PRESETS.find(l => l.id === lengthId) || LENGTH_PRESETS[1];
+    return { words: p.words, paragraphs: p.paragraphs };
+  })();
+  const lengthLabel = lengthId === 'custom' ? `~${lengthParam.words} words` : (LENGTH_PRESETS.find(l => l.id === lengthId)?.label || 'Medium');
+
   // stop playback when leaving the section
   useEffect(() => () => { playingAllRef.current = false; stopSpeaking(); }, []);
 
@@ -47,7 +65,7 @@ export default function ReadingLibraryView() {
     setLoading(true);
     setError(null);
     try {
-      const article = await generateReadingArticle(language, level, effectiveTopic || undefined);
+      const article = await generateReadingArticle(language, level, effectiveTopic || undefined, lengthParam);
       addSavedArticle(article);
       setOpenArticle(article);
       setAnswers({});
@@ -243,6 +261,35 @@ export default function ReadingLibraryView() {
           placeholder="Or write your own topic…"
           className="w-full px-4 py-2.5 bg-stone-50 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-stone-200 text-stone-800 mb-3"
         />
+        <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-2">Length</p>
+        <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+          {LENGTH_PRESETS.map(l => (
+            <button key={l.id} onClick={() => setLengthId(l.id)}
+              className={cn('px-3 py-1.5 rounded-xl text-xs font-bold transition-colors',
+                lengthId === l.id ? 'bg-teal-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
+              {l.label} <span className="opacity-60 font-medium">· ~{l.words}w</span>
+            </button>
+          ))}
+          <button onClick={() => setLengthId('custom')}
+            className={cn('px-3 py-1.5 rounded-xl text-xs font-bold transition-colors',
+              lengthId === 'custom' ? 'bg-teal-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
+            Custom
+          </button>
+        </div>
+        {lengthId === 'custom' && (
+          <div className="flex items-center gap-3 mb-3">
+            <input
+              type="number"
+              min={60}
+              max={900}
+              value={customWords}
+              onChange={e => setCustomWords(Number(e.target.value))}
+              placeholder="300"
+              className="w-32 px-4 py-2.5 bg-stone-50 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-200 text-stone-800"
+            />
+            <span className="text-[11px] text-stone-400">approx. words (60–900) · ~{Math.min(12, Math.max(1, Math.round((customWords || 300) / 50)))} paragraphs</span>
+          </div>
+        )}
         {error && (
           <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-xs mb-3">
             <XCircle size={13} /> {error}
@@ -251,7 +298,7 @@ export default function ReadingLibraryView() {
         <button onClick={generate} disabled={loading}
           className="w-full flex items-center justify-center gap-2 py-3.5 bg-stone-900 text-white text-sm font-bold rounded-2xl hover:bg-stone-700 transition-colors disabled:opacity-50">
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-          {loading ? `Writing a ${level} article…` : `Generate ${level} article${effectiveTopic ? ` · ${effectiveTopic}` : ''}`}
+          {loading ? `Writing a ${level} article (~${lengthParam.words} words)…` : `Generate ${level} article · ${lengthLabel}${effectiveTopic ? ` · ${effectiveTopic}` : ''}`}
         </button>
       </div>
 
