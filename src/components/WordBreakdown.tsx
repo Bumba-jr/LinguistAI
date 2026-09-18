@@ -1,52 +1,105 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Check, Volume2 } from 'lucide-react';
 import { getWordBreakdown, type BreakdownToken } from '../services/aiService';
+import { useAppStore } from '../store/useAppStore';
 import type { Language } from '../store/useAppStore';
+import { speakText } from '../services/voiceService';
 import { cn } from '../lib/utils';
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
+const cleanWord = (s: string) => s.replace(/[.,!?;:«»"'()]/g, '').trim();
 
-/** Tooltip content: meaning, grammar tag, base form, inflection table, explanation. */
-const TooltipBody = ({ token, dark }: { token: BreakdownToken; dark: boolean }) => (
-  <div className={cn(
-    'w-max max-w-[300px] text-left rounded-2xl shadow-2xl p-3.5 space-y-2',
-    dark ? 'bg-[#0d1526] border border-white/15 text-white' : 'bg-stone-900 text-white'
-  )}>
-    <div>
-      <span className="text-sm font-black">{token.word}</span>
-      <span className={cn('mx-1.5', dark ? 'text-white/30' : 'text-white/40')}>—</span>
-      <span className="text-sm font-semibold text-emerald-300">{token.translation || '—'}</span>
-    </div>
-    {token.note && (
-      <p className={cn('text-[10px] font-bold uppercase tracking-wider', dark ? 'text-white/45' : 'text-white/50')}>
-        {token.note}
-      </p>
-    )}
-    {token.base && (
-      <p className={cn('text-xs', dark ? 'text-white/70' : 'text-white/80')}>
-        from <span className="font-bold text-amber-300">{token.base}</span>
-        {token.baseTranslation && <> — {token.baseTranslation}</>}
-      </p>
-    )}
-    {token.forms && token.forms.length > 0 && (
-      <div className="grid grid-cols-2 gap-1">
-        {token.forms.map((f, fi) => (
-          <div key={fi} className={cn('flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-[11px]',
-            dark ? 'bg-white/5' : 'bg-white/10')}>
-            <span className={cn('font-bold', dark ? 'text-white/50' : 'text-white/60')}>{f.form}</span>
-            <span className="font-semibold">{f.value}</span>
-          </div>
-        ))}
+/** Tooltip content: meaning, grammar tag, base form, inflection table, explanation,
+ *  plus actions — hear the word spoken and add it to the flashcard deck. */
+const TooltipBody = ({ token, dark, language }: {
+  token: BreakdownToken; dark: boolean; language: Language;
+}) => {
+  const { addFlashcard, flashcards, user } = useAppStore() as any;
+  // flashcard word: prefer the dictionary form when the token is inflected
+  const cardWord = cleanWord(token.base || token.word);
+  const cardTranslation = token.baseTranslation || token.translation || '';
+  const inDeck = flashcards.some((f: any) =>
+    f.word.toLowerCase().replace(/[.,!?;:«»"'()]/g, '').trim() === cardWord.toLowerCase() && f.language === language);
+
+  const addToDeck = () => {
+    if (inDeck || !cardWord) return;
+    const card = {
+      id: crypto.randomUUID(),
+      word: cardWord,
+      translation: cardTranslation,
+      language,
+      nextReview: new Date().toISOString(),
+      lastReviewed: null,
+    };
+    addFlashcard(card);
+    if (user) {
+      import('../services/dbService').then(m => m.upsertFlashcard(user.id, card)).catch(() => { });
+    }
+  };
+
+  return (
+    <div className={cn(
+      'w-max max-w-[300px] text-left rounded-2xl shadow-2xl p-3.5 space-y-2',
+      dark ? 'bg-[#0d1526] border border-white/15 text-white' : 'bg-stone-900 text-white'
+    )}>
+      <div>
+        <span className="text-sm font-black">{token.word}</span>
+        <span className={cn('mx-1.5', dark ? 'text-white/30' : 'text-white/40')}>—</span>
+        <span className="text-sm font-semibold text-emerald-300">{token.translation || '—'}</span>
       </div>
-    )}
-    {token.explanation && (
-      <p className={cn('text-[11px] leading-relaxed', dark ? 'text-white/60' : 'text-white/70')}>
-        {token.explanation}
-      </p>
-    )}
-  </div>
-);
+      {token.note && (
+        <p className={cn('text-[10px] font-bold uppercase tracking-wider', dark ? 'text-white/45' : 'text-white/50')}>
+          {token.note}
+        </p>
+      )}
+      {token.base && (
+        <p className={cn('text-xs', dark ? 'text-white/70' : 'text-white/80')}>
+          from <span className="font-bold text-amber-300">{token.base}</span>
+          {token.baseTranslation && <> — {token.baseTranslation}</>}
+        </p>
+      )}
+      {token.forms && token.forms.length > 0 && (
+        <div className="grid grid-cols-2 gap-1">
+          {token.forms.map((f, fi) => (
+            <div key={fi} className={cn('flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-[11px]',
+              dark ? 'bg-white/5' : 'bg-white/10')}>
+              <span className={cn('font-bold', dark ? 'text-white/50' : 'text-white/60')}>{f.form}</span>
+              <span className="font-semibold">{f.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {token.explanation && (
+        <p className={cn('text-[11px] leading-relaxed', dark ? 'text-white/60' : 'text-white/70')}>
+          {token.explanation}
+        </p>
+      )}
+      {/* actions — hear it · add to deck */}
+      <div className="flex items-center gap-1.5 pt-1 border-t border-white/10">
+        <button
+          onClick={(e) => { e.stopPropagation(); speakText(cardWord || token.word, language); }}
+          title="Hear it"
+          className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 text-[10px] font-bold transition-colors"
+        >
+          <Volume2 size={11} /> Hear
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); addToDeck(); }}
+          disabled={inDeck || !cardWord}
+          title={inDeck ? 'Already in your deck' : 'Add to flashcards'}
+          className={cn('flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-bold transition-colors',
+            inDeck
+              ? 'bg-emerald-500/30 text-emerald-300 cursor-default'
+              : 'bg-emerald-500 hover:bg-emerald-400 text-white')}
+        >
+          {inDeck ? <Check size={11} /> : <Plus size={11} />}
+          {inDeck ? 'In deck' : 'Add to deck'}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 /**
  * One underlined word with a portal-rendered tooltip. The tooltip is fixed
@@ -54,8 +107,9 @@ const TooltipBody = ({ token, dark }: { token: BreakdownToken; dark: boolean }) 
  * card containers or scroll areas. Hover (desktop) or tap (mobile) to open.
  * All clicks stop propagation — safe inside tappable cards.
  */
-const BreakdownWord = ({ token, dark }: { token: BreakdownToken; dark: boolean }) => {
+const BreakdownWord = ({ token, dark, language }: { token: BreakdownToken; dark: boolean; language: Language }) => {
   const [active, setActive] = useState(false);
+  const [pinned, setPinned] = useState(false); // clicked → stays open until dismissed
   const [renderPos, setRenderPos] = useState<{ top: number; left: number; below: boolean; cx: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
@@ -73,6 +127,7 @@ const BreakdownWord = ({ token, dark }: { token: BreakdownToken; dark: boolean }
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
     setActive(false);
     setRenderPos(null);
+    setPinned(false);
   };
 
   // measure the tooltip once rendered, then clamp it into the viewport
@@ -116,9 +171,14 @@ const BreakdownWord = ({ token, dark }: { token: BreakdownToken; dark: boolean }
     <>
       <button
         ref={btnRef}
-        onClick={(e) => { e.stopPropagation(); active ? close() : open(); }}
-        onMouseEnter={() => { hoverTimer.current = setTimeout(open, 220); }}
-        onMouseLeave={close}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (pinned) { close(); return; }
+          open();
+          setPinned(true); // clicked — tooltip stays for the actions
+        }}
+        onMouseEnter={() => { if (!pinned) hoverTimer.current = setTimeout(open, 220); }}
+        onMouseLeave={() => { if (!pinned) close(); }}
         className={cn(
           'underline decoration-dotted underline-offset-[5px] decoration-[1.5px] transition-colors cursor-help',
           dark
@@ -147,7 +207,7 @@ const BreakdownWord = ({ token, dark }: { token: BreakdownToken; dark: boolean }
               style={{ left: clamp(renderPos.cx - renderPos.left - 5, 10, (tipRef.current?.offsetWidth ?? 300) - 15) }}
             />
           )}
-          <TooltipBody token={token} dark={dark} />
+          <TooltipBody token={token} dark={dark} language={language} />
         </div>,
         document.body
       )}
@@ -186,7 +246,7 @@ export const InteractiveText = ({ text, language, dark = false, className }: {
       {tokens.map((t, i) => (
         <React.Fragment key={i}>
           {i > 0 && ' '}
-          <BreakdownWord token={t} dark={dark} />
+          <BreakdownWord token={t} dark={dark} language={language} />
         </React.Fragment>
       ))}
     </span>
@@ -234,7 +294,7 @@ export const WordBreakdown = ({ text, language, dark = false }: {
         {tokens.map((t, i) => (
           <React.Fragment key={i}>
             {i > 0 && ' '}
-            <BreakdownWord token={t} dark={dark} />
+            <BreakdownWord token={t} dark={dark} language={language} />
           </React.Fragment>
         ))}
       </div>
