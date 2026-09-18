@@ -20,6 +20,7 @@ const GRAMMAR_RULES: Record<string, string[]> = {
 const GrammarDrillView = () => {
     const { quizSettings, addPoints } = useAppStore();
     const [selectedRule, setSelectedRule] = useState('');
+    const [questionCount, setQuestionCount] = useState(10);
     const [questions, setQuestions] = useState<Question[]>([]);
     const [current, setCurrent] = useState(0);
     const [selected, setSelected] = useState<string | null>(null);
@@ -36,8 +37,18 @@ const GrammarDrillView = () => {
         setLoading(true);
         setError(null);
         try {
-            const qs = await generateGrammarDrill(quizSettings.targetLanguage, selectedRule, quizSettings.difficulty, 10);
+            // remember recent questions per language+rule so rounds stay fresh
+            const histKey = `linguistai-drill-history-${quizSettings.targetLanguage}:${selectedRule}`;
+            let recent: string[] = [];
+            try { recent = JSON.parse(localStorage.getItem(histKey) || '[]'); } catch { recent = []; }
+            if (!Array.isArray(recent)) recent = [];
+
+            const qs = await generateGrammarDrill(quizSettings.targetLanguage, selectedRule, quizSettings.difficulty, questionCount, recent);
             if (qs.length === 0) throw new Error('empty');
+            try {
+                const updated = [...recent, ...qs.map(q => q.question)].slice(-30);
+                localStorage.setItem(histKey, JSON.stringify(updated));
+            } catch { /* quota — ignore */ }
             setQuestions(qs);
             setCurrent(0); setScore(0); setFinished(false); setSelected(null); setIsCorrect(null);
         } catch {
@@ -64,13 +75,25 @@ const GrammarDrillView = () => {
             <div className="text-center space-y-3">
                 <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mx-auto"><Zap size={38} className="text-rose-600" /></div>
                 <h1 className="text-3xl font-black text-stone-900">Grammar Drill</h1>
-                <p className="text-stone-400">10 rapid-fire questions on one grammar rule, with English hints and explanations. +20 pts per correct answer.</p>
+                <p className="text-stone-400">Rapid-fire questions on one grammar rule, with English hints and explanations. +20 pts per correct answer. Every round gets fresh questions.</p>
             </div>
             {error && (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm">
                     <AlertTriangle size={15} className="shrink-0" /> {error}
                 </div>
             )}
+            <div>
+                <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-3">How many questions?</p>
+                <div className="flex gap-2 mb-6">
+                    {[5, 10, 15].map(n => (
+                        <button key={n} onClick={() => setQuestionCount(n)}
+                            className={cn('flex-1 py-3 rounded-2xl border-2 text-sm font-black transition-all',
+                                questionCount === n ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-stone-200 text-stone-500 hover:border-stone-300')}>
+                            {n}
+                        </button>
+                    ))}
+                </div>
+            </div>
             <div>
                 <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-3">Choose a grammar rule</p>
                 <div className="grid grid-cols-1 gap-2 mb-6">

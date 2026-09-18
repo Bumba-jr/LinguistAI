@@ -913,15 +913,23 @@ IMPORTANT: "translation" and every choice "translation" MUST be in English — t
 };
 
 // ── Feature 7: Grammar drill ──────────────────────────────────────────────────
+const normDrill = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+
 export const generateGrammarDrill = async (
   targetLanguage: Language,
   grammarRule: string,
   difficulty: Difficulty,
-  count = 10
+  count = 10,
+  recentQuestions: string[] = []
 ): Promise<Question[]> => {
+  const avoid = recentQuestions.length > 0
+    ? `\nSTRICT — these recent questions were already asked. Do NOT repeat them or close paraphrases; test completely different aspects/examples of the rule:\n${recentQuestions.slice(0, 15).map(q => `- ${q}`).join('\n')}`
+    : '';
   const system = `You are an expert ${targetLanguage} grammar teacher teaching an ENGLISH-speaking student. Return ONLY valid JSON.
 Generate exactly ${count} multiple choice questions ALL testing this specific grammar rule: "${grammarRule}" in ${targetLanguage} at ${difficulty} level.
-Every question must test a DIFFERENT aspect or example of the rule. No repeats.
+Every question must test a DIFFERENT aspect or example of the rule. No repeats within the batch.${avoid}
 {"questions":[{"question":"the ${targetLanguage} question (fill-in-the-blank with ___ or choose-the-correct-sentence)","translation":"full ENGLISH translation of the question + what is being tested, e.g. 'Yesterday, I ___ to the market. (passé composé vs imparfait)'","type":"multiple_choice","options":["a","b","c","d"],"answer":"string","explanation":"1-2 sentence ENGLISH explanation of WHY the correct answer is right — name the grammar rule and when to use that form"}]}
 Rules:
 - answer MUST be one of the 4 options exactly.
@@ -932,15 +940,24 @@ Rules:
     try { raw = await chat(system, `Generate ${count} grammar drill questions for: ${grammarRule}`, 2048, true); }
     catch { raw = await chatOpenAI(system, `Generate ${count} grammar drill questions for: ${grammarRule}`, 2048); }
     const result = parseJSON(raw);
-    return (Array.isArray(result.questions) ? result.questions : []).map((q: any, i: number) => ({
-      id: `drill-${i}-${Date.now()}`,
-      question: q.question || '',
-      translation: q.translation || '',
-      type: 'multiple_choice' as QuestionType,
-      options: Array.isArray(q.options) ? q.options : [],
-      answer: q.answer || '',
-      explanation: q.explanation || undefined,
-    }));
+    // hard filter: no duplicates within the batch, none repeated from recent rounds
+    const seen = new Set(recentQuestions.map(normDrill));
+    const out: Question[] = [];
+    for (const q of (Array.isArray(result.questions) ? result.questions : [])) {
+      const key = normDrill(String(q.question || ''));
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        id: `drill-${out.length}-${Date.now()}`,
+        question: q.question || '',
+        translation: q.translation || '',
+        type: 'multiple_choice' as QuestionType,
+        options: Array.isArray(q.options) ? q.options : [],
+        answer: q.answer || '',
+        explanation: q.explanation || undefined,
+      });
+    }
+    return out.slice(0, count);
   } catch { return []; }
 };
 
