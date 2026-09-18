@@ -520,21 +520,25 @@ export interface ConjugationQuestion {
 export const generateConjugationDrill = async (
   verb: string,
   targetLanguage: Language,
-  count = 10
+  count = 10,
+  tenseLabel = 'present',
+  tenseGuide = 'the PRESENT tense'
 ): Promise<ConjugationQuestion[]> => {
-  const system = `You are a ${targetLanguage} grammar drill generator. The student practises conjugating ONE verb.
-Return ONLY valid JSON: {"questions":[{"pronoun":"subject pronoun or person label","verb":"the dictionary form","answer":"the correct conjugated form for that pronoun","tense":"present","translation":"short English gloss of pronoun + verb, e.g. 'we take'"}]}
+  const system = `You are a ${targetLanguage} grammar drill generator. The student practises conjugating ONE verb in ${tenseGuide}.
+Return ONLY valid JSON: {"questions":[{"pronoun":"subject pronoun or person label","verb":"the dictionary form","answer":"the correct conjugated form for that pronoun","tense":"${tenseLabel}","translation":"short English gloss of pronoun + verb in that tense, e.g. 'we took'"}]}
 Rules:
-- Exactly ${count} questions covering DIFFERENT persons — je/tu/il-elle/nous/vous/ils-elles (or ${targetLanguage}-appropriate person labels). If ${count} exceeds the persons, repeat persons with the same correct answers.
-- "answer" is the conjugated form ONLY (no pronoun). Accuracy is critical.
-- "pronoun" uses standard ${targetLanguage} subject pronouns.`;
+- Exactly ${count} questions covering DIFFERENT persons — the standard person set for ${targetLanguage}. If ${count} exceeds the persons, repeat persons with the same correct answers.
+- "answer" is the conjugated form ONLY for simple tenses. For COMPOUND tenses (passé composé, passato prossimo, Perfekt...) the answer MUST include the auxiliary + participle (e.g. "ai pris", "ho preso", "habe genommen"). Use elisions correctly (je → j' before a vowel: "j'ai pris").
+- "answer" is lowercase (no pronoun). Accuracy is critical.
+- "pronoun" uses standard ${targetLanguage} subject pronouns.
+- "translation" reflects the given tense in English.`;
   const raw = await chat(system, `Verb: "${verb}"`, 1500);
   const d = parseJSON(raw);
   return (Array.isArray(d.questions) ? d.questions : [])
     .filter((q: any) => q && q.answer && q.pronoun)
     .map((q: any) => ({
       pronoun: String(q.pronoun), verb: String(q.verb || verb),
-      answer: String(q.answer).trim().toLowerCase(), tense: String(q.tense || 'present'),
+      answer: String(q.answer).trim().toLowerCase(), tense: String(q.tense || tenseLabel),
       translation: String(q.translation || ''),
     }))
     .slice(0, count);
