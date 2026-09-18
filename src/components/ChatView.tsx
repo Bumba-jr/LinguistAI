@@ -1320,6 +1320,18 @@ const ChatView = () => {
   // tutor speech with the user's chosen voice
   const speakTutor = (text: string, onEnd?: () => void) =>
     speakText(text, quizSettings.targetLanguage, onEnd, 0.88, voiceGender);
+
+  // refs mirroring voice state — recognition callbacks capture stale closures
+  const voiceModeRef = useRef(voiceMode);
+  useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
+  const isLoadingRef = useRef(false);
+  useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
+
+  // stop playback and mic when leaving the tutor entirely
+  useEffect(() => () => {
+    stopSpeaking();
+    (window as any).speechSynthesis?.cancel();
+  }, []);
   const [selectedScenario, setSelectedScenario] = useState<Scenario>(SCENARIOS[0]);
   const [scenarioPicker, setScenarioPicker] = useState(false);
   const [expandedCorrection, setExpandedCorrection] = useState<number | null>(null);
@@ -1664,6 +1676,7 @@ const ChatView = () => {
     r.lang = LANG_CODES[quizSettings.targetLanguage] || 'fr-FR';
     r.continuous = false;
     r.interimResults = true; // live transcript while speaking
+    let gotFinal = false;
     r.onstart = () => setIsListening(true);
     r.onresult = (e: any) => {
       let finalText = '';
@@ -1675,6 +1688,7 @@ const ChatView = () => {
       }
       setInterimTranscript(interim);
       if (finalText) {
+        gotFinal = true;
         setLastPronScore(Math.round(e.results[0][0].confidence * 100));
         setInput(finalText);
         setIsListening(false);
@@ -1685,11 +1699,19 @@ const ChatView = () => {
     r.onerror = (e: any) => {
       setIsListening(false);
       setInterimTranscript('');
-      if (e.error === 'no-speech') return; // user just didn't speak, no need to show error
-      if (e.error === 'not-allowed') setChatError('Microphone access denied. Check your browser settings.');
-      else setChatError(`Microphone error: ${e.error}`);
+      if (e.error === 'no-speech') return; // silence — voice mode restarts below
+      if (e.error === 'not-allowed') { setChatError('Microphone access denied. Check your browser settings.'); return; }
+      if (e.error === 'aborted') return;
+      setChatError(`Microphone error: ${e.error}`);
     };
-    r.onend = () => { setIsListening(false); setInterimTranscript(''); };
+    r.onend = () => {
+      setIsListening(false);
+      setInterimTranscript('');
+      // hands-free: if nothing was said (or it was too quiet), re-open the mic
+      if (voiceModeRef.current && !gotFinal && !isLoadingRef.current) {
+        setTimeout(() => startListeningRef.current(), 900);
+      }
+    };
     r.start();
     recognitionRef.current = r;
   };
@@ -1780,6 +1802,8 @@ const ChatView = () => {
       const reviewWords = flashcards.filter(f => chatText.includes(f.word.toLowerCase()));
       if (reviewWords.length > 0) setShowVocabReview(true);
     }
+    stopSpeaking();
+    recognitionRef.current?.stop();
     setActiveSessionId(`session-${Date.now()}`);
     setSessionCreatedAt(new Date().toISOString()); // fresh date for new session
     setMessages([]);
