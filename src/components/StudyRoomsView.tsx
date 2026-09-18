@@ -1018,26 +1018,34 @@ const StudyRoomsView = () => {
     } catch { /* clipboard unavailable */ }
   };
 
-  useEffect(() => {
+  // derive the invite target ONCE — reacting to `rooms` restarts the join loop
+  const [joinTarget] = useState(() => {
     const hash = window.location.hash || '';
     const params = new URLSearchParams(window.location.search);
-    const joinId = hash.match(/#join=([\w-]+)/)?.[1] || params.get('room');
-    if (!joinId) return;
+    return hash.match(/#join=([\w-]+)/)?.[1] || params.get('room') || null;
+  });
+
+  useEffect(() => {
+    if (!joinTarget || !myId) return;
     let alive = true;
     (async () => {
-      // wait for the room list, then auto-join
-      for (let t = 0; t < 10 && alive; t++) {
-        const room = rooms.find(r => r.id === joinId);
-        if (room) {
-          if (myId) await handleJoin(room);
-          window.history.replaceState({}, '', window.location.pathname);
-          return;
-        }
-        await new Promise(r => setTimeout(r, 400));
+      for (let t = 0; t < 12 && alive; t++) {
+        try {
+          const all = await getRooms();
+          const room = all.find(r => r.id === joinTarget);
+          if (room) {
+            await joinRoom(room.id, myId, displayName, avatarUrl).catch(() => { });
+            if (!alive) return;
+            setActiveRoom(room);
+            window.history.replaceState({}, '', window.location.pathname);
+            return;
+          }
+        } catch { /* retry */ }
+        await new Promise(r => setTimeout(r, 500));
       }
     })();
     return () => { alive = false; };
-  }, [rooms, myId]);
+  }, [joinTarget, myId]);
 
   const handleCreate = async () => {
     if (!myId || !form.name.trim()) return;
