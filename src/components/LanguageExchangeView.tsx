@@ -21,6 +21,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { speakText } from '../services/voiceService';
 import { generateChatResponse } from '../services/aiService';
+import { InteractiveText } from './WordBreakdown';
 import { Language, Flashcard } from '../store/useAppStore';
 
 const LANGUAGES = ['French', 'Spanish', 'German', 'Italian', 'Japanese', 'Portuguese', 'Chinese', 'English'];
@@ -329,7 +330,11 @@ const AIChat = ({ partner, myLanguage, partnerLanguage, myName, onBack }: {
                     <div key={i} className={cn('flex gap-2', msg.role === 'user' ? 'flex-row-reverse' : 'flex-row')}>
                         {msg.role === 'partner' && <Avatar url={partner.avatar_url} name={partner.display_name} size={30} isAI />}
                         <div className={cn('max-w-[80%] space-y-1.5', msg.role === 'user' ? 'items-end flex flex-col' : 'items-start')}>
-                            <div className={cn('px-4 py-3 rounded-2xl text-sm leading-relaxed', msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white border border-stone-100 shadow-sm text-stone-800 rounded-tl-sm')}>{msg.content}</div>
+                            <div className={cn('px-4 py-3 rounded-2xl text-sm leading-relaxed', msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white border border-stone-100 shadow-sm text-stone-800 rounded-tl-sm')}>
+                                {msg.role === 'partner'
+                                    ? <InteractiveText text={msg.content} language={myLanguage} />
+                                    : msg.content}
+                            </div>
                             {msg.translation && msg.role === 'partner' && <p className="text-xs text-stone-400 italic px-1">{msg.translation}</p>}
                             {msg.correction && (
                                 <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 text-xs space-y-0.5">
@@ -699,9 +704,9 @@ const VoiceMessage = ({ src, isMe }: { src: string; isMe: boolean }) => {
 };
 
 // ── Direct chat (real user ↔ real user) ──────────────────────────────────────
-const DirectChat = ({ partner, myId, myName, myAvatar, onBack, onlineUsers }: {
+const DirectChat = ({ partner, myId, myName, myAvatar, onBack, onlineUsers, language }: {
     partner: ExchangeProfile; myId: string; myName: string; myAvatar: string | null; onBack: () => void;
-    onlineUsers: Set<string>;
+    onlineUsers: Set<string>; language: string;
 }) => {
     const conversationId = getConversationId(myId, partner.user_id);
     const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -944,7 +949,9 @@ const DirectChat = ({ partner, myId, myName, myAvatar, onBack, onlineUsers }: {
                                     ) : (
                                         <div className={cn('px-4 py-3 rounded-2xl text-sm leading-relaxed',
                                             isMe ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white border border-stone-100 shadow-sm text-stone-800 rounded-tl-sm')}>
-                                            {msg.content}
+                                            {!isMe
+                                                ? <InteractiveText text={msg.content} language={language as any} />
+                                                : msg.content}
                                         </div>
                                     )}
                                     {/* Delete button on hover */}
@@ -1281,6 +1288,7 @@ const LanguageExchangeView = () => {
                     myName={displayName}
                     myAvatar={avatarUrl}
                     onlineUsers={onlineUsers}
+                    language={myProfile?.learning_language ?? quizSettings.targetLanguage}
                     onBack={() => setChatPartner(null)}
                 />
             </div>
@@ -1403,9 +1411,15 @@ const LanguageExchangeView = () => {
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {filteredDiscover.map(p => {
+                                        {[...filteredDiscover].sort((a, b) => {
+                                            // online real users first, then AI partners (always available), then offline
+                                            const rank = (p: ExchangeProfile) =>
+                                                p.user_id.startsWith('ai-') ? 1 : (onlineUsers.has(p.user_id) ? 0 : 2);
+                                            return rank(a) - rank(b);
+                                        }).map(p => {
                                             const isAI = p.user_id.startsWith('ai-');
                                             const status = isAI ? 'ai' : getStatus(p.user_id);
+                                            const isOnline = isAI || onlineUsers.has(p.user_id);
                                             const expanded = bioExpanded.has(p.user_id);
                                             const toggleBio = () => setBioExpanded(prev => {
                                                 const next = new Set(prev);
@@ -1417,13 +1431,23 @@ const LanguageExchangeView = () => {
                                                     className="bg-white rounded-3xl border border-stone-100 shadow-sm p-5 space-y-3">
                                                     {/* Header */}
                                                     <div className="flex items-center gap-3">
-                                                        <Avatar url={p.avatar_url} name={p.display_name} size={52} isAI={isAI} />
+                                                        <div className="relative">
+                                                            <Avatar url={p.avatar_url} name={p.display_name} size={52} isAI={isAI} />
+                                                            {!isAI && (
+                                                                <span className={cn('absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white',
+                                                                    onlineUsers.has(p.user_id) ? 'bg-emerald-500' : 'bg-stone-300')}
+                                                                    title={onlineUsers.has(p.user_id) ? 'Online now' : 'Offline'} />
+                                                            )}
+                                                        </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 flex-wrap">
                                                                 <p className="font-bold text-stone-900 text-base">{p.display_name}</p>
                                                                 {isAI
                                                                     ? <span className="text-[9px] bg-indigo-50 text-indigo-500 border border-indigo-100 px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">AI</span>
                                                                     : <span className="text-[9px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Real</span>}
+                                                                {!isAI && onlineUsers.has(p.user_id) && (
+                                                                    <span className="text-[9px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Online</span>
+                                                                )}
                                                             </div>
                                                             <p className="text-xs text-stone-400 mt-0.5">
                                                                 {LANG_FLAGS[p.native_language]} Native {p.native_language} · Learning {LANG_FLAGS[p.learning_language]} {p.learning_language}
