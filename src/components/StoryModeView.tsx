@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion } from 'motion/react';
-import { BookOpen, Loader2, RotateCcw, Volume2, Square, Star, AlertCircle, Plus, Check } from 'lucide-react';
+import { BookOpen, Loader2, RotateCcw, Volume2, Square, Star, AlertCircle, Plus, Check, Undo2, Library, Trash2, ArrowLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { generateStoryStart, continueStory, StoryNode } from '../services/aiService';
 import { speakText, stopSpeaking } from '../services/voiceService';
@@ -18,23 +18,63 @@ const THEMES = [
     'A restaurant adventure',
 ];
 
+const LENGTHS = [
+    { label: 'Short', turns: 4, blurb: '4 scenes' },
+    { label: 'Standard', turns: 6, blurb: '6 scenes' },
+    { label: 'Long', turns: 8, blurb: '8 scenes' },
+];
+
 const StoryModeView = () => {
-    const { quizSettings, addPoints, addFlashcard, flashcards, user } = useAppStore() as any;
+    const { quizSettings, addPoints, addFlashcard, flashcards, user, savedStories, addSavedStory, removeSavedStory, activeStory, setActiveStory } = useAppStore() as any;
+    // all hooks before any conditional returns
     const [theme, setTheme] = useState('');
     const [customTheme, setCustomTheme] = useState('');
+    const [maxTurns, setMaxTurns] = useState(6);
+    const [storyTheme, setStoryTheme] = useState('');
     const [nodes, setNodes] = useState<StoryNode[]>([]);
     const [chosenPath, setChosenPath] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [undoing, setUndoing] = useState(false);
     const [finished, setFinished] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [totalVocab, setTotalVocab] = useState<{ word: string; translation: string }[]>([]);
     const [showTranslation, setShowTranslation] = useState<Record<string, boolean>>({});
     const [speakingKey, setSpeakingKey] = useState<string | null>(null);
     const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
+    const [readingSaved, setReadingSaved] = useState<any>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const restoredRef = useRef(false);
 
     // Stop any playing audio when leaving the section
     useEffect(() => () => stopSpeaking(), []);
+
+    // Resume an in-progress story after a refresh or navigation away
+    useEffect(() => {
+        if (restoredRef.current) return;
+        restoredRef.current = true;
+        if (activeStory && activeStory.nodes?.length > 0) {
+            setNodes(activeStory.nodes);
+            setChosenPath(activeStory.chosenPath || []);
+            setStoryTheme(activeStory.theme || '');
+            setMaxTurns(activeStory.maxTurns || 6);
+            const vocab: { word: string; translation: string }[] = [];
+            activeStory.nodes.forEach((n: StoryNode) => (n.vocabulary ?? []).forEach(v => {
+                if (!vocab.some(p => p.word === v.word)) vocab.push(v);
+            }));
+            setTotalVocab(vocab);
+            setActiveStory(null);
+        }
+    }, []);
+
+    // keep the in-progress story persisted so nothing is lost mid-story
+    useEffect(() => {
+        if (nodes.length === 0) return;
+        if (finished) { setActiveStory(null); return; }
+        setActiveStory({
+            id: 'active', theme: storyTheme, language: quizSettings.targetLanguage,
+            level: quizSettings.difficulty, nodes, chosenPath, maxTurns, date: new Date().toISOString(),
+        });
+    }, [nodes, chosenPath, finished]);
 
     // Scroll to bottom whenever nodes update
     useEffect(() => {
@@ -88,9 +128,11 @@ const StoryModeView = () => {
             if (!node.text) throw new Error('Empty story response');
             setNodes([node]);
             setChosenPath([]);
+            setStoryTheme(t);
             setTotalVocab(node.vocabulary ?? []);
+            setFinished(false);
         } catch (err: any) {
-            setError(err?.message || 'Failed to start story. Check your API key and try again.');
+            setError(err?.message || 'Failed to start story. Try again.');
         } finally {
             setLoading(false);
         }
@@ -110,7 +152,8 @@ const StoryModeView = () => {
                 quizSettings.difficulty,
                 history,
                 choiceText,
-                turn
+                turn,
+                maxTurns
             );
             if (!next.text) throw new Error('Empty continuation response');
             setNodes(prev => [...prev, next]);
@@ -123,6 +166,16 @@ const StoryModeView = () => {
             if (next.isEnding || (next.choices ?? []).length === 0) {
                 setFinished(true);
                 addPoints(50);
+                addSavedStory({
+                    id: `story-${Date.now()}`,
+                    theme: storyTheme,
+                    language: quizSettings.targetLanguage,
+                    level: quizSettings.difficulty,
+                    nodes: [...nodes, next],
+                    chosenPath: [...chosenPath, choiceText],
+                    maxTurns,
+                    date: new Date().toISOString(),
+                });
                 import('../services/activityLog').then(m => m.logActivity(1)).catch(() => { });
             }
         } catch (err: any) {
@@ -132,17 +185,34 @@ const StoryModeView = () => {
         }
     };
 
+    const undoChoice = () => {
+        if (nodes.length < 2 || loading) return;
+        stopSpeaking();
+        setSpeakingKey(null);
+        setNodes(prev => prev.slice(0, -1));
+        setChosenPath(prev => prev.slice(0, -1));
+        setFinished(false);
+        // rebuild vocab from the remaining nodes only
+        const vocab: { word: string; translation: string }[] = [];
+        nodes.slice(0, -1).forEach(n => (n.vocabulary ?? []).forEach(v => {
+            if (!vocab.some(p => p.word === v.word)) vocab.push(v);
+        }));
+        setTotalVocab(vocab);
+    };
+
     const saveAllVocab = () => {
         totalVocab.forEach(v => saveWord(v));
     };
 
     const reset = () => {
         stopSpeaking();
+        setActiveStory(null);
         setNodes([]);
         setChosenPath([]);
         setFinished(false);
         setTheme('');
         setCustomTheme('');
+        setStoryTheme('');
         setTotalVocab([]);
         setSavedKeys(new Set());
         setSpeakingKey(null);
@@ -150,6 +220,47 @@ const StoryModeView = () => {
     };
 
     const currentNode = nodes[nodes.length - 1];
+
+    // ── Saved-story reader ───────────────────────────────────────────────────
+    if (readingSaved) {
+        const s = readingSaved;
+        return (
+            <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
+                <button onClick={() => setReadingSaved(null)} className="flex items-center gap-2 text-stone-400 hover:text-stone-800 text-sm font-bold transition-colors">
+                    <ArrowLeft size={15} /> Library
+                </button>
+                <div>
+                    <h1 className="text-2xl font-black text-stone-900 leading-tight">{s.theme}</h1>
+                    <p className="text-xs text-stone-400 mt-1">{s.language} · {s.level} · {s.nodes.length} scenes · {new Date(s.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}</p>
+                </div>
+                <div className="space-y-4">
+                    {s.nodes.map((node: StoryNode, i: number) => (
+                        <div key={i} className="bg-white rounded-3xl border border-stone-100 shadow-sm p-6 space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                                <InteractiveText text={node.text} language={s.language} className="text-stone-800 leading-relaxed flex-1" />
+                                <button onClick={() => toggleListen('r' + i, node.text)}
+                                    className={cn('p-2 rounded-xl hover:bg-stone-100 shrink-0 transition-colors', speakingKey === 'r' + i ? 'bg-emerald-100 text-emerald-700' : 'text-stone-400')}>
+                                    {speakingKey === 'r' + i ? <Square size={14} fill="currentColor" /> : <Volume2 size={16} />}
+                                </button>
+                            </div>
+                            {node.translation && (
+                                <p className="text-sm text-stone-400 italic border-l-2 border-stone-200 pl-3">{node.translation}</p>
+                            )}
+                            {(node.vocabulary ?? []).length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {node.vocabulary.map((v, vi) => (
+                                        <span key={vi} className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                                            {v.word} = {v.translation}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     // ── Theme selection screen ────────────────────────────────────────────────
     if (nodes.length === 0) {
@@ -167,6 +278,18 @@ const StoryModeView = () => {
                 </div>
 
                 <div>
+                    <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-3">Story length</p>
+                    <div className="flex gap-2 mb-6">
+                        {LENGTHS.map(l => (
+                            <button key={l.turns} onClick={() => setMaxTurns(l.turns)}
+                                className={cn('flex-1 py-3 rounded-2xl border-2 transition-all',
+                                    maxTurns === l.turns ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-stone-200 text-stone-500 hover:border-stone-300')}>
+                                <p className="text-sm font-black">{l.label}</p>
+                                <p className="text-[10px] font-bold opacity-60">{l.blurb}</p>
+                            </button>
+                        ))}
+                    </div>
+
                     <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-3">Choose a theme</p>
                     <div className="grid grid-cols-2 gap-2 mb-4">
                         {THEMES.map(t => (
@@ -209,6 +332,29 @@ const StoryModeView = () => {
                             : <><BookOpen size={18} /> Begin Story</>}
                     </button>
                 </div>
+
+                {savedStories.length > 0 && (
+                    <div>
+                        <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <Library size={12} /> Your stories ({savedStories.length})
+                        </p>
+                        <div className="space-y-2">
+                            {savedStories.map((s: any) => (
+                                <div key={s.id} onClick={() => setReadingSaved(s)}
+                                    className="group flex items-center justify-between gap-3 bg-white rounded-2xl border border-stone-100 p-4 cursor-pointer hover:border-emerald-300 transition-colors">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-stone-800 text-sm truncate">{s.theme}</p>
+                                        <p className="text-[11px] text-stone-400">{s.language} · {s.level} · {s.nodes.length} scenes · {new Date(s.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}</p>
+                                    </div>
+                                    <button onClick={(e) => { e.stopPropagation(); removeSavedStory(s.id); }}
+                                        className="p-2 rounded-xl text-stone-200 hover:text-red-400 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
@@ -222,9 +368,15 @@ const StoryModeView = () => {
                     <span className="font-bold text-stone-800">Story Mode</span>
                     <span className="text-xs text-stone-400 ml-1">· {quizSettings.targetLanguage}</span>
                 </div>
-                <button onClick={reset} className="text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1">
-                    <RotateCcw size={12} /> New story
-                </button>
+                <div className="flex items-center gap-3">
+                    <span className={cn('text-[10px] font-black px-2 py-1 rounded-full',
+                        finished ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-500')}>
+                        Scene {nodes.length}{finished ? '' : ` · up to ${maxTurns}`}
+                    </span>
+                    <button onClick={reset} className="text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1">
+                        <RotateCcw size={12} /> New story
+                    </button>
+                </div>
             </div>
 
             {/* Story nodes */}
@@ -313,8 +465,10 @@ const StoryModeView = () => {
                 >
                     <Star size={36} className="mx-auto text-amber-400" fill="currentColor" />
                     <h2 className="text-2xl font-black text-stone-900">Story Complete!</h2>
+                    <p className="text-stone-400 text-sm italic">"{storyTheme}"</p>
                     <p className="text-stone-500">
                         You earned <span className="font-black text-amber-500">+50 pts</span> and learned {totalVocab.length} new words.
+                        Saved to <span className="font-bold text-stone-600">Your stories</span>.
                     </p>
                     {totalVocab.length > 0 && (
                         <div className="text-left bg-white rounded-2xl p-4 space-y-1.5">
@@ -363,14 +517,26 @@ const StoryModeView = () => {
                 </div>
             ) : currentNode && (currentNode.choices ?? []).length > 0 ? (
                 <div className="space-y-3">
-                    <p className="text-xs font-black text-stone-400 uppercase tracking-widest">What do you do?</p>
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs font-black text-stone-400 uppercase tracking-widest">What do you do?</p>
+                        {nodes.length > 1 && (
+                            <button onClick={undoChoice} disabled={undoing}
+                                className="flex items-center gap-1 text-[11px] font-bold text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-40">
+                                <Undo2 size={12} /> Undo choice
+                            </button>
+                        )}
+                    </div>
                     {currentNode.choices.map((choice, ci) => (
                         <button
                             key={choice.id ?? ci}
                             onClick={() => makeChoice(choice.text)}
                             className="w-full text-left p-4 rounded-2xl border-2 border-stone-100 hover:border-emerald-400 hover:bg-emerald-50 transition-all group"
                         >
-                            <p className="font-medium text-stone-800 group-hover:text-emerald-800">{choice.text}</p>
+                            <InteractiveText
+                                text={choice.text}
+                                language={quizSettings.targetLanguage}
+                                className="font-medium text-stone-800 group-hover:text-emerald-800"
+                            />
                             {choice.translation && (
                                 <p className="text-xs text-stone-400 mt-0.5 italic">{choice.translation}</p>
                             )}

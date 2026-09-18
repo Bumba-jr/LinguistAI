@@ -888,9 +888,10 @@ export const continueStory = async (
   difficulty: Difficulty,
   storyHistory: string,
   choiceText: string,
-  turnNumber: number
+  turnNumber: number,
+  maxTurns = 6
 ): Promise<StoryNode> => {
-  const isNearEnd = turnNumber >= 6;
+  const isNearEnd = turnNumber >= maxTurns;
   const system = `You are a ${targetLanguage} interactive story writer. Return ONLY valid JSON.
 Continue the story based on the player's choice. Stay consistent with EVERYTHING that happened before — characters, places, and the player's earlier choices must all carry forward. ${isNearEnd ? 'This should be the final scene — wrap up the story with a satisfying ending.' : 'Continue the adventure with 2-3 new choices.'}
 {"id":"node-${turnNumber}","text":"continuation in ${targetLanguage} (3-4 sentences)","translation":"English translation","choices":${isNearEnd ? '[]' : '[{"id":"a","text":"choice","translation":"English"},{"id":"b","text":"choice","translation":"English"}]'},"vocabulary":[{"word":"word","translation":"English"}],"isEnding":${isNearEnd}}

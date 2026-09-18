@@ -1,6 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ReadingArticle } from '../services/aiService';
+import type { StoryNode } from '../services/aiService';
+
+export interface StorySave {
+  id: string;
+  theme: string;
+  language: Language;
+  level: string;
+  nodes: StoryNode[];
+  chosenPath: string[];
+  maxTurns?: number;
+  date: string;
+}
 
 export type QuestionType = 'multiple_choice' | 'fill_in_the_blank' | 'pronunciation' | 'mixed';
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
@@ -181,6 +193,11 @@ interface AppState {
   addSavedPhrase: (phrase: { id: string; phrase: string; translation: string; language: Language; date: string }) => void;
   removeSavedPhrase: (id: string) => void;
   setSavedArticles: (articles: ReadingArticle[]) => void;
+  savedStories: StorySave[];
+  addSavedStory: (s: StorySave) => void;
+  removeSavedStory: (id: string) => void;
+  activeStory: StorySave | null;
+  setActiveStory: (s: StorySave | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -213,6 +230,8 @@ export const useAppStore = create<AppState>()(
       grammarMode: 'strict',
       savedPhrases: [],
       savedArticles: [],
+      savedStories: [],
+      activeStory: null,
       weeklyStats: { sessionsThisWeek: 0, wordsThisWeek: 0, correctionsThisWeek: 0, accuracyThisWeek: 0 },
       totalPoints: 0,
 
@@ -309,6 +328,13 @@ export const useAppStore = create<AppState>()(
       })),
       removeSavedArticle: (id) => set((state) => ({ savedArticles: state.savedArticles.filter(a => a.id !== id) })),
       setSavedArticles: (savedArticles) => set({ savedArticles }),
+      addSavedStory: (story) => set((state) => ({
+        savedStories: state.savedStories.some(s => s.id === story.id)
+          ? state.savedStories
+          : [story, ...state.savedStories].slice(0, 20),
+      })),
+      removeSavedStory: (id) => set((state) => ({ savedStories: state.savedStories.filter(s => s.id !== id) })),
+      setActiveStory: (activeStory) => set({ activeStory }),
     }),
     {
       name: 'linguistai-store',
@@ -321,6 +347,8 @@ export const useAppStore = create<AppState>()(
         grammarMode: state.grammarMode,
         savedPhrases: state.savedPhrases,
         savedArticles: state.savedArticles,
+        savedStories: state.savedStories,
+        activeStory: state.activeStory,
         totalPoints: state.totalPoints,
       }),
       // migrate stale data — ensure mistakeLog entries always have examples array
