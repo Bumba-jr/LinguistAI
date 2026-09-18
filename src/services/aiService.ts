@@ -567,7 +567,7 @@ export const generateReadingArticle = async (
 {"title":"string in ${targetLanguage}","paragraphs":[{"text":"paragraph in ${targetLanguage}","translation":"full English translation of that paragraph"}],"questions":[{"question":"comprehension question in ENGLISH about the text","options":["4 options in English"],"answer":"the correct option exactly"}]}
 Rules:
 - CEFR level ${level}: vocabulary and grammar MUST match ${level} (${level === 'A1' ? 'very basic everyday words, present tense only' : level === 'A2' ? 'common vocabulary, present + passé composé' : level === 'B1' ? 'wider vocabulary, past/future tenses, opinions' : level === 'B2' ? 'abstract topics, idiomatic language, complex sentences' : 'near-native richness, nuance and register'}).
-- LENGTH: exactly ${paras} paragraph${paras !== 1 ? 's' : ''}, together roughly ${words} words of ${targetLanguage} text (translations don't count). Stay within ±20%.
+- LENGTH (critical): exactly ${paras} paragraphs. EACH paragraph must be about ${Math.round(words / paras)} words (4-6 full sentences), together ~${words} words of ${targetLanguage} text — translations don't count. Short paragraphs fail the requirements; if anything, write slightly more.
 - 4 comprehension questions; each has exactly 4 options and ONE correct "answer" matching an option exactly.
 - Text must be natural ${targetLanguage}, never translated-sounding.`;
   const user = `Level: ${level}. Topic: ${topic || 'an interesting everyday story'}. Length: ${paras} paragraphs / ~${words} words.`;
