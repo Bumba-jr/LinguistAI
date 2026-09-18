@@ -481,14 +481,16 @@ export const getWordBreakdown = async (
 Return ONLY valid JSON: {"words":[...]}
 
 Each word object:
-{"word":"the word exactly as it appears (keep punctuation attached to the preceding word, e.g. 'moi.' and 'plaît.')","translation":"ENGLISH meaning of this word as used in this sentence","note":"short ENGLISH grammar tag like '3rd person singular present of être' or 'partitive article' — null for plain nouns","base":"dictionary form if the word is conjugated/inflected (être for 'est'), else null","baseTranslation":"ENGLISH meaning of the base form, else null","forms":[{"form":"person/number/gender label","value":"inflected ${targetLanguage} form"}],"explanation":"1-2 sentence ENGLISH explanation of how the word is used and when its form changes — ALWAYS include for verbs, articles, prepositions, pronouns and adjectives; null for simple nouns"}
+{"word":"the word exactly as it appears (keep punctuation attached to the preceding word, e.g. 'moi.' and 'plaît.')","translation":"ENGLISH meaning(s) — see multi-sense rule below","note":"short ENGLISH grammar tag like '3rd person singular present of être' or 'partitive article' — null for plain nouns","base":"dictionary form if the word is conjugated/inflected (être for 'est'), else null","baseTranslation":"ENGLISH meaning of the base form, else null","forms":[{"form":"person/number/gender label","value":"inflected ${targetLanguage} form"}],"explanation":"ENGLISH explanation — see depth rule below"}
 
 Rules:
 - One entry per word, in the same order as the text. Skip standalone punctuation.
 - "translation", "note" and "explanation" are ALWAYS in English.
+- MULTI-SENSE WORDS (prepositions, articles, pronouns, conjunctions, modals): "translation" MUST list the word's main senses comma-separated in usage order — e.g. à → "to, at, in", dans → "in, inside", de → "of, from, some", en → "in, to, on". Never give just one sense when the word commonly has several.
+- "explanation" depth: for EVERY function word (verb, article, preposition, pronoun, conjunction, adjective, adverb) write 1-3 sentences covering: what it means here, when its form changes, and a quick contrast with its closest confusable word if one exists (à vs de, dans vs sur, mon/ma/mes, est/sont). null only for simple nouns.
 - Conjugated verbs: "forms" = the present-tense table (je, tu, il/elle, nous, vous, ils/elles) — max 8 rows.
 - Articles/adjectives/possessives: "forms" = gender & number variants (le/la/les, mon/ma/mes, petit/petite/petits/petites).
-- Keep every string short — the tooltip must stay readable.`;
+- Keep individual strings compact — the tooltip must stay readable.`;
 
   const raw = await chat(system, `Break down this ${targetLanguage} text word by word:\n"${text}"`, 2500);
   const d = parseJSON(raw);
