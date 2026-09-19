@@ -805,7 +805,8 @@ const FlashcardsView = () => {
 
   // ── Deck section state ─────────────────────────────────────────────────
   const [deckSearch, setDeckSearch] = useState('');
-  const [deckLangFilter, setDeckLangFilter] = useState<string>('all');
+  // deck defaults to the active language's cards — chips let you see everything
+  const [deckLangFilter, setDeckLangFilter] = useState<string>(quizSettings?.targetLanguage || 'all');
   const [deckSort, setDeckSort] = useState<'newest' | 'az' | 'za' | 'due' | 'hardest' | 'confident'>('newest');
   const [deckGroupByLang, setDeckGroupByLang] = useState(false);
   const [collapsedLangs, setCollapsedLangs] = useState<Set<string>>(new Set());
