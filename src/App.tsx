@@ -542,7 +542,7 @@ export default function App() {
             </div>
 
             {/* 4. How it works */}
-            <div className="flex items-start gap-0">
+            <div className="grid grid-cols-3 sm:flex sm:items-start gap-0">
               {[
                 { icon: Upload, label: 'Upload', desc: 'PDF or paste notes', color: '#6366f1', bg: 'rgba(99,102,241,0.08)' },
                 { icon: Sparkles, label: 'AI Generates', desc: 'Lessons, cards & quizzes', color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
@@ -557,7 +557,7 @@ export default function App() {
                     <p className="text-[11px] text-stone-400 mt-0.5">{step.desc}</p>
                   </div>
                   {i < 2 && (
-                    <div className="flex-shrink-0 mb-6" style={{ width: 24 }}>
+                    <div className="hidden sm:block flex-shrink-0 mb-6" style={{ width: 24 }}>
                       <ArrowRight size={14} style={{ color: '#cbd5e1' }} />
                     </div>
                   )}
@@ -683,9 +683,9 @@ export default function App() {
           </div>
         )}
 
-        {/* Top bar — total points — dashboard only */}
+        {/* Top bar — total points — desktop dashboard only (mobile shows it in the app bar) */}
         {activeTab === 'editor' && !hasQuestions && (
-          <div className="flex items-center justify-end px-6 lg:px-12 py-3 border-b border-stone-100 bg-white/60 backdrop-blur-sm">
+          <div className="hidden lg:flex items-center justify-end px-12 py-3 border-b border-stone-100 bg-white/60 backdrop-blur-sm">
             <TotalPointsBadge />
           </div>
         )}

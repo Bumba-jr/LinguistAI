@@ -162,7 +162,7 @@ export const GlobalCallManager: React.FC<Props> = ({ myId, myName, myAvatar }) =
                     <motion.div key="incoming"
                         initial={{ y: -120, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -120, opacity: 0 }}
                         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-                        className="fixed top-5 left-1/2 -translate-x-1/2 z-[200] bg-white rounded-3xl shadow-2xl border border-stone-100 p-5 w-[340px]"
+                        className="fixed top-5 left-1/2 -translate-x-1/2 z-[200] bg-white rounded-3xl shadow-2xl border border-stone-100 p-5 w-[340px] max-w-[calc(100vw-2rem)]"
                     >
                         <div className="flex items-center gap-4 mb-4">
                             <div className="relative">

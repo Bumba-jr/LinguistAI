@@ -338,7 +338,7 @@ const FloatingNotes = ({ userId, contextLabel, wordGoal = 100 }: FloatingNotesPr
             <button
                 onClick={() => setOpen(o => !o)}
                 className={cn(
-                    'fixed top-6 right-6 z-50 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-200',
+                    'fixed top-[4.5rem] right-4 lg:top-6 lg:right-6 z-50 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-200',
                     open
                         ? 'bg-stone-900 text-white shadow-stone-900/30'
                         : 'bg-white text-stone-500 border border-stone-200 hover:border-stone-400 hover:text-stone-800 shadow-stone-200/60'
