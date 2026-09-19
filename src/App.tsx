@@ -66,14 +66,22 @@ const usePlacementGate = (userId?: string) => {
   return show;
 };
 
-// Suspense wrapper for the lazily-loaded tab views
+// Suspense wrapper for the lazily-loaded tab views.
+// The enter animation lives INSIDE the Suspense boundary: when a lazy chunk
+// resolves after the tab's mount animation would have finished, this inner
+// animation still runs — without it the tab can render stuck at opacity 0
+// (blank page) whenever the chunk loads slowly, e.g. on mobile.
 const LazyPage = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={
     <div className="max-w-2xl mx-auto w-full py-24 flex items-center justify-center gap-3 text-stone-300">
       <Loader2 size={24} className="animate-spin" />
       <span className="text-sm font-medium">Loading…</span>
     </div>
-  }>{children}</Suspense>
+  }>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+      {children}
+    </motion.div>
+  </Suspense>
 );
 
 // ── Floating message notification button ─────────────────────────────────────
