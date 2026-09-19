@@ -1144,3 +1144,26 @@ export const transcribeAudio = async (
   const data = await res.json();
   return (data.text || '').trim();
 };
+
+// ── Exchange DM assists ───────────────────────────────────────────────────────
+// 3 short natural replies the learner could send, in the target language.
+export const generateSmartReplies = async (
+    recent: { role: 'me' | 'partner'; content: string }[],
+    targetLanguage: Language
+): Promise<string[]> => {
+    const system = `You are a language-learning assistant. Given a short conversation, suggest 3 SHORT natural replies the LEARNER (the 'Learner' side) could send next in ${targetLanguage}.
+Return ONLY valid JSON: {"replies":["...","...","..."]}
+Rules: each reply is ONE sentence, natural, at an accessible level. Vary the intent — one direct answer, one reaction, one follow-up question. Never repeat the partner's words back.`;
+    const convo = recent.slice(-6).map(m => `${m.role === 'me' ? 'Learner' : 'Partner'}: ${m.content}`).join('\n');
+    const raw = await chat(system, convo, 400);
+    const d = parseJSON(raw);
+    return (Array.isArray(d.replies) ? d.replies : []).filter(Boolean).map(String).slice(0, 3);
+};
+
+// Translate a partner's message into English
+export const translateToEnglish = async (text: string, fromLanguage: Language): Promise<string> => {
+    const system = `Translate the given ${fromLanguage} message into natural English. Return ONLY valid JSON: {"translation":"the English translation"}`;
+    const raw = await chat(system, text, 300);
+    const d = parseJSON(raw);
+    return d.translation || '';
+};

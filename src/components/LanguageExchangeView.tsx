@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-    Users2, Globe, Loader2, MessageSquare, Send, ArrowLeft,
+    Users2, Globe, Loader2, MessageSquare, Send, ArrowLeft, Languages,
     Sparkles, RefreshCw, BookOpen, Volume2, CheckCircle2,
     AlertCircle, X, Bookmark, Target, ChevronRight,
     Settings, Bell, UserCheck, UserX, Clock, Check,
@@ -20,7 +20,7 @@ import {
 } from '../services/dbService';
 import { supabase } from '../lib/supabase';
 import { speakText } from '../services/voiceService';
-import { generateChatResponse } from '../services/aiService';
+import { generateChatResponse, generateSmartReplies, translateToEnglish } from '../services/aiService';
 import { InteractiveText } from './WordBreakdown';
 import { Language, Flashcard } from '../store/useAppStore';
 
@@ -721,12 +721,62 @@ const DirectChat = ({ partner, myId, myName, myAvatar, onBack, onlineUsers, lang
     const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
     const [contextMenu, setContextMenu] = useState<{ msgId: string; x: number; y: number; isMine: boolean } | null>(null);
+    const [smartReplies, setSmartReplies] = useState<string[]>([]);
+    const [loadingReplies, setLoadingReplies] = useState(false);
+    const [translations, setTranslations] = useState<Record<string, string>>({});
+    const [translating, setTranslating] = useState<Record<string, boolean>>({});
+    const [partnerTyping, setPartnerTyping] = useState(false);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // tell the partner we're typing (throttled broadcast)
+    const notifyTyping = () => {
+        try {
+            supabase.channel(`dm_${conversationId}`).send({
+                type: 'broadcast', event: 'dm-typing', payload: { from: myId },
+            });
+        } catch { /* channel not ready */ }
+    };
+    const handleInputChange = (v: string) => {
+        setInput(v);
+        if (typingTimeoutRef.current) return; // throttled — at most every 1.5s
+        notifyTyping();
+        typingTimeoutRef.current = setTimeout(() => { typingTimeoutRef.current = null; }, 1500);
+    };
+
     // Load history on mount + mark as read
     useEffect(() => {
         getDirectMessages(conversationId).then(setMessages).catch(() => { });
         markConversationRead(conversationId);
         getHiddenMessageIds(myId, conversationId).then(setHiddenIds).catch(() => { });
     }, [conversationId]);
+
+    // Smart replies: suggest answers when the partner has the last word
+    const lastMsg = messages[messages.length - 1];
+    const needsReplies = lastMsg && !lastMsg.sender_id.startsWith('temp-') &&
+        (lastMsg.sender_id !== myId) && !lastMsg.content.startsWith('🎤') && input.trim() === '';
+    useEffect(() => {
+        if (!needsReplies || loadingReplies) return;
+        let alive = true;
+        setLoadingReplies(true);
+        const history = messages.slice(-6).map(m => ({ role: (m.sender_id === myId ? 'me' : 'partner') as 'me' | 'partner', content: m.content }));
+        generateSmartReplies(history, language as any)
+            .then(r => { if (alive) setSmartReplies(r); })
+            .catch(() => { if (alive) setSmartReplies([]); })
+            .finally(() => { if (alive) setLoadingReplies(false); });
+        return () => { alive = false; };
+    }, [lastMsg?.id, input, needsReplies, loadingReplies]);
+
+    const translateMessage = async (msg: DirectMessage) => {
+        if (translations[msg.id] || translating[msg.id]) return;
+        setTranslating(prev => ({ ...prev, [msg.id]: true }));
+        try {
+            const tr = await translateToEnglish(msg.content, language as any);
+            setTranslations(prev => ({ ...prev, [msg.id]: tr }));
+        } catch {
+            setTranslations(prev => ({ ...prev, [msg.id]: 'Translation unavailable.' }));
+        } finally {
+            setTranslating(prev => ({ ...prev, [msg.id]: false }));
+        }
+    };
 
     // Realtime subscription
     useEffect(() => {
@@ -776,6 +826,12 @@ const DirectChat = ({ partner, myId, myName, myAvatar, onBack, onlineUsers, lang
                     } else if (Notification.permission === 'default') {
                         Notification.requestPermission();
                     }
+                }
+            })
+            .on('broadcast', { event: 'dm-typing' }, ({ payload }: any) => {
+                if (payload?.from && payload.from !== myId) {
+                    setPartnerTyping(true);
+                    setTimeout(() => setPartnerTyping(false), 2500);
                 }
             })
             .on('postgres_changes', {
@@ -962,6 +1018,22 @@ const DirectChat = ({ partner, myId, myName, myAvatar, onBack, onlineUsers, lang
                                         <Trash2 size={11} />
                                     </button>
                                 </div>
+                                {/* Translate action for received text messages */}
+                                {!isMe && !isVoice && (
+                                    <div className="flex items-center gap-2 px-1">
+                                        <button onClick={() => translateMessage(msg)}
+                                            disabled={!!translating[msg.id]}
+                                            className="flex items-center gap-1 text-[10px] font-bold text-stone-300 hover:text-indigo-500 transition-colors disabled:opacity-40">
+                                            {translating[msg.id] ? <Loader2 size={10} className="animate-spin" /> : <Languages size={10} />}
+                                            {translations[msg.id] ? 'Translation' : 'Translate'}
+                                        </button>
+                                    </div>
+                                )}
+                                {translations[msg.id] && (
+                                    <p className="text-[11px] text-stone-500 italic bg-stone-50 border border-stone-100 rounded-xl px-3 py-1.5 max-w-[80%]">
+                                        {translations[msg.id]}
+                                    </p>
+                                )}
                                 <p className="text-[9px] text-stone-300 px-1">
                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </p>
@@ -1059,10 +1131,37 @@ const DirectChat = ({ partner, myId, myName, myAvatar, onBack, onlineUsers, lang
                         </button>
                     </div>
                 )}
+                {/* Partner typing indicator */}
+                {partnerTyping && (
+                    <div className="flex items-center gap-2 px-2 pb-1">
+                        <div className="bg-white border border-stone-100 shadow-sm rounded-2xl rounded-tl-sm px-3 py-2 flex gap-1 items-center h-7">
+                            {[0, 1, 2].map(i => <motion.div key={i} className="w-1.5 h-1.5 bg-stone-300 rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }} />)}
+                        </div>
+                        <span className="text-[10px] text-stone-400 font-bold">{partner.display_name.split(' ')[0]} is typing…</span>
+                    </div>
+                )}
+                {/* Smart replies — AI-suggested answers when the partner has the last word */}
+                {!isRecording && !voiceBlob && smartReplies.length > 0 && !input.trim() && (
+                    <div className="flex flex-wrap gap-1.5 pb-2 px-1">
+                        {loadingReplies ? (
+                            <span className="flex items-center gap-1.5 text-[10px] font-bold text-stone-300 px-1"><Loader2 size={10} className="animate-spin" /> Thinking of replies…</span>
+                        ) : (
+                            <>
+                                <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest self-center mr-1"><Sparkles size={10} className="inline" /> suggestions</span>
+                                {smartReplies.map((r, i) => (
+                                    <button key={i} onClick={() => setInput(r)}
+                                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-700 text-[11px] font-semibold rounded-full transition-all text-left">
+                                        {r}
+                                    </button>
+                                ))}
+                            </>
+                        )}
+                    </div>
+                )}
                 {/* Text input row */}
                 {!isRecording && !voiceBlob && (
                     <div className="flex gap-2">
-                        <input value={input} onChange={e => setInput(e.target.value)}
+                        <input value={input} onChange={e => handleInputChange(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
                             placeholder={`Message ${partner.display_name}…`}
                             className="flex-1 px-4 py-3 bg-stone-50 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 text-stone-800 border border-stone-100" />
