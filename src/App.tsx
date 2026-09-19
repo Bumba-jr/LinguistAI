@@ -527,7 +527,7 @@ export default function App() {
           </motion.div>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-6 xl:gap-12">
+        <div className="grid lg:grid-cols-[1fr_minmax(320px,380px)] gap-6 xl:gap-12">
           <div className="lg:col-span-2 space-y-8">
 
             {/* Hero text */}
