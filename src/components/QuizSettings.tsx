@@ -99,7 +99,7 @@ const QuizSettings = () => {
   const languages: Language[] = ['French', 'Spanish', 'German', 'Italian', 'Japanese', 'Portuguese', 'Chinese'];
 
   return (
-    <div className="bg-white rounded-3xl p-8 shadow-sm border border-stone-100" id="quiz-settings">
+    <div className="bg-white rounded-3xl p-5 sm:p-8 shadow-sm border border-stone-100" id="quiz-settings">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-stone-900 rounded-xl flex items-center justify-center">
@@ -122,7 +122,7 @@ const QuizSettings = () => {
                 key={lang}
                 onClick={() => updateQuizSettings({ targetLanguage: lang })}
                 className={cn(
-                  "px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all",
+                  "px-1.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold border-2 transition-all text-center",
                   quizSettings.targetLanguage === lang
                     ? "border-emerald-500 bg-emerald-50 text-emerald-900"
                     : "border-stone-50 bg-stone-50 text-stone-500 hover:border-stone-200"
@@ -168,13 +168,13 @@ const QuizSettings = () => {
           <label className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-4 block">
             Proficiency Level
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2">
             {(['beginner', 'intermediate', 'advanced'] as Difficulty[]).map((level) => (
               <button
                 key={level}
                 onClick={() => updateQuizSettings({ difficulty: level })}
                 className={cn(
-                  "flex-1 px-4 py-3 rounded-xl text-sm font-bold border-2 transition-all flex flex-col items-center gap-1",
+                  "flex-1 min-w-[92px] px-2 sm:px-4 py-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all flex flex-col items-center gap-1 text-center",
                   quizSettings.difficulty === level
                     ? "border-emerald-500 bg-emerald-50 text-emerald-900"
                     : "border-stone-50 bg-stone-50 text-stone-500 hover:border-stone-200"
@@ -261,13 +261,13 @@ const QuizSettings = () => {
               <label className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-4 block">
                 Question Type
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 {(['multiple_choice', 'fill_in_the_blank', 'pronunciation', 'mixed'] as QuestionType[]).map((type) => (
                   <button
                     key={type}
                     onClick={() => updateQuizSettings({ type })}
                     className={cn(
-                      "px-4 py-3 rounded-xl text-sm font-medium border-2 transition-all",
+                      "px-2 sm:px-4 py-3 rounded-xl text-xs sm:text-sm font-medium border-2 transition-all text-center leading-snug",
                       quizSettings.type === type
                         ? "border-stone-900 bg-stone-50 text-stone-900"
                         : "border-stone-50 bg-stone-50 text-stone-500 hover:border-stone-200"
