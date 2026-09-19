@@ -148,6 +148,9 @@ interface AppState {
   chatSessions: ChatSession[];
   difficultyScore: number;
   mistakeLog: { category: string; count: number; examples: { original: string; corrected: string; explanation: string }[] }[];
+  // per-language values — difficultyScore/mistakeLog mirror the ACTIVE language
+  difficultyByLang: Record<string, number>;
+  mistakesByLang: Record<string, { category: string; count: number; examples: { original: string; corrected: string; explanation: string }[] }[]>;
   grammarMode: 'strict' | 'fluency';
   savedPhrases: { id: string; phrase: string; translation: string; language: Language; date: string }[];
   savedArticles: ReadingArticle[];
@@ -227,6 +230,8 @@ export const useAppStore = create<AppState>()(
       chatSessions: [],
       difficultyScore: 30,
       mistakeLog: [],
+      difficultyByLang: {},
+      mistakesByLang: {},
       grammarMode: 'strict',
       savedPhrases: [],
       savedArticles: [],
@@ -256,8 +261,19 @@ export const useAppStore = create<AppState>()(
         savedLectures: state.savedLectures.filter(l => l.id !== id),
       })),
       setCurrentQuestionIndex: (currentQuestionIndex) => set({ currentQuestionIndex }),
-      updateQuizSettings: (settings) =>
-        set((state) => ({ quizSettings: { ...state.quizSettings, ...settings } })),
+      updateQuizSettings: (settings) => set((state) => {
+        const quizSettings = { ...state.quizSettings, ...settings };
+        // language switch: swap active difficulty/mistakes to the new profile
+        if (settings.targetLanguage && settings.targetLanguage !== state.quizSettings.targetLanguage) {
+          const lang = settings.targetLanguage;
+          return {
+            quizSettings,
+            difficultyScore: state.difficultyByLang[lang] ?? 30,
+            mistakeLog: state.mistakesByLang[lang] || [],
+          };
+        }
+        return { quizSettings };
+      }),
       addQuizResult: (result) => set((state) => ({ quizHistory: [result, ...state.quizHistory] })),
       setQuizHistory: (quizHistory) => set({ quizHistory }),
       addFlashcard: (card) => set((state) => ({ flashcards: [...state.flashcards, card] })),
@@ -300,21 +316,30 @@ export const useAppStore = create<AppState>()(
       removeChatSession: (id) => set((state) => ({
         chatSessions: state.chatSessions.filter(s => s.id !== id),
       })),
-      updateDifficultyScore: (delta) => set((state) => ({
-        difficultyScore: Math.max(0, Math.min(100, state.difficultyScore + delta)),
-      })),
-      setDifficultyScore: (score) => set({ difficultyScore: Math.max(0, Math.min(100, score)) }),
+      updateDifficultyScore: (delta) => set((state) => {
+        const v = Math.max(0, Math.min(100, state.difficultyScore + delta));
+        const lang = state.quizSettings.targetLanguage;
+        return { difficultyScore: v, difficultyByLang: { ...state.difficultyByLang, [lang]: v } };
+      }),
+      setDifficultyScore: (score) => set((state) => {
+        const v = Math.max(0, Math.min(100, score));
+        const lang = state.quizSettings.targetLanguage;
+        return { difficultyScore: v, difficultyByLang: { ...state.difficultyByLang, [lang]: v } };
+      }),
       logMistake: (category, example) => set((state) => {
-        const existing = state.mistakeLog.find(m => m.category === category);
+        const lang = state.quizSettings.targetLanguage;
+        const langLog = state.mistakesByLang[lang] || [];
+        const existing = langLog.find(m => m.category === category);
         const newExample = example ? [example] : [];
-        if (existing) {
-          return {
-            mistakeLog: state.mistakeLog.map(m => m.category === category
+        const next = existing
+          ? langLog.map(m => m.category === category
               ? { ...m, count: m.count + 1, examples: [...(m.examples || []), ...newExample].slice(-5) }
               : m)
-          };
-        }
-        return { mistakeLog: [...state.mistakeLog, { category, count: 1, examples: newExample }] };
+          : [...langLog, { category, count: 1, examples: newExample }];
+        return {
+          mistakesByLang: { ...state.mistakesByLang, [lang]: next },
+          mistakeLog: next,
+        };
       }),
       setGrammarMode: (mode) => set({ grammarMode: mode }),
       addSavedPhrase: (phrase) => set((state) => ({
@@ -343,6 +368,8 @@ export const useAppStore = create<AppState>()(
         chatSessions: state.chatSessions,
         difficultyScore: state.difficultyScore,
         mistakeLog: state.mistakeLog,
+        difficultyByLang: state.difficultyByLang,
+        mistakesByLang: state.mistakesByLang,
         quizSettings: state.quizSettings,
         grammarMode: state.grammarMode,
         savedPhrases: state.savedPhrases,

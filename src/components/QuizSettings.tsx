@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore, QuestionType, Difficulty, Language } from '../store/useAppStore';
+import { Plus, Check } from 'lucide-react';
+import OnboardingFlow from './OnboardingFlow';
 import { Settings2, Sparkles, Loader2, BookOpen, GraduationCap, Globe } from 'lucide-react';
 import { generateQuestions, generateLecture } from '../services/aiService';
 import { cn } from '../lib/utils';
@@ -22,6 +24,32 @@ const QuizSettings = () => {
   } = useAppStore();
 
   const [generationError, setGenerationError] = useState<{ message: string; isRateLimit: boolean } | null>(null);
+  const [showAddLang, setShowAddLang] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // languages already learning — the active one plus any the user saved
+  const [myLanguages, setMyLanguages] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('linguistai-my-languages') || '[]'); } catch { return []; }
+  });
+
+  const activeLanguage = quizSettings.targetLanguage;
+  const languagesList = [...new Set([activeLanguage, ...myLanguages])];
+
+  const saveMyLanguages = (langs: string[]) => {
+    setMyLanguages(langs);
+    try { localStorage.setItem('linguistai-my-languages', JSON.stringify(langs)); } catch { /* quota */ }
+  };
+
+  const switchLanguage = (lang: string) => {
+    // swap to that profile: difficulty/mistakes follow automatically
+    updateQuizSettings({ targetLanguage: lang as Language });
+  };
+
+  const addLanguage = (lang: string) => {
+    saveMyLanguages([...myLanguages, lang]);
+    switchLanguage(lang);
+    setShowAddLang(false);
+  };
 
   const handleGenerate = async () => {
     const state = useAppStore.getState();
@@ -110,28 +138,58 @@ const QuizSettings = () => {
       </div>
 
       <div className="space-y-8">
-        {/* Language Selector */}
+        {/* Language profile switcher — each language is its own learning space */}
         <div>
           <label className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-4 flex items-center gap-2">
             <Globe size={14} />
-            Target Language
+            My Languages
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            {languages.map((lang) => (
-              <button
-                key={lang}
-                onClick={() => updateQuizSettings({ targetLanguage: lang })}
-                className={cn(
-                  "px-1.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-bold border-2 transition-all text-center",
-                  quizSettings.targetLanguage === lang
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                    : "border-stone-50 bg-stone-50 text-stone-500 hover:border-stone-200"
-                )}
-              >
-                {lang}
-              </button>
-            ))}
+          <div className="space-y-2">
+            {languagesList.map((lang) => {
+              const active = activeLanguage === lang;
+              return (
+                <button
+                  key={lang}
+                  onClick={() => !active && switchLanguage(lang)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all",
+                    active
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-900"
+                      : "border-stone-100 bg-stone-50 text-stone-600 hover:border-stone-300"
+                  )}
+                >
+                  <span className="flex items-center gap-2.5 text-sm font-bold">
+                    <span className="text-xl">{({ French: '🇫🇷', Spanish: '🇪🇸', German: '🇩🇪', Italian: '🇮🇹', Japanese: '🇯🇵', Portuguese: '🇵🇹', Chinese: '🇨🇳', English: '🇬🇧' } as Record<string, string>)[lang] || '🌐'}</span>
+                    {lang}
+                  </span>
+                  {active
+                    ? <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600"><Check size={12} /> Active</span>
+                    : <span className="text-[10px] font-black uppercase tracking-wider text-stone-400">Switch</span>}
+                </button>
+              );
+            })}
           </div>
+          {/* add language */}
+          {showAddLang ? (
+            <div className="mt-2 p-4 rounded-2xl border border-emerald-200 bg-emerald-50/40 space-y-2">
+              <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Add a language — starts its own profile</p>
+              <div className="grid grid-cols-2 gap-2">
+                {languages.filter(l => !languagesList.includes(l)).map(lang => (
+                  <button key={lang} onClick={() => addLanguage(lang)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold text-stone-700 hover:border-emerald-400 transition-colors">
+                    <Plus size={12} className="text-emerald-500" /> {lang}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setShowAddLang(false)} className="text-[10px] font-bold text-stone-400 hover:text-stone-600">Cancel</button>
+            </div>
+          ) : (
+            <button onClick={() => setShowAddLang(true)}
+              className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl border-2 border-dashed border-stone-200 text-stone-400 text-xs font-bold hover:border-emerald-400 hover:text-emerald-600 transition-colors">
+              <Plus size={13} /> Add language
+            </button>
+          )}
+          <p className="mt-2 text-[10px] text-stone-400">Each language keeps its own flashcards, lessons, quizzes and streak.</p>
         </div>
 
         {/* Mode Selector */}

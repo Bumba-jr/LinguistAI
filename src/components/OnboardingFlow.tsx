@@ -19,13 +19,31 @@ const LANGS: { lang: Language; flag: string; note: string }[] = [
     { lang: 'Chinese', flag: '🇨🇳', note: 'HSK ready' },
 ];
 
-const GOALS = [
-    { id: 'tcf', icon: Flag, label: 'Pass the TCF Canada exam', sub: 'Immigration-ready NCLC 7+' },
+const STARTER_WORDS: Record<string, [string, string][]> = {
+    French: [['bonjour', 'hello'], ['merci', 'thank you'], ['je suis', 'I am']],
+    Spanish: [['hola', 'hello'], ['gracias', 'thank you'], ['soy', 'I am']],
+    German: [['hallo', 'hello'], ['danke', 'thank you'], ['ich bin', 'I am']],
+    Italian: [['ciao', 'hello'], ['grazie', 'thank you'], ['sono', 'I am']],
+    Portuguese: [['olá', 'hello'], ['obrigado', 'thank you'], ['eu sou', 'I am']],
+    Japanese: [['こんにちは', 'hello'], ['ありがとう', 'thank you'], ['私は', 'I am']],
+    Chinese: [['你好', 'hello'], ['谢谢', 'thank you'], ['我是', 'I am']],
+};
+
+const EXAMS: Partial<Record<Language, string>> = {
+    French: 'TCF Canada', German: 'Goethe-Zertifikat', Spanish: 'DELE',
+    Italian: 'CILS', Japanese: 'JLPT', Portuguese: 'CAPLE', Chinese: 'HSK',
+};
+const BASE_GOALS = [
     { id: 'travel', icon: Plane, label: 'Travel with confidence', sub: 'Order, ask, explore' },
     { id: 'work', icon: Briefcase, label: 'Work & career', sub: 'Professional language skills' },
     { id: 'school', icon: School, label: 'School & exams', sub: 'Class support and revision' },
     { id: 'family', icon: Home, label: 'Family & community', sub: 'Speak with the people around you' },
     { id: 'explore', icon: Sparkles, label: 'Just exploring', sub: 'See what AI learning feels like' },
+];
+// goals are language-aware: the first card offers the language's official exam
+const getGoals = (lang?: Language | null) => [
+    ...(lang && EXAMS[lang] ? [{ id: 'exam', icon: Flag, label: `Pass the ${EXAMS[lang]} exam`, sub: 'Exam-ready preparation' }] : []),
+    ...BASE_GOALS,
 ];
 
 const TIMES = [
@@ -54,7 +72,17 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
     const toggleGoal = (id: string) => setGoals(prev =>
         prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
 
-    const canContinue = [goals.length > 0, !!lang, true, !!levelId][step];
+    const canContinue = [!!lang, goals.length > 0, true, !!levelId][step];
+
+    // left-panel cards — react to the step and the user's selections
+    const cards: [string, string, string][] =
+        step === 0
+            ? [['bonjour', 'hello', 'French'], ['hola', 'hello', 'Spanish'], ['こんにちは', 'hello', 'Japanese']]
+            : step === 1 && lang
+                ? (STARTER_WORDS[lang] || STARTER_WORDS.French).map(([fr, en]) => [fr, en, lang])
+                : step === 2
+                    ? [[time, 'minutes a day', 'pace']]
+                    : [['level', 'matched to you', 'almost']];
 
     const finish = async () => {
         setSaving(true);
@@ -82,14 +110,14 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
     };
 
     const titles = [
-        <>What do you want<br /><span className="text-stone-400">to achieve?</span></>,
         <>Which language<br /><span className="text-stone-400">do you want to learn?</span></>,
+        <>What do you want<br /><span className="text-stone-400">to achieve?</span></>,
         <>How much time<br /><span className="text-stone-400">can you give daily?</span></>,
         <>How familiar are you<br /><span className="text-stone-400">with {lang || 'it'}?</span></>,
     ];
     const helpers = [
-        'We tailor lessons and exam prep to your goals',
         'Every lesson, quiz and game uses this language',
+        `Goals tailored to ${lang || 'your language'}`,
         'Small daily habits beat long weekend sessions',
         'We never assume — we test before placing you',
     ];
@@ -104,29 +132,31 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
 
     return (
         <div className="fixed inset-0 z-[70] flex bg-white text-stone-900 overflow-hidden">
-            {/* Left visual panel — desktop only */}
+            {/* Left visual panel — DYNAMIC: reacts to the step and selections */}
             <div className="hidden lg:block w-[38%] shrink-0 relative overflow-hidden"
                 style={{ background: 'linear-gradient(160deg,#ecfdf5 0%,#d1fae5 60%,#a7f3d0 130%)' }}>
                 <div className="absolute inset-0 opacity-60"
                     style={{ backgroundImage: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.7), transparent 45%), radial-gradient(circle at 70% 80%, rgba(16,185,129,0.12), transparent 50%)' }} />
-                {/* floating word cards — the product itself, as the visual */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-10">
-                    {[['bonjour', 'hello'], ['gracias', 'thank you'], ['こんにちは', 'hello']].map(([fr, en], i) => (
-                        <motion.div key={i}
-                            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + i * 0.25, type: 'spring', stiffness: 120, damping: 14 }}
-                            className="w-64 bg-white border border-emerald-100 rounded-3xl p-5 shadow-lg shadow-emerald-100/60"
-                            style={{ transform: `rotate(${i === 0 ? -3 : i === 1 ? 2 : -2}deg)` }}>
-                            <div className="flex items-center justify-between">
-                                <p className="text-2xl font-black text-stone-900">{fr}</p>
-                                <button onClick={() => speakText(fr, 'French')} className="text-emerald-400 hover:text-emerald-600"><Volume2 size={16} /></button>
-                            </div>
-                            <p className="text-stone-400 text-sm mt-1">{en}</p>
-                        </motion.div>
-                    ))}
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}
+                    <AnimatePresence mode="popLayout">
+                        {cards.map(([fr, en, tag], i) => (
+                            <motion.div key={step + '-' + tag + '-' + i}
+                                initial={{ opacity: 0, y: 24, rotate: i === 0 ? -3 : i === 1 ? 2 : -2 }}
+                                animate={{ opacity: 1, y: 0, rotate: i === 0 ? -3 : i === 1 ? 2 : -2 }}
+                                exit={{ opacity: 0, y: -16 }}
+                                transition={{ delay: i * 0.15, type: 'spring', stiffness: 120, damping: 14 }}
+                                className="w-64 bg-white border border-emerald-100 rounded-3xl p-5 shadow-lg shadow-emerald-100/60">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-2xl font-black text-stone-900">{fr}</p>
+                                    <button onClick={() => speakText(String(fr), 'French')} className="text-emerald-400 hover:text-emerald-600"><Volume2 size={16} /></button>
+                                </div>
+                                <p className="text-stone-400 text-sm mt-1">{en}</p>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                    <motion.p key={'caption-' + step} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
                         className="text-emerald-700/60 text-xs font-black uppercase tracking-[0.2em] mt-4 text-center">
-                        Your language. Your pace.
+                        {step === 0 ? '7 languages supported' : step === 1 && lang ? `${lang} — great choice` : step === 2 ? `${time} minutes a day` : 'Almost there'}
                     </motion.p>
                 </div>
             </div>
@@ -165,27 +195,8 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
                                 {titles[step]}
                             </h1>
 
-                            {/* step 0: goals (multi-select) */}
+                            {/* step 0: language — FIRST */}
                             {step === 0 && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-10">
-                                    {GOALS.map(g => {
-                                        const on = goals.includes(g.id);
-                                        return (
-                                            <button key={g.id} onClick={() => toggleGoal(g.id)} className={cardCls(on)}>
-                                                <div className="flex items-start justify-between">
-                                                    <g.icon size={18} className={iconCls(on)} />
-                                                    <span className={radio(on)}>{on && <Check size={11} className="text-white" />}</span>
-                                                </div>
-                                                <p className="font-bold mt-3 text-stone-900">{g.label}</p>
-                                                <p className="text-stone-400 text-sm mt-0.5">{g.sub}</p>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-
-                            {/* step 1: language */}
-                            {step === 1 && (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-10">
                                     {LANGS.map(l => {
                                         const on = lang === l.lang;
@@ -197,6 +208,25 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
                                                 </div>
                                                 <p className="font-bold mt-3 text-stone-900">{l.lang}</p>
                                                 <p className="text-stone-400 text-sm mt-0.5">{l.note}</p>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* step 1: goals — language-aware */}
+                            {step === 1 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-10">
+                                    {getGoals(lang).map(g => {
+                                        const on = goals.includes(g.id);
+                                        return (
+                                            <button key={g.id} onClick={() => toggleGoal(g.id)} className={cardCls(on)}>
+                                                <div className="flex items-start justify-between">
+                                                    <g.icon size={18} className={iconCls(on)} />
+                                                    <span className={radio(on)}>{on && <Check size={11} className="text-white" />}</span>
+                                                </div>
+                                                <p className="font-bold mt-3 text-stone-900">{g.label}</p>
+                                                <p className="text-stone-400 text-sm mt-0.5">{g.sub}</p>
                                             </button>
                                         );
                                     })}
