@@ -724,17 +724,10 @@ export default function App() {
         )}
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-12 lg:py-12">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab + (hasLectures ? 'lecture' : hasQuestions ? 'quiz' : 'setup')}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              {renderContent()}
-            </motion.div>
-          </AnimatePresence>
+          {/* CSS transition keyed per tab — immune to the framer-motion + Suspense freeze */}
+          <div key={activeTab + (hasLectures ? 'lecture' : hasQuestions ? 'quiz' : 'setup')} className="tab-fade-in">
+            {renderContent()}
+          </div>
         </main>
 
         <footer className="border-t border-stone-100 py-6 px-4 lg:px-12 lg:py-8">
