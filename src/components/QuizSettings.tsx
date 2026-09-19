@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore, QuestionType, Difficulty, Language } from '../store/useAppStore';
 import { Plus, Check } from 'lucide-react';
 import OnboardingFlow from './OnboardingFlow';
@@ -13,6 +13,7 @@ const QuizSettings = () => {
     quizSettings,
     updateQuizSettings,
     user,
+    flashcards,
     notes,
     extractedText,
     setIsGenerating,
@@ -36,6 +37,17 @@ const QuizSettings = () => {
 
   const activeLanguage = quizSettings.targetLanguage;
   const languagesList = [...new Set([activeLanguage, ...myLanguages])];
+  // self-heal: languages present in the user's actual data are always in the list
+  // (protects against localStorage wipes from multi-tab races)
+  useEffect(() => {
+    if (!user) return;
+    import('../services/dbService').then(m =>
+      m.getFlashcards(user.id).then((cards: any[]) => {
+        const dataLangs = [...new Set(cards.map((c: any) => c.language))].filter(Boolean);
+        setMyLanguages(prev => [...new Set([...prev, ...dataLangs])]);
+      }).catch(() => { })
+    );
+  }, [user]);
 
   const saveMyLanguages = (langs: string[]) => {
     setMyLanguages(langs);
