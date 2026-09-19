@@ -174,7 +174,7 @@ const QuizSettings = () => {
                 key={level}
                 onClick={() => updateQuizSettings({ difficulty: level })}
                 className={cn(
-                  "flex-1 min-w-[92px] px-2 sm:px-4 py-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all flex flex-col items-center gap-1 text-center",
+                  "flex-1 min-w-[84px] px-2 sm:px-4 py-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all flex flex-col items-center gap-1 text-center",
                   quizSettings.difficulty === level
                     ? "border-emerald-500 bg-emerald-50 text-emerald-900"
                     : "border-stone-50 bg-stone-50 text-stone-500 hover:border-stone-200"
