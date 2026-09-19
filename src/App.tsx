@@ -528,7 +528,7 @@ export default function App() {
         )}
 
         <div className="grid lg:grid-cols-[1fr_minmax(320px,380px)] gap-6 xl:gap-12">
-          <div className="lg:col-span-2 space-y-8">
+          <div className="space-y-8">
 
             {/* Hero text */}
             <div className="space-y-5">
@@ -619,7 +619,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="lg:col-span-1">
+          <div>
             <div className="sticky top-32">
               <QuizSettings />
             </div>
