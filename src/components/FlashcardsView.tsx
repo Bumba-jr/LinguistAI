@@ -745,13 +745,15 @@ const FlashcardsView = () => {
     import('../services/dbService').then(m =>
       m.getFlashcards(user.id).then((cards: any[]) => {
         if (!alive) return;
-        if (cards.length > 0 || navigator.onLine) {
-          setFlashcards(cards);
-          import('../services/offlineDeck').then(o => o.saveDeckCache(user.id, cards)).catch(() => { });
-        } else {
-          // offline with empty remote — use the cached deck
-          import('../services/offlineDeck').then(o => setFlashcards(o.loadDeckCache(user.id))).catch(() => { });
-        }
+        // MERGE: keep in-memory cards that Supabase doesn't have yet —
+        // just-seeded starter cards or offline additions must survive the fetch
+        setFlashcards(prev => {
+          const fetchedIds = new Set(cards.map((c: any) => c.id));
+          const localOnly = prev.filter((p: any) => !fetchedIds.has(p.id));
+          const merged = [...cards, ...localOnly];
+          import('../services/offlineDeck').then(o => o.saveDeckCache(user.id, merged)).catch(() => { });
+          return merged;
+        });
       }).catch(() => {
         if (alive) import('../services/offlineDeck').then(o => setFlashcards(o.loadDeckCache(user.id))).catch(() => { });
       }).finally(() => { if (alive) setCardsLoading(false); })
