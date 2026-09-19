@@ -56,12 +56,15 @@ const QuizSettings = () => {
   };
 
   const finishSwitchFlow = (result: { difficultyScore: number; difficulty: string; goals: string[]; starters: { word: string; translation: string }[] }) => {
-    // apply the profile: difficulty, starter cards, then activate
+    // 1. activate the language (syncs stored difficulty — default 30)
+    switchLanguage(pendingLang!);
+    // 2. THEN apply the flow's difficulty so it sticks in the per-language map
     useAppStore.getState().setDifficultyScore(result.difficultyScore);
     useAppStore.getState().updateQuizSettings({ difficulty: result.difficulty as Difficulty });
+    // 3. seed the starter cards into the new deck
     result.starters.forEach((c, i) => {
       const card = {
-        id: `starter-${activeLanguage}-${i}-${Date.now()}`,
+        id: `starter-${pendingLang}-${i}-${Date.now()}`,
         word: c.word, translation: c.translation,
         language: (pendingLang || activeLanguage) as Language,
         nextReview: new Date().toISOString(), lastReviewed: null,
@@ -70,7 +73,6 @@ const QuizSettings = () => {
       if (user) import('../services/dbService').then(m => m.upsertFlashcard(user.id, card)).catch(() => { });
     });
     saveMyLanguages([...myLanguages, pendingLang!]);
-    switchLanguage(pendingLang!);
     setPendingLang(null);
   };
 
