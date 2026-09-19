@@ -62,6 +62,8 @@ const LeaderboardView = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [tab, setTab] = useState<'global' | 'me'>('global');
+    const [langTab, setLangTab] = useState<string>('all');
+    const allLanguages = ['all', 'French', 'Spanish', 'German', 'Italian', 'Japanese', 'Portuguese', 'Chinese'];
 
     const fetchLeaderboard = async () => {
         setLoading(true); setError(null);
@@ -90,6 +92,7 @@ const LeaderboardView = () => {
 
     const liveEntries = entries
         .map(e => e.user_id === myUserId ? { ...e, best_score: totalPoints } : e)
+        .filter(e => langTab === 'all' || e.language === langTab || (e.user_id === myUserId && !e.language))
         .sort((a, b) => b.best_score - a.best_score);
 
     const myRank = liveEntries.findIndex(e => e.user_id === myUserId) + 1;
@@ -151,6 +154,17 @@ const LeaderboardView = () => {
                             {nextTier.min - totalPoints} pts to {nextTier.label} {totalPoints > 0 && totalPoints < 50 ? '🔥 keep going' : ''}
                         </motion.p>
                     )}
+                </div>
+
+                {/* Language tabs */}
+                <div className="flex gap-1.5 flex-wrap justify-center">
+                    {allLanguages.map(l => (
+                        <button key={l} onClick={() => setLangTab(l)}
+                            className={cn('px-3 py-1.5 rounded-xl text-[11px] font-black transition-all',
+                                langTab === l ? 'bg-amber-400 text-stone-900' : 'text-white/40 hover:text-white bg-white/5')}>
+                            {l === 'all' ? '🌍 All languages' : l}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Tabs */}

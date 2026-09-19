@@ -847,30 +847,26 @@ const FlashcardsView = () => {
     return d.toDateString();
   };
 
-  // Load stats on mount
+  // Load per-language stats on mount (each language keeps its own streak)
   useEffect(() => {
-    if (!user) return;
-    import('../services/dbService').then(m =>
-      m.getUserStats(user.id).then((row: any) => {
-        if (!row) return;
-        const today = calendarDate(0);
-        const yesterday = calendarDate(-1);
-        const streakCount = (row.streak_last_date === today || row.streak_last_date === yesterday)
-          ? row.streak_count : 0;
-        const dailyCount = row.daily_date === today ? row.daily_count : 0;
-        setStreak(streakCount);
-        setDailyGoal(row.daily_goal ?? 20);
-        setDailyProgress(dailyCount);
-        statsRef.current = {
-          streak: streakCount,
-          streakLastDate: row.streak_last_date ?? '',
-          dailyGoal: row.daily_goal ?? 20,
-          dailyDate: row.daily_date ?? '',
-          dailyCount,
-        };
-      }).catch(() => { })
-    );
-  }, [user?.id]);
+    import('../services/streakService').then(m => {
+      const s = m.getStreak(quizSettings.targetLanguage);
+      const today = calendarDate(0);
+      const yesterday = calendarDate(-1);
+      const streakCount = (s.streakLastDate === today || s.streakLastDate === yesterday) ? s.streak : 0;
+      const dailyCount = s.dailyDate === today ? s.dailyCount : 0;
+      setStreak(streakCount);
+      setDailyGoal(s.dailyGoal ?? 20);
+      setDailyProgress(dailyCount);
+      statsRef.current = {
+        streak: streakCount,
+        streakLastDate: s.streakLastDate ?? '',
+        dailyGoal: s.dailyGoal ?? 20,
+        dailyDate: s.dailyDate ?? '',
+        dailyCount,
+      };
+    });
+  }, [user?.id, quizSettings.targetLanguage]);
 
   const bumpStats = () => {
     if (!user) return;
@@ -886,30 +882,12 @@ const FlashcardsView = () => {
     setStreak(newStreak);
     setDailyProgress(newDailyCount);
     import('../services/activityLog').then(m => m.logActivity(1)).catch(() => { });
-    import('../services/dbService').then(m =>
-      m.upsertUserStats(user.id, {
-        streak_count: newStreak,
-        streak_last_date: today,
-        daily_goal: next.dailyGoal,
-        daily_date: today,
-        daily_count: newDailyCount,
-      }).catch(() => { })
-    );
   };
 
   const saveGoal = (g: number) => {
     setDailyGoal(g);
     statsRef.current.dailyGoal = g;
-    if (!user) return;
-    import('../services/dbService').then(m =>
-      m.upsertUserStats(user.id, {
-        streak_count: statsRef.current.streak,
-        streak_last_date: statsRef.current.streakLastDate,
-        daily_goal: g,
-        daily_date: statsRef.current.dailyDate,
-        daily_count: statsRef.current.dailyCount,
-      }).catch(() => { })
-    );
+    import('../services/streakService').then(m => m.setDailyGoal(quizSettings.targetLanguage, g)).catch(() => { });
   };
 
   // ── Focus mode ─────────────────────────────────────────────────────────
