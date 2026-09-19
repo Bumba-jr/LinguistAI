@@ -178,7 +178,7 @@ interface AppState {
   addQuizResult: (result: QuizResult) => void;
   setQuizHistory: (history: QuizResult[]) => void;
   addFlashcard: (card: Flashcard) => void;
-  setFlashcards: (cards: Flashcard[]) => void;
+  setFlashcards: (cards: Flashcard[] | ((prev: Flashcard[]) => Flashcard[])) => void;
   updateFlashcard: (id: string, updates: Partial<Flashcard>) => void;
   removeFlashcard: (id: string) => void;
   resetQuiz: () => void;
@@ -277,7 +277,9 @@ export const useAppStore = create<AppState>()(
       addQuizResult: (result) => set((state) => ({ quizHistory: [result, ...state.quizHistory] })),
       setQuizHistory: (quizHistory) => set({ quizHistory }),
       addFlashcard: (card) => set((state) => ({ flashcards: [...state.flashcards, card] })),
-      setFlashcards: (flashcards) => set({ flashcards }),
+      setFlashcards: (cards) => set((state) => ({
+        flashcards: typeof cards === 'function' ? cards(state.flashcards) : cards,
+      })),
       updateFlashcard: (id, updates) => set((state) => ({
         flashcards: state.flashcards.map(f => f.id === id ? { ...f, ...updates } : f),
       })),
