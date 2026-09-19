@@ -725,7 +725,7 @@ export default function App() {
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-12 lg:py-12">
           {/* CSS transition keyed per tab — immune to the framer-motion + Suspense freeze */}
-          <div key={activeTab + (hasLectures ? 'lecture' : hasQuestions ? 'quiz' : 'setup')} className="tab-fade-in">
+          <div key={activeTab + (hasLectures ? 'lecture' : hasQuestions ? 'quiz' : 'setup')} className="">
             {renderContent()}
           </div>
         </main>
