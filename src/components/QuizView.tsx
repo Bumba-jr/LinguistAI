@@ -253,7 +253,7 @@ const QuizView = () => {
       const result: QuizResult = { id: `res-${Date.now()}`, date: new Date().toISOString(), score: finalScore, total: questions.length, difficulty: quizSettings.difficulty, language: quizSettings.targetLanguage };
       addQuizResult(result);
       if (user) import('../services/dbService').then(m => {
-        m.saveQuizResult(user.id, finalScore, questions.length, quizSettings.difficulty, quizSettings.type).catch(() => { });
+        m.saveQuizResult(user.id, finalScore, questions.length, quizSettings.difficulty, quizSettings.type, quizSettings.targetLanguage).catch(() => { });
         m.upsertLeaderboardEntry(
           user.id,
           user.displayName || user.email?.split('@')[0] || 'Anonymous',

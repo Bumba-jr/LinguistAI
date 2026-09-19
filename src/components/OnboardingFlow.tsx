@@ -87,7 +87,10 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
     const finish = async () => {
         setSaving(true);
         if (lang) updateQuizSettings({ targetLanguage: lang });
-        try { localStorage.setItem('linguistai-onboarded', '1'); } catch { /* quota */ }
+        try {
+          if (user?.id) localStorage.setItem(`linguistai-onboarded-${user.id}`, '1');
+          localStorage.setItem('linguistai-onboarded', '1');
+        } catch { /* quota */ }
         // Give brand-new learners three starter words in their language so the deck is never empty
         if (levelId === 'new' && lang) {
             const starters: Record<string, [string, string][]> = {

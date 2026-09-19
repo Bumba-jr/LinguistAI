@@ -82,7 +82,8 @@ export const saveQuizResult = async (
   score: number,
   total: number,
   difficulty: string,
-  type: string
+  type: string,
+  language?: string
 ) => {
   const { data, error } = await supabase
     .from('quiz_results')
@@ -92,6 +93,7 @@ export const saveQuizResult = async (
       total,
       difficulty,
       quiz_type: type,
+      language: language || 'French',
       created_at: new Date().toISOString()
     })
     .select();
@@ -345,11 +347,12 @@ export const deleteChatSessionDB = async (sessionId: string, userId: string) => 
 };
 
 // ── User Stats (streak + daily goal) ─────────────────────────────────────────
-export const getUserStats = async (userId: string) => {
+export const getUserStats = async (userId: string, language = 'French') => {
   const { data, error } = await supabase
     .from('user_stats')
     .select('*')
     .eq('user_id', userId)
+    .eq('language', language)
     .maybeSingle();
   if (error) throw error;
   return data;
@@ -363,11 +366,12 @@ export const upsertUserStats = async (
     daily_goal: number;
     daily_date: string;
     daily_count: number;
-  }
+  },
+  language = 'French'
 ) => {
   const { error } = await supabase
     .from('user_stats')
-    .upsert({ user_id: userId, ...stats });
+    .upsert({ user_id: userId, language, ...stats }, { onConflict: 'user_id,language' });
   if (error) throw error;
 };
 

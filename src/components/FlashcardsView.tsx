@@ -857,7 +857,25 @@ const FlashcardsView = () => {
   // Load per-language stats on mount (each language keeps its own streak)
   useEffect(() => {
     import('../services/streakService').then(m => {
-      const s = m.getStreak(quizSettings.targetLanguage);
+      let s = m.getStreak(quizSettings.targetLanguage);
+      // merge with the Supabase per-language row — keep whichever practiced more recently
+      if (user) {
+        import('../services/dbService').then(db =>
+          db.getUserStats(user.id, quizSettings.targetLanguage).then((row: any) => {
+            if (!row) return;
+            if (!s.streakLastDate || new Date(row.streak_last_date) > new Date(s.streakLastDate)) {
+              s = { ...s, streak: row.streak_count, streakLastDate: row.streak_last_date, dailyGoal: row.daily_goal ?? s.dailyGoal, dailyDate: row.daily_date ?? '', dailyCount: row.daily_count ?? 0 };
+              m.setDailyGoal(quizSettings.targetLanguage, s.dailyGoal);
+              const today = calendarDate(0);
+              const streakCount = (s.streakLastDate === today || s.streakLastDate === yesterday) ? s.streak : 0;
+              const dailyCount = s.dailyDate === today ? s.dailyCount : 0;
+              setStreak(streakCount);
+              setDailyGoal(s.dailyGoal ?? 20);
+              setDailyProgress(dailyCount);
+            }
+          }).catch(() => { })
+        );
+      }
       const today = calendarDate(0);
       const yesterday = calendarDate(-1);
       const streakCount = (s.streakLastDate === today || s.streakLastDate === yesterday) ? s.streak : 0;
@@ -889,6 +907,17 @@ const FlashcardsView = () => {
     setStreak(newStreak);
     setDailyProgress(newDailyCount);
     import('../services/activityLog').then(m => m.logActivity(1)).catch(() => { });
+    if (user) {
+      import('../services/dbService').then(mm =>
+        mm.upsertUserStats(user.id, {
+          streak_count: newStreak,
+          streak_last_date: today,
+          daily_goal: next.dailyGoal,
+          daily_date: today,
+          daily_count: newDailyCount,
+        }, quizSettings.targetLanguage).catch(() => { })
+      );
+    }
   };
 
   const saveGoal = (g: number) => {

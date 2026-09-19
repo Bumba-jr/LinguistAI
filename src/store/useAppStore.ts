@@ -201,6 +201,7 @@ interface AppState {
   removeSavedStory: (id: string) => void;
   activeStory: StorySave | null;
   setActiveStory: (s: StorySave | null) => void;
+  resetUserData: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -362,6 +363,21 @@ export const useAppStore = create<AppState>()(
       })),
       removeSavedStory: (id) => set((state) => ({ savedStories: state.savedStories.filter(s => s.id !== id) })),
       setActiveStory: (activeStory) => set({ activeStory }),
+      // when a DIFFERENT user signs in on this browser, wipe the previous
+      // user's learning data so nothing leaks between accounts
+      resetUserData: () => set({
+        totalPoints: 0,
+        chatSessions: [],
+        savedPhrases: [],
+        savedArticles: [],
+        savedStories: [],
+        activeStory: null,
+        difficultyScore: 30,
+        mistakeLog: [],
+        difficultyByLang: {},
+        mistakesByLang: {},
+        grammarMode: 'strict',
+      }),
     }),
     {
       name: 'linguistai-store',

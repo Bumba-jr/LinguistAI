@@ -48,7 +48,7 @@ const usePlacementGate = (userId?: string) => {
   const [show, setShow] = useState(false);
   useEffect(() => {
     if (!userId) return;
-    if (localStorage.getItem('linguistai-placement-done')) return;
+    if (localStorage.getItem(`linguistai-placement-done-${userId}`)) return;
     let alive = true;
     Promise.all([
       import('./services/dbService').then(m => m.getQuizHistory(userId)).catch(() => []),
@@ -56,7 +56,7 @@ const usePlacementGate = (userId?: string) => {
     ]).then(([qh, fc]) => {
       if (!alive) return;
       if ((qh?.length ?? 0) > 0 || (fc?.length ?? 0) > 0) {
-        localStorage.setItem('linguistai-placement-done', '1');
+        localStorage.setItem(`linguistai-placement-done-${userId}`, '1');
       } else {
         setShow(true);
       }
@@ -154,13 +154,28 @@ export default function App() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [showAllLectures, setShowAllLectures] = useState(false);
   const [placementDismissed, setPlacementDismissed] = useState(false);
-  // onboarding wizard + tutorial tour — each shows once, both skippable
-  const [onboardingDone, setOnboardingDone] = useState<boolean>(() => {
-    try { return localStorage.getItem('linguistai-onboarded') === '1'; } catch { return true; }
-  });
-  const [tourDone, setTourDone] = useState<boolean>(() => {
-    try { return localStorage.getItem('linguistai-tour-done') === '1'; } catch { return true; }
-  });
+  // onboarding wizard + tutorial tour — PER-USER flags (a new signup on the
+  // same browser must get its own onboarding, not inherit the old user's)
+  const [onboardingDone, setOnboardingDone] = useState<boolean>(true); // until the user's flag is read
+  const [tourDone, setTourDone] = useState<boolean>(true);
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      setOnboardingDone(localStorage.getItem(`linguistai-onboarded-${user.id}`) === '1');
+      setTourDone(localStorage.getItem(`linguistai-tour-done-${user.id}`) === '1');
+    } catch { /* storage unavailable */ }
+  }, [user?.id]);
+  // user switch on this browser: wipe the previous account's learning data
+  useEffect(() => {
+    if (!user?.id) return;
+    const lastUserKey = 'linguistai-last-user';
+    const last = localStorage.getItem(lastUserKey);
+    if (last && last !== user.id) {
+      useAppStore.getState().resetUserData();
+    }
+    localStorage.setItem(lastUserKey, user.id);
+  }, [user?.id]);
+
   // hooks must run on every render — call before any early returns below
   const placementShow = usePlacementGate(user?.id);
 
@@ -335,10 +350,10 @@ export default function App() {
       if (skipPlacement) {
         useAppStore.getState().setDifficultyScore(25);
         useAppStore.getState().updateQuizSettings({ difficulty: 'beginner' });
-        localStorage.setItem('linguistai-placement-done', '1');
+        localStorage.setItem(`linguistai-placement-done-${user.id}`, '1');
         setPlacementDismissed(true);
       }
-      localStorage.setItem('linguistai-onboarded', '1');
+      localStorage.setItem(`linguistai-onboarded-${user.id}`, '1');
       setOnboardingDone(true);
     }} />;
   }
@@ -813,7 +828,7 @@ export default function App() {
         )}
       </AnimatePresence>
       {/* First-visit tutorial tour — skippable */}
-      {!tourDone && <TutorialTour onFinish={() => { localStorage.setItem('linguistai-tour-done', '1'); setTourDone(true); }} />}
+      {!tourDone && <TutorialTour onFinish={() => { localStorage.setItem(`linguistai-tour-done-${user.id}`, '1'); setTourDone(true); }} />}
       {user && <FloatingNotes userId={(user as any).id} contextLabel={lectures?.title} />}
       {/* Global call manager — handles incoming calls from any tab */}
       {user && <GlobalCallManager myId={(user as any).id} myName={(user as any).displayName || (user as any).email?.split('@')[0] || 'Me'} myAvatar={(user as any).avatarUrl || null} />}
