@@ -146,12 +146,13 @@ const FloatingMessageButton = ({ count, onClick }: { count: number; onClick: () 
 };
 
 export default function App() {
-  const { activeTab, setActiveTab, questions, lectures, user, setUser, savedLectures, setSavedLectures, setLectures, removeSavedLecture, setFlashcards, setQuizHistory, setLectureProgress, setQuestions, quizHistory } = useAppStore() as any;
+  const { activeTab, setActiveTab, questions, lectures, user, setUser, savedLectures, setSavedLectures, setLectures, removeSavedLecture, setFlashcards, setQuizHistory, setLectureProgress, setQuestions, quizHistory, quizSettings } = useAppStore() as any;
   const [authLoading, setAuthLoading] = useState(true);
   const [stats, setStats] = useState<{ totalQuizzes: number; avgAccuracy: string; totalQuestions: number } | null>(null);
   const [userMeta, setUserMeta] = useState<{ firstName: string } | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [showAllLectures, setShowAllLectures] = useState(false);
   const [placementDismissed, setPlacementDismissed] = useState(false);
   // onboarding wizard + tutorial tour — each shows once, both skippable
   const [onboardingDone, setOnboardingDone] = useState<boolean>(() => {
@@ -366,7 +367,8 @@ export default function App() {
     { id: 'dictation', label: 'Dictation', icon: Ear },
     { id: 'conjugation', label: 'Conjugation', icon: BookOpenCheck },
     { id: 'reading', label: 'Reading', icon: Newspaper },
-    { id: 'tcf', label: 'TCF Canada', icon: Flag },
+    // TCF Canada is a French-only exam — hidden for other languages
+    ...(quizSettings?.targetLanguage === 'French' ? [{ id: 'tcf', label: 'TCF Canada', icon: Flag }] : []),
     { id: 'exchange', label: 'Exchange', icon: Users2 },
     { id: 'analytics', label: 'Analytics', icon: BarChart2 },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
@@ -391,26 +393,39 @@ export default function App() {
     if (activeTab === 'lectures') {
       // Active lecture open → show it
       if (lectures) return <LazyPage><LectureView /></LazyPage>;
-      // Lectures library
+      // Lectures library — filtered to the active language
+      const activeLang = quizSettings?.targetLanguage || 'French';
+      const visibleLectures = showAllLectures ? savedLectures : savedLectures.filter((lec: any) => lec.language === activeLang);
       return (
-        <div className="max-w-4xl mx-auto w-full py-8 px-4 space-y-8">
-          <div className="flex items-center justify-between">
+        <div className="max-w-4xl mx-auto w-full py-8 px-4 space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h1 className="text-3xl font-black text-stone-900 mb-1">My Lectures</h1>
-              <p className="text-stone-400 text-sm">{savedLectures.length} saved lecture{savedLectures.length !== 1 ? 's' : ''}</p>
+              <p className="text-stone-400 text-sm">
+                Showing {visibleLectures.length} {activeLang} lecture{visibleLectures.length !== 1 ? 's' : ''}
+                {visibleLectures.length !== savedLectures.length && ` · ${savedLectures.length - visibleLectures.length} in other languages hidden`}
+              </p>
             </div>
-            <button onClick={() => setActiveTab('editor')}
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-sm">
-              <BookOpen size={16} /> Generate New
-            </button>
+            <div className="flex items-center gap-3 flex-wrap">
+              {visibleLectures.length !== savedLectures.length && (
+                <button onClick={() => setShowAllLectures(v => !v)}
+                  className="px-4 py-2.5 rounded-2xl border-2 border-stone-200 text-xs font-bold text-stone-500 hover:border-indigo-300 hover:text-indigo-600 transition-all">
+                  {showAllLectures ? 'Showing active language only' : 'Show all languages'}
+                </button>
+              )}
+              <button onClick={() => setActiveTab('editor')}
+                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-2xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-sm">
+                <BookOpen size={16} /> Generate New
+              </button>
+            </div>
           </div>
 
-          {savedLectures.length === 0 ? (
+          {visibleLectures.length === 0 ? (
             <div className="text-center py-24 space-y-4">
               <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center mx-auto">
                 <BookOpen size={36} className="text-emerald-400" />
               </div>
-              <p className="text-stone-700 font-bold text-lg">No saved lectures yet</p>
+              <p className="text-stone-700 font-bold text-lg">No {activeLang} lectures yet</p>
               <p className="text-stone-400 text-sm max-w-xs mx-auto">Generate a lecture from your notes and save it to access it anytime.</p>
               <button onClick={() => setActiveTab('editor')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl font-bold hover:bg-emerald-600 transition-all mt-2">
@@ -419,7 +434,7 @@ export default function App() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {savedLectures.map((lec) => (
+              {visibleLectures.map((lec) => (
                 <motion.div key={lec.id} whileHover={{ y: -2 }} transition={{ duration: 0.15 }}
                   className="group bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden cursor-pointer"
                   onClick={() => setLectures(lec)}>
