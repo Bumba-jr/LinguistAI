@@ -39,6 +39,8 @@ import { scheduleFlashcardReminder, scheduleDailyReminder } from './lib/notifica
 import NotificationSettings from './components/NotificationSettings';
 import { GlobalCallManager } from './components/GlobalCallManager';
 import PlacementTest from './components/PlacementTest';
+import OnboardingFlow from './components/OnboardingFlow';
+import TutorialTour from './components/TutorialTour';
 
 // Decide once per signed-in user whether the first-run placement test should
 // show. Existing users (with quiz/flashcard history) are marked as done.
@@ -143,6 +145,13 @@ export default function App() {
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
   const [placementDismissed, setPlacementDismissed] = useState(false);
+  // onboarding wizard + tutorial tour — each shows once, both skippable
+  const [onboardingDone, setOnboardingDone] = useState<boolean>(() => {
+    try { return localStorage.getItem('linguistai-onboarded') === '1'; } catch { return true; }
+  });
+  const [tourDone, setTourDone] = useState<boolean>(() => {
+    try { return localStorage.getItem('linguistai-tour-done') === '1'; } catch { return true; }
+  });
   // hooks must run on every render — call before any early returns below
   const placementShow = usePlacementGate(user?.id);
 
@@ -307,6 +316,22 @@ export default function App() {
   // Show login page if not authenticated (and Supabase is configured)
   if (isSupabaseConfigured && !user) {
     return <AuthPage />;
+  }
+
+  // First-run onboarding wizard — language selection, goals, time, level.
+  // Runs before the placement test; the last step routes 'new' users
+  // straight to A1 and everyone else into the placement test.
+  if (!onboardingDone) {
+    return <OnboardingFlow onFinish={({ skipPlacement, levelId }) => {
+      if (skipPlacement) {
+        useAppStore.getState().setDifficultyScore(25);
+        useAppStore.getState().updateQuizSettings({ difficulty: 'beginner' });
+        localStorage.setItem('linguistai-placement-done', '1');
+        setPlacementDismissed(true);
+      }
+      localStorage.setItem('linguistai-onboarded', '1');
+      setOnboardingDone(true);
+    }} />;
   }
 
   // First-run placement test — sets quiz/tutor difficulty for new users
@@ -771,6 +796,8 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* First-visit tutorial tour — skippable */}
+      {!tourDone && <TutorialTour onFinish={() => { localStorage.setItem('linguistai-tour-done', '1'); setTourDone(true); }} />}
       {user && <FloatingNotes userId={(user as any).id} contextLabel={lectures?.title} />}
       {/* Global call manager — handles incoming calls from any tab */}
       {user && <GlobalCallManager myId={(user as any).id} myName={(user as any).displayName || (user as any).email?.split('@')[0] || 'Me'} myAvatar={(user as any).avatarUrl || null} />}
