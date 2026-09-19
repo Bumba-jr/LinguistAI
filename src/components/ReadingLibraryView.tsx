@@ -302,13 +302,13 @@ export default function ReadingLibraryView() {
         </button>
       </div>
 
-      {/* saved articles */}
-      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-3">Saved articles ({savedArticles.length})</p>
+      {/* saved articles — active language only */}
+      <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-3">Saved {language} articles ({savedArticles.filter((a: ReadingArticle) => a.language === language).length})</p>
       {savedArticles.length === 0 ? (
         <p className="text-sm text-stone-300 text-center py-8">Nothing saved yet — generate your first article above.</p>
       ) : (
         <div className="space-y-2">
-          {savedArticles.map((a: ReadingArticle) => (
+          {savedArticles.filter((a: ReadingArticle) => a.language === language).map((a: ReadingArticle) => (
             <div key={a.id} onClick={() => { setOpenArticle(a); setAnswers({}); setShowAllTranslations(false); }}
               className="group flex items-center justify-between gap-3 bg-white rounded-2xl border border-stone-100 p-4 cursor-pointer hover:border-teal-300 transition-colors">
               <div className="flex-1 min-w-0">

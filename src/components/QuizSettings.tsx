@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore, QuestionType, Difficulty, Language } from '../store/useAppStore';
 import { Plus, Check } from 'lucide-react';
 import OnboardingFlow from './OnboardingFlow';
+import LanguageSwitchFlow from './LanguageSwitchFlow';
 import { Settings2, Sparkles, Loader2, BookOpen, GraduationCap, Globe } from 'lucide-react';
 import { generateQuestions, generateLecture } from '../services/aiService';
 import { cn } from '../lib/utils';
@@ -11,6 +12,7 @@ const QuizSettings = () => {
   const {
     quizSettings,
     updateQuizSettings,
+    user,
     notes,
     extractedText,
     setIsGenerating,
@@ -45,10 +47,31 @@ const QuizSettings = () => {
     updateQuizSettings({ targetLanguage: lang as Language });
   };
 
+  const [pendingLang, setPendingLang] = useState<string | null>(null);
+
   const addLanguage = (lang: string) => {
-    saveMyLanguages([...myLanguages, lang]);
-    switchLanguage(lang);
+    // brand-new language → full-page Duolingo-style onboarding flow
+    setPendingLang(lang);
     setShowAddLang(false);
+  };
+
+  const finishSwitchFlow = (result: { difficultyScore: number; difficulty: string; goals: string[]; starters: { word: string; translation: string }[] }) => {
+    // apply the profile: difficulty, starter cards, then activate
+    useAppStore.getState().setDifficultyScore(result.difficultyScore);
+    useAppStore.getState().updateQuizSettings({ difficulty: result.difficulty as Difficulty });
+    result.starters.forEach((c, i) => {
+      const card = {
+        id: `starter-${activeLanguage}-${i}-${Date.now()}`,
+        word: c.word, translation: c.translation,
+        language: (pendingLang || activeLanguage) as Language,
+        nextReview: new Date().toISOString(), lastReviewed: null,
+      };
+      useAppStore.getState().addFlashcard(card);
+      if (user) import('../services/dbService').then(m => m.upsertFlashcard(user.id, card)).catch(() => { });
+    });
+    saveMyLanguages([...myLanguages, pendingLang!]);
+    switchLanguage(pendingLang!);
+    setPendingLang(null);
   };
 
   const handleGenerate = async () => {
@@ -125,6 +148,12 @@ const QuizSettings = () => {
   };
 
   const languages: Language[] = ['French', 'Spanish', 'German', 'Italian', 'Japanese', 'Portuguese', 'Chinese'];
+
+  if (pendingLang) {
+    return <LanguageSwitchFlow language={pendingLang}
+      onDone={finishSwitchFlow}
+      onCancel={() => setPendingLang(null)} />;
+  }
 
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-8 shadow-sm border border-stone-100" id="quiz-settings">

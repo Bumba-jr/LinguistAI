@@ -53,6 +53,16 @@ const SCENARIOS: Scenario[] = [
   { id: 'emergency', label: 'Emergency', description: 'Ask for help urgently', icon: Siren, color: '#dc2626', bg: 'rgba(220,38,38,0.08)', prompt: 'This is an emergency situation. I need to ask for help urgently. You play a bystander, police officer, or emergency responder. Help me practice urgent, clear communication in the target language.' },
 ];
 
+const CHAT_STARTERS: Record<string, string[]> = {
+    French: ['Bonjour !', 'Comment ça va ?', 'Parle-moi de toi', "Qu'est-ce que tu aimes faire ?"],
+    Spanish: ['¡Hola!', '¿Cómo estás?', 'Cuéntame de tu día', '¿Qué te gusta hacer?'],
+    German: ['Hallo!', 'Wie geht es dir?', 'Erzähl mir von deinem Tag', 'Was machst du gern?'],
+    Italian: ['Ciao!', 'Come stai?', 'Raccontami della tua giornata', 'Cosa ti piace fare?'],
+    Japanese: ['こんにちは！','元気ですか？','今日はどうでしたか？','何が好きですか？'],
+    Portuguese: ['Olá!', 'Como vai?', 'Me conte o seu dia', 'O que gosta de fazer?'],
+    Chinese: ['你好！','你好吗？','说说你的一天','你喜欢做什么？'],
+};
+
 const LANG_CODES: Record<string, string> = {
   French: 'fr-FR', Spanish: 'es-ES', German: 'de-DE',
   Italian: 'it-IT', Japanese: 'ja-JP', Portuguese: 'pt-PT', Chinese: 'zh-CN',
@@ -2172,7 +2182,7 @@ const ChatView = () => {
               <p className="text-stone-400 text-sm max-w-xs">{selectedScenario.id === 'free' ? `Say hello in ${quizSettings.targetLanguage} to get started.` : selectedScenario.description + '. Type or speak to begin.'}</p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center mt-2">
-              {(selectedScenario.id === 'free' ? ['Bonjour!', 'Comment ça va?', 'Parle-moi de toi']
+              {(selectedScenario.id === 'free' ? (CHAT_STARTERS[quizSettings.targetLanguage] || CHAT_STARTERS.French)
                 : selectedScenario.id === 'restaurant' ? ["Je voudrais une table", "Qu'est-ce que vous recommandez?", "L'addition, s'il vous plaît"]
                   : selectedScenario.id === 'shopping' ? ["Combien ça coûte?", "Avez-vous ça en rouge?", "Je cherche un cadeau"]
                     : ["Bonjour!", "Pouvez-vous m'aider?", "Je ne comprends pas"]
@@ -2369,7 +2379,7 @@ const ChatView = () => {
 
       {/* Panels & Modals */}
       <AnimatePresence>
-        {showHistory && <HistoryPanel sessions={chatSessions} onLoad={loadSession} onDelete={(id) => {
+        {showHistory && <HistoryPanel sessions={chatSessions.filter(s => s.language === quizSettings.targetLanguage)} onLoad={loadSession} onDelete={(id) => {
           removeChatSession(id);
           if (user) deleteChatSessionDB(id, user.id).catch(() => { });
         }} onNewChat={() => { startNewChat(); setShowHistory(false); }} onClose={() => setShowHistory(false)} />}

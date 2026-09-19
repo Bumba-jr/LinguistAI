@@ -333,13 +333,13 @@ const StoryModeView = () => {
                     </button>
                 </div>
 
-                {savedStories.length > 0 && (
+                {savedStories.filter((st: any) => st.language === quizSettings.targetLanguage).length > 0 && (
                     <div>
                         <p className="text-xs font-black text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                            <Library size={12} /> Your stories ({savedStories.length})
+                            <Library size={12} /> Your {quizSettings.targetLanguage} stories ({savedStories.filter((st: any) => st.language === quizSettings.targetLanguage).length})
                         </p>
                         <div className="space-y-2">
-                            {savedStories.map((s: any) => (
+                            {savedStories.filter((st: any) => st.language === quizSettings.targetLanguage).map((s: any) => (
                                 <div key={s.id} onClick={() => setReadingSaved(s)}
                                     className="group flex items-center justify-between gap-3 bg-white rounded-2xl border border-stone-100 p-4 cursor-pointer hover:border-emerald-300 transition-colors">
                                     <div className="flex-1 min-w-0">

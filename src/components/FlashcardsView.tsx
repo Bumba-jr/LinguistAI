@@ -807,6 +807,10 @@ const FlashcardsView = () => {
   const [deckSearch, setDeckSearch] = useState('');
   // deck defaults to the active language's cards — chips let you see everything
   const [deckLangFilter, setDeckLangFilter] = useState<string>(quizSettings?.targetLanguage || 'all');
+  // follow the active language profile when it switches
+  useEffect(() => {
+    setDeckLangFilter(quizSettings?.targetLanguage || 'all');
+  }, [quizSettings?.targetLanguage]);
   const [deckSort, setDeckSort] = useState<'newest' | 'az' | 'za' | 'due' | 'hardest' | 'confident'>('newest');
   const [deckGroupByLang, setDeckGroupByLang] = useState(false);
   const [collapsedLangs, setCollapsedLangs] = useState<Set<string>>(new Set());
@@ -903,7 +907,10 @@ const FlashcardsView = () => {
 
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
   const isDue = (f: any) => { const d = new Date(f.nextReview); d.setHours(0, 0, 0, 0); return d <= todayStart; };
-  const baseDue = shuffled ? smartSort(flashcards.filter(isDue)) : flashcards.filter(isDue);
+  // study session follows the ACTIVE language profile — no cross-language leaks
+  const activeLang = quizSettings?.targetLanguage || 'French';
+  const activeDeck = flashcards.filter((f: any) => f.language === activeLang);
+  const baseDue = shuffled ? smartSort(activeDeck.filter(isDue)) : activeDeck.filter(isDue);
   const dueCards = hardRoundIds !== null
     ? baseDue.filter((f: any) => hardRoundIds.has(f.id))
     : baseDue;
@@ -1418,11 +1425,11 @@ const FlashcardsView = () => {
 
   // deck stats
   const deckStats = {
-    total: flashcards.length,
-    due: flashcards.filter((c: any) => isDue(c)).length,
-    mastered: flashcards.filter((c: any) => (c.easyStreak || 0) >= 5).length,
-    avgConfidence: flashcards.length > 0
-      ? Math.round(flashcards.reduce((s: number, c: any) => s + Math.min((c.easyStreak || 0) / 5, 1) * 100, 0) / flashcards.length)
+    total: activeDeck.length,
+    due: activeDeck.filter((c: any) => isDue(c)).length,
+    mastered: activeDeck.filter((c: any) => (c.easyStreak || 0) >= 5).length,
+    avgConfidence: activeDeck.length > 0
+      ? Math.round(activeDeck.reduce((s: number, c: any) => s + Math.min((c.easyStreak || 0) / 5, 1) * 100, 0) / activeDeck.length)
       : 0,
   };
 
@@ -1534,7 +1541,7 @@ const FlashcardsView = () => {
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-black text-stone-900 mb-1">Flashcards</h1>
-            <p className="text-stone-400 text-sm">{flashcards.length} word{flashcards.length !== 1 ? 's' : ''} in your deck</p>
+            <p className="text-stone-400 text-sm">{activeDeck.length} word{activeDeck.length !== 1 ? 's' : ''} in your {activeLang} deck</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {/* Streak */}
@@ -1676,7 +1683,7 @@ const FlashcardsView = () => {
               )}
               <div className="mt-4 bg-stone-50 rounded-2xl px-5 py-3 text-center">
                 <p className="text-xs text-stone-400">
-                  {flashcards.length} card{flashcards.length !== 1 ? 's' : ''} in deck · next due{' '}
+                  {activeDeck.length} card{activeDeck.length !== 1 ? 's' : ''} in deck · next due{' '}
                   <span className="font-bold text-stone-600">
                     {flashcards.length > 0
                       ? new Date(Math.min(...flashcards.map((f: any) => new Date(f.nextReview).getTime()))).toLocaleDateString('en', { month: 'short', day: 'numeric' })
