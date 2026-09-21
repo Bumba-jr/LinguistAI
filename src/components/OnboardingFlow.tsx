@@ -151,7 +151,10 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
                                 className="w-64 bg-white border border-emerald-100 rounded-3xl p-5 shadow-lg shadow-emerald-100/60">
                                 <div className="flex items-center justify-between">
                                     <p className="text-2xl font-black text-stone-900">{fr}</p>
-                                    <button onClick={() => speakText(String(fr), 'French')} className="text-emerald-400 hover:text-emerald-600"><Volume2 size={16} /></button>
+                                    {LANGS.some(l => l.lang === tag) && (
+                                        <button onClick={() => speakText(String(fr), tag)}
+                                            className="text-emerald-400 hover:text-emerald-600"><Volume2 size={16} /></button>
+                                    )}
                                 </div>
                                 <p className="text-stone-400 text-sm mt-1">{en}</p>
                             </motion.div>

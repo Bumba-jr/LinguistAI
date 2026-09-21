@@ -278,6 +278,13 @@ export default function App() {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
+  // TCF Canada is French-only — leave the portal as soon as the active language isn't French
+  useEffect(() => {
+    if (activeTab === 'tcf' && quizSettings?.targetLanguage !== 'French') {
+      setActiveTab('editor');
+    }
+  }, [activeTab, quizSettings?.targetLanguage, setActiveTab]);
+
   // Handle shared quiz URL param
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -777,13 +784,18 @@ export default function App() {
       {/* Mobile bottom navigation */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur border-t border-stone-100" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="grid grid-cols-5">
-          {([
+          {(quizSettings?.targetLanguage === 'French' ? [
             { id: 'editor', label: 'Home', icon: Home },
             { id: 'flashcards', label: 'Cards', icon: Layers },
             { id: 'chat', label: 'Tutor', icon: MessageSquare },
             { id: 'tcf', label: 'TCF', icon: Flag },
-          ] as const).map(item => (
-            <button key={item.id} onClick={() => setActiveTab(item.id)}
+          ] : [
+            { id: 'editor', label: 'Home', icon: Home },
+            { id: 'flashcards', label: 'Cards', icon: Layers },
+            { id: 'chat', label: 'Tutor', icon: MessageSquare },
+            { id: 'reading', label: 'Read', icon: Newspaper },
+          ]).map(item => (
+            <button key={item.id} onClick={() => setActiveTab(item.id as any)}
               className={cn('flex flex-col items-center gap-0.5 py-2.5 transition-colors',
                 activeTab === item.id ? 'text-emerald-600' : 'text-stone-400')}>
               <item.icon size={20} />

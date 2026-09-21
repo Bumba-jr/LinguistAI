@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
@@ -926,13 +926,38 @@ const Progress = ({ scores }: { scores: TcfScoreEntry[] }) => {
 
 // ── Portal shell ─────────────────────────────────────────────────────────────
 const TCFPrepView = () => {
-    const { quizSettings } = useAppStore() as any;
+    const { quizSettings, setActiveTab } = useAppStore() as any;
     const language = quizSettings?.targetLanguage || 'French';
     const [tab, setTab] = useState<TcfTab>('overview');
     const [level, setLevel] = useState<TcfLevel>('A2');
     const [scores, setScores] = useState<TcfScoreEntry[]>(getTcfScores());
 
     useEffect(() => { setScores(getTcfScores()); }, [tab]);
+
+    // French-only exam — functional gate, not a CSS hide: nothing in this portal
+    // (lessons, mock exam, trainers, scores) renders for any other language,
+    // regardless of how the tab was opened.
+    if (quizSettings?.targetLanguage !== 'French') {
+        return (
+            <div className="max-w-md mx-auto w-full py-16 px-6 text-center">
+                <div className="w-16 h-16 rounded-3xl bg-stone-100 flex items-center justify-center mx-auto mb-5">
+                    <Lock size={28} className="text-stone-400" />
+                </div>
+                <h1 className="text-2xl font-black text-stone-900">TCF Canada is French-only</h1>
+                <p className="text-stone-400 text-sm mt-2 leading-relaxed">
+                    This portal prepares you for the Test de connaissance du français, so it stays locked
+                    unless <span className="font-bold text-stone-600">French</span> is your active language.
+                    You are currently learning{' '}
+                    <span className="font-bold text-stone-600">{quizSettings?.targetLanguage || 'another language'}</span>.
+                </p>
+                <button onClick={() => setActiveTab('editor')}
+                    className="mt-6 w-full py-3.5 bg-stone-900 text-white text-sm font-black rounded-2xl hover:bg-emerald-600 transition-colors">
+                    Back to Dashboard
+                </button>
+                <p className="text-stone-300 text-xs mt-4">You can switch languages anytime in Learning Options.</p>
+            </div>
+        );
+    }
 
     const TABS: { id: TcfTab; label: string; icon: any }[] = [
         { id: 'overview', label: 'Overview', icon: Flag },
