@@ -22,11 +22,12 @@ const DictationView = lazy(() => import('./components/DictationView'));
 const ConjugationDrillView = lazy(() => import('./components/ConjugationDrillView'));
 const ReadingLibraryView = lazy(() => import('./components/ReadingLibraryView'));
 const TCFPrepView = lazy(() => import('./components/tcf/TCFPrepView'));
+const HSKPrepView = lazy(() => import('./components/hsk/HSKPrepView'));
 import {
   BookOpen, Upload, GraduationCap, User as UserIcon,
   BarChart2, Layers, MessageSquare, Users, Home,
   FileText, Zap, ArrowRight, Clock, Trash2, Play, Trophy,
-  BookMarked, Sparkles, Users2, Mic, Loader2, Ear, BookOpenCheck, Newspaper, Flag
+  BookMarked, Sparkles, Users2, Mic, Loader2, Ear, BookOpenCheck, Newspaper, Flag, Languages
 } from 'lucide-react';
 import AuthPage from './components/AuthPage';
 import { getAuthRedirectUrl } from './lib/auth-config';
@@ -278,9 +279,12 @@ export default function App() {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  // TCF Canada is French-only — leave the portal as soon as the active language isn't French
+  // Exam portals are language-locked — leave as soon as the active language doesn't match
   useEffect(() => {
     if (activeTab === 'tcf' && quizSettings?.targetLanguage !== 'French') {
+      setActiveTab('editor');
+    }
+    if (activeTab === 'hsk' && quizSettings?.targetLanguage !== 'Chinese') {
       setActiveTab('editor');
     }
   }, [activeTab, quizSettings?.targetLanguage, setActiveTab]);
@@ -389,8 +393,9 @@ export default function App() {
     { id: 'dictation', label: 'Dictation', icon: Ear },
     { id: 'conjugation', label: 'Conjugation', icon: BookOpenCheck },
     { id: 'reading', label: 'Reading', icon: Newspaper },
-    // TCF Canada is a French-only exam — hidden for other languages
+    // Exam portals are language-locked — TCF Canada for French, HSK for Chinese
     ...(quizSettings?.targetLanguage === 'French' ? [{ id: 'tcf', label: 'TCF Canada', icon: Flag }] : []),
+    ...(quizSettings?.targetLanguage === 'Chinese' ? [{ id: 'hsk', label: 'HSK Chinese', icon: Languages }] : []),
     { id: 'exchange', label: 'Exchange', icon: Users2 },
     { id: 'analytics', label: 'Analytics', icon: BarChart2 },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
@@ -411,6 +416,7 @@ export default function App() {
     if (activeTab === 'conjugation') return <LazyPage><ConjugationDrillView /></LazyPage>;
     if (activeTab === 'reading') return <LazyPage><ReadingLibraryView /></LazyPage>;
     if (activeTab === 'tcf') return <LazyPage><TCFPrepView /></LazyPage>;
+    if (activeTab === 'hsk') return <LazyPage><HSKPrepView /></LazyPage>;
 
     if (activeTab === 'lectures') {
       // Active lecture open → show it
@@ -789,6 +795,11 @@ export default function App() {
             { id: 'flashcards', label: 'Cards', icon: Layers },
             { id: 'chat', label: 'Tutor', icon: MessageSquare },
             { id: 'tcf', label: 'TCF', icon: Flag },
+          ] : quizSettings?.targetLanguage === 'Chinese' ? [
+            { id: 'editor', label: 'Home', icon: Home },
+            { id: 'flashcards', label: 'Cards', icon: Layers },
+            { id: 'chat', label: 'Tutor', icon: MessageSquare },
+            { id: 'hsk', label: 'HSK', icon: Languages },
           ] : [
             { id: 'editor', label: 'Home', icon: Home },
             { id: 'flashcards', label: 'Cards', icon: Layers },
