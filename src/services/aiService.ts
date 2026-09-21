@@ -1160,6 +1160,20 @@ Rules: each reply is ONE sentence, natural, at an accessible level. Vary the int
     return (Array.isArray(d.replies) ? d.replies : []).filter(Boolean).map(String).slice(0, 3);
 };
 
+// Opening lines a learner could say to START a role-play scenario — always in the target language
+export const generateScenarioStarters = async (
+    scenarioLabel: string,
+    scenarioDescription: string,
+    targetLanguage: Language
+): Promise<string[]> => {
+    const system = `You are a language-learning assistant. The learner is about to start a role-play scenario called "${scenarioLabel}" — ${scenarioDescription}. Suggest 3 SHORT opening lines the LEARNER could say to begin, in ${targetLanguage}.
+Return ONLY valid JSON: {"replies":["...","...","..."]}
+Rules: each reply is ONE short natural sentence in ${targetLanguage} only (no English, no translations), at an accessible beginner-friendly level, and it must be something the learner (customer/guest/patient side) would actually say in this scenario. Vary the intent.`;
+    const raw = await chat(system, `Scenario: ${scenarioLabel} — ${scenarioDescription}. Language: ${targetLanguage}`, 400);
+    const d = parseJSON(raw);
+    return (Array.isArray(d.replies) ? d.replies : []).filter(Boolean).map(String).slice(0, 3);
+};
+
 // Translate a partner's message into English
 export const translateToEnglish = async (text: string, fromLanguage: Language): Promise<string> => {
     const system = `Translate the given ${fromLanguage} message into natural English. Return ONLY valid JSON: {"translation":"the English translation"}`;

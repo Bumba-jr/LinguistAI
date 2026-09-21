@@ -16,6 +16,7 @@ import {
 import {
   generateChatResponse, generateSessionSummary, getWordOfTheDay,
   generateChallenge, analyzeTone, generateCustomScenario, generateVocabQuiz, translateWord,
+  generateScenarioStarters,
 } from '../services/aiService';
 import { speakText, stopSpeaking } from '../services/voiceService';
 import { InteractiveText } from './WordBreakdown';
@@ -61,6 +62,45 @@ const CHAT_STARTERS: Record<string, string[]> = {
     Japanese: ['こんにちは！','元気ですか？','今日はどうでしたか？','何が好きですか？'],
     Portuguese: ['Olá!', 'Como vai?', 'Me conte o seu dia', 'O que gosta de fazer?'],
     Chinese: ['你好！','你好吗？','说说你的一天','你喜欢做什么？'],
+};
+
+// Offline fallbacks for scenario chips while the AI ones load (or if generation fails) — per language
+const SCENARIO_STARTER_FALLBACKS: Record<string, { restaurant: string[]; shopping: string[]; other: string[] }> = {
+    French: {
+        restaurant: ["Je voudrais une table", "Qu'est-ce que vous recommandez?", "L'addition, s'il vous plaît"],
+        shopping: ["Combien ça coûte?", "Avez-vous ça en rouge?", "Je cherche un cadeau"],
+        other: ["Bonjour!", "Pouvez-vous m'aider?", "Je ne comprends pas"],
+    },
+    Spanish: {
+        restaurant: ["Quisiera una mesa", "¿Qué recomienda?", "La cuenta, por favor"],
+        shopping: ["¿Cuánto cuesta?", "¿Lo tiene en rojo?", "Busco un regalo"],
+        other: ["¡Hola!", "¿Puede ayudarme?", "No entiendo"],
+    },
+    German: {
+        restaurant: ["Ich möchte einen Tisch", "Was empfehlen Sie?", "Die Rechnung, bitte"],
+        shopping: ["Wie viel kostet das?", "Haben Sie das in Rot?", "Ich suche ein Geschenk"],
+        other: ["Hallo!", "Können Sie mir helfen?", "Ich verstehe nicht"],
+    },
+    Italian: {
+        restaurant: ["Vorrei un tavolo", "Cosa consiglia?", "Il conto, per favore"],
+        shopping: ["Quanto costa?", "Ce l'ha in rosso?", "Cerco un regalo"],
+        other: ["Ciao!", "Mi può aiutare?", "Non capisco"],
+    },
+    Japanese: {
+        restaurant: ["席をお願いします", "おすすめは何ですか？", "お会計をお願いします"],
+        shopping: ["いくらですか？", "赤いのはありますか？", "プレゼントを探しています"],
+        other: ["こんにちは！", "手伝ってくれますか？", "わかりません"],
+    },
+    Portuguese: {
+        restaurant: ["Queria uma mesa", "O que recomenda?", "A conta, por favor"],
+        shopping: ["Quanto custa?", "Tem em vermelho?", "Procuro um presente"],
+        other: ["Olá!", "Pode ajudar-me?", "Não entendo"],
+    },
+    Chinese: {
+        restaurant: ["我想订一个位子", "你有什么推荐的？", "请结账"],
+        shopping: ["这个多少钱？", "有红色的吗？", "我在找礼物"],
+        other: ["你好！", "你能帮我吗？", "我不明白"],
+    },
 };
 
 const LANG_CODES: Record<string, string> = {
@@ -1344,6 +1384,41 @@ const ChatView = () => {
   }, []);
   const [selectedScenario, setSelectedScenario] = useState<Scenario>(SCENARIOS[0]);
   const [scenarioPicker, setScenarioPicker] = useState(false);
+  // scenario opener chips — AI-generated in the active language, cached per (lang, scenario)
+  const [scenarioStarters, setScenarioStarters] = useState<string[]>([]);
+  const [startersLoading, setStartersLoading] = useState(false);
+  const startersCacheRef = useRef<Map<string, string[]>>(new Map());
+
+  // generate opener chips whenever the empty state shows a non-free scenario,
+  // in the ACTIVE language — never hardcoded French
+  useEffect(() => {
+    if (messages.length > 0 || selectedScenario.id === 'free') {
+      setScenarioStarters([]);
+      setStartersLoading(false);
+      return;
+    }
+    const lang = quizSettings.targetLanguage;
+    const cacheKey = `${lang}:${selectedScenario.id}:${selectedScenario.label}`;
+    const cached = startersCacheRef.current.get(cacheKey);
+    if (cached) {
+      setScenarioStarters(cached);
+      setStartersLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setScenarioStarters([]);
+    setStartersLoading(true);
+    generateScenarioStarters(selectedScenario.label, selectedScenario.description, lang)
+      .then(replies => {
+        if (cancelled) return;
+        const clean = replies.filter(r => r && r.trim());
+        if (clean.length > 0) startersCacheRef.current.set(cacheKey, clean);
+        setScenarioStarters(clean);
+      })
+      .catch(() => { /* fallback chips render below */ })
+      .finally(() => { if (!cancelled) setStartersLoading(false); });
+    return () => { cancelled = true; };
+  }, [messages.length, selectedScenario.id, selectedScenario.label, selectedScenario.description, quizSettings.targetLanguage]);
   const [expandedCorrection, setExpandedCorrection] = useState<number | null>(null);
   const [addedWords, setAddedWords] = useState<Set<string>>(new Set());
   const [chatError, setChatError] = useState<string | null>(null);
@@ -1505,17 +1580,17 @@ const ChatView = () => {
     const text = last.content.toLowerCase();
     const lang = quizSettings.targetLanguage;
 
-    // Context-aware suggestions based on what the AI just said
-    const isQuestion = last.content.includes('?');
-    const asksRepeat = text.includes('répét') || text.includes('repeat') || text.includes('encore');
-    const asksName = text.includes('nom') || text.includes('appel') || text.includes('name');
-    const asksHow = text.includes('comment') || text.includes('how are') || text.includes('ça va');
-    const asksWhere = text.includes('où') || text.includes('where') || text.includes('destination');
-    const asksOrder = text.includes('commander') || text.includes('order') || text.includes('choisir');
-    const asksPrice = text.includes('prix') || text.includes('coût') || text.includes('combien');
-    const asksJob = text.includes('expérience') || text.includes('travail') || text.includes('poste');
-    const asksHelp = text.includes('aide') || text.includes('help') || text.includes('besoin');
-    const greeting = text.includes('bonjour') || text.includes('bonsoir') || text.includes('salut');
+    // Context-aware suggestions based on what the AI just said (keywords across all supported languages)
+    const isQuestion = last.content.includes('?') || last.content.includes('？');
+    const asksRepeat = text.includes('répét') || text.includes('repeat') || text.includes('encore') || text.includes('repet') || text.includes('wiederhol') || text.includes('もう一度') || text.includes('ゆっくり') || text.includes('再说') || text.includes('慢一点');
+    const asksName = text.includes('nom') || text.includes('appel') || text.includes('name') || text.includes('llamo') || text.includes('heiße') || text.includes('chiamo') || text.includes('名前') || text.includes('叫什么') || text.includes('我叫');
+    const asksHow = text.includes('comment') || text.includes('how are') || text.includes('ça va') || text.includes('cómo estás') || text.includes('como vai') || text.includes('wie geht') || text.includes('come stai') || text.includes('元気') || text.includes('你好吗') || text.includes('怎么样');
+    const asksWhere = text.includes('où') || text.includes('where') || text.includes('destination') || text.includes('dónde') || text.includes('onde') || text.includes('wohin') || text.includes('dov') || text.includes('どこ') || text.includes('哪里') || text.includes('哪儿');
+    const asksOrder = text.includes('commander') || text.includes('order') || text.includes('choisir') || text.includes('pedir') || text.includes('recomienda') || text.includes('empfehlen') || text.includes('consiglia') || text.includes('おすすめ') || text.includes('注文') || text.includes('推荐') || text.includes('点菜');
+    const asksPrice = text.includes('prix') || text.includes('coût') || text.includes('combien') || text.includes('cuánto') || text.includes('cuesta') || text.includes('quanto') || text.includes('kostet') || text.includes('prezzo') || text.includes('いくら') || text.includes('多少钱');
+    const asksJob = text.includes('expérience') || text.includes('travail') || text.includes('poste') || text.includes('experiencia') || text.includes('trabajo') || text.includes('erfahrung') || text.includes('esperienza') || text.includes('経験') || text.includes('经验') || text.includes('工作');
+    const asksHelp = text.includes('aide') || text.includes('help') || text.includes('besoin') || text.includes('ayuda') || text.includes('hilfe') || text.includes('aiuto') || text.includes('手伝') || text.includes('帮助') || text.includes('帮忙');
+    const greeting = text.includes('bonjour') || text.includes('bonsoir') || text.includes('salut') || text.includes('hola') || text.includes('hallo') || text.includes('guten') || text.includes('ciao') || text.includes('buongiorno') || text.includes('olá') || text.includes('bom dia') || text.includes('こんにちは') || text.includes('你好');
 
     if (lang === 'French') {
       if (greeting) return ["Bonjour!", "Bonsoir!", "Enchanté(e)!"];
@@ -1540,8 +1615,67 @@ const ChatView = () => {
     if (lang === 'German') {
       if (greeting) return ["Hallo!", "Guten Morgen!", "Freut mich!"];
       if (asksName) return ["Ich heiße...", "Mein Name ist...", "Und Sie?"];
-      if (isQuestion) return ["Können Sie wiederholen?", "Ich verstehe", "Ich bin nicht sicher"];
+      if (asksHow) return ["Mir geht es gut, danke", "Nicht schlecht", "Sehr gut!"];
+      if (asksWhere) return ["Ich fahre nach Berlin", "Mein Ziel ist...", "Ich weiß noch nicht"];
+      if (asksOrder) return ["Ich möchte bestellen", "Was empfehlen Sie?", "Was ist das Gericht des Tages?"];
+      if (asksPrice) return ["Wie viel kostet das?", "Haben Sie etwas Günstigeres?", "Ich nehme es"];
+      if (asksJob) return ["Ich habe 3 Jahre Erfahrung", "Ich arbeite in...", "Was sind die Aufgaben?"];
+      if (asksHelp) return ["Ja, ich brauche Hilfe", "Nein danke, alles gut", "Können Sie das erklären?"];
+      if (asksRepeat) return ["Können Sie das wiederholen?", "Langsamer bitte", "Ich habe nicht verstanden"];
+      if (isQuestion) return ["Können Sie das wiederholen?", "Ich verstehe", "Ich bin nicht sicher"];
       return ["Interessant!", "Ich verstehe", "Können Sie erklären?"];
+    }
+    if (lang === 'Italian') {
+      if (greeting) return ["Ciao!", "Buongiorno!", "Piacere!"];
+      if (asksName) return ["Mi chiamo...", "Il mio nome è...", "E lei?"];
+      if (asksHow) return ["Sto bene, grazie", "Non c'è male", "Molto bene!"];
+      if (asksWhere) return ["Vado a Roma", "La mia destinazione è...", "Non lo so ancora"];
+      if (asksOrder) return ["Vorrei ordinare", "Cosa consiglia?", "Qual è il piatto del giorno?"];
+      if (asksPrice) return ["Quanto costa?", "Ha qualcosa di meno caro?", "Lo prendo"];
+      if (asksJob) return ["Ho 3 anni di esperienza", "Lavoro nel...", "Quali sono le responsabilità?"];
+      if (asksHelp) return ["Sì, ho bisogno di aiuto", "No grazie, va bene", "Mi può spiegare?"];
+      if (asksRepeat) return ["Può ripetere?", "Più lentamente, per favore", "Non ho capito"];
+      if (isQuestion) return ["Può ripetere?", "Capisco", "Non sono sicuro/a"];
+      return ["Interessante!", "Capisco", "Può spiegare?"];
+    }
+    if (lang === 'Japanese') {
+      if (greeting) return ["こんにちは！", "はじめまして！", "こんばんは！"];
+      if (asksName) return ["〜と申します", "名前は…です", "あなたは？"];
+      if (asksHow) return ["元気です、ありがとう", "まあまあです", "とても元気です！"];
+      if (asksWhere) return ["東京に行きます", "目的地は…です", "まだわかりません"];
+      if (asksOrder) return ["注文したいです", "おすすめは何ですか？", "今日のおすすめは？"];
+      if (asksPrice) return ["いくらですか？", "もう少し安いのはありますか？", "これにします"];
+      if (asksJob) return ["経験は3年です", "…で働いています", "仕事内容は何ですか？"];
+      if (asksHelp) return ["はい、手伝ってください", "いいえ、大丈夫です", "説明していただけますか？"];
+      if (asksRepeat) return ["もう一度お願いします", "ゆっくり話してください", "わかりませんでした"];
+      if (isQuestion) return ["もう一度お願いします", "わかりました", "少し不安です"];
+      return ["面白いですね！", "わかりました", "説明してください"];
+    }
+    if (lang === 'Portuguese') {
+      if (greeting) return ["Olá!", "Bom dia!", "Muito prazer!"];
+      if (asksName) return ["Meu nome é...", "Chamo-me...", "E você?"];
+      if (asksHow) return ["Estou bem, obrigado/a", "Mais ou menos", "Muito bem!"];
+      if (asksWhere) return ["Vou para Lisboa", "O meu destino é...", "Ainda não sei"];
+      if (asksOrder) return ["Queria pedir", "O que recomenda?", "Qual é o prato do dia?"];
+      if (asksPrice) return ["Quanto custa?", "Tem algo mais barato?", "Vou levar"];
+      if (asksJob) return ["Tenho 3 anos de experiência", "Trabalho em...", "Quais são as responsabilidades?"];
+      if (asksHelp) return ["Sim, preciso de ajuda", "Não obrigado, está bem", "Pode explicar?"];
+      if (asksRepeat) return ["Pode repetir?", "Mais devagar, por favor", "Não entendi"];
+      if (isQuestion) return ["Pode repetir?", "Entendo", "Não tenho certeza"];
+      return ["Que interessante!", "Entendo", "Pode explicar?"];
+    }
+    if (lang === 'Chinese') {
+      if (greeting) return ["你好！", "早上好！", "很高兴认识你！"];
+      if (asksName) return ["我叫……", "我的名字是……", "您呢？"];
+      if (asksHow) return ["我很好，谢谢", "还可以", "非常好！"];
+      if (asksWhere) return ["我去北京", "我的目的地是……", "我还不知道"];
+      if (asksOrder) return ["我想点菜", "你有什么推荐？", "今天的特色菜是什么？"];
+      if (asksPrice) return ["多少钱？", "有便宜一点的吗？", "我要这个"];
+      if (asksJob) return ["我有三年经验", "我在……工作", "职责是什么？"];
+      if (asksHelp) return ["是的，我需要帮助", "不用了，谢谢", "你能解释一下吗？"];
+      if (asksRepeat) return ["请再说一遍", "请慢一点说", "我没听懂"];
+      if (isQuestion) return ["请再说一遍", "我明白了", "我不太确定"];
+      return ["很有意思！", "我明白了", "你能解释一下吗？"];
     }
     // Generic fallback for other languages
     if (isQuestion) return ["Can you repeat?", "I understand", "I'm not sure"];
@@ -2182,13 +2316,22 @@ const ChatView = () => {
               <p className="text-stone-400 text-sm max-w-xs">{selectedScenario.id === 'free' ? `Say hello in ${quizSettings.targetLanguage} to get started.` : selectedScenario.description + '. Type or speak to begin.'}</p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center mt-2">
-              {(selectedScenario.id === 'free' ? (CHAT_STARTERS[quizSettings.targetLanguage] || CHAT_STARTERS.French)
-                : selectedScenario.id === 'restaurant' ? ["Je voudrais une table", "Qu'est-ce que vous recommandez?", "L'addition, s'il vous plaît"]
-                  : selectedScenario.id === 'shopping' ? ["Combien ça coûte?", "Avez-vous ça en rouge?", "Je cherche un cadeau"]
-                    : ["Bonjour!", "Pouvez-vous m'aider?", "Je ne comprends pas"]
+              {(selectedScenario.id === 'free'
+                ? (CHAT_STARTERS[quizSettings.targetLanguage] || CHAT_STARTERS.French)
+                : (scenarioStarters.length > 0
+                  ? scenarioStarters
+                  : (() => {
+                      const fb = SCENARIO_STARTER_FALLBACKS[quizSettings.targetLanguage] || SCENARIO_STARTER_FALLBACKS.French;
+                      return selectedScenario.id === 'restaurant' ? fb.restaurant
+                        : selectedScenario.id === 'shopping' ? fb.shopping
+                          : fb.other;
+                    })())
               ).map(s => (
                 <button key={s} onClick={() => handleSend(s)} className="px-3 py-1.5 bg-stone-50 hover:bg-stone-100 border border-stone-100 rounded-xl text-xs font-medium text-stone-600 transition-colors">{s}</button>
               ))}
+              {startersLoading && (
+                <span className="px-3 py-1.5 text-xs text-stone-300 italic">Suggesting…</span>
+              )}
             </div>
           </div>
         )}
