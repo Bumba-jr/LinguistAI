@@ -126,7 +126,7 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
     ];
 
     const cardCls = (on: boolean) => cn(
-        'relative text-left p-5 rounded-2xl border-2 transition-all',
+        'relative text-left p-4 sm:p-5 rounded-2xl border-2 transition-all',
         on ? 'border-emerald-500 bg-emerald-50/60 shadow-sm shadow-emerald-100' : 'border-stone-200 bg-white hover:border-stone-300');
     const radio = (on: boolean) => cn(
         'w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all shrink-0',
@@ -166,51 +166,49 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
 
             {/* Right side — the question */}
             <div className="flex-1 flex flex-col relative">
-                {/* progress dots */}
-                <div className="flex items-center justify-center gap-2 pt-8">
-                    {Array.from({ length: DOT_STEPS }).map((_, i) => (
-                        <span key={i} className={cn('h-1.5 rounded-full transition-all duration-300',
-                            i === step ? 'w-8 bg-emerald-500' : i < step ? 'w-4 bg-emerald-400/60' : 'w-4 bg-stone-200')} />
-                    ))}
+                {/* header row: back · dots · skip — one aligned row on every screen size */}
+                <div className="grid grid-cols-[72px_1fr_72px] items-center h-14 shrink-0 px-4 sm:px-6">
+                    {step > 0 ? (
+                        <button onClick={() => setStep(s => s - 1)}
+                            className="flex items-center gap-1 text-stone-400 hover:text-stone-800 text-xs font-bold transition-colors">
+                            <ChevronLeft size={13} /> Back
+                        </button>
+                    ) : <span />}
+                    <div className="flex items-center justify-center gap-2">
+                        {Array.from({ length: DOT_STEPS }).map((_, i) => (
+                            <span key={i} className={cn('h-1.5 rounded-full transition-all duration-300',
+                                i === step ? 'w-8 bg-emerald-500' : i < step ? 'w-4 bg-emerald-400/60' : 'w-4 bg-stone-200')} />
+                        ))}
+                    </div>
+                    <button onClick={finish} disabled={saving}
+                        className="justify-self-end text-stone-400 hover:text-stone-800 text-[11px] sm:text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-40">
+                        Skip
+                    </button>
                 </div>
 
-                {/* skip */}
-                <button onClick={finish} disabled={saving}
-                    className="absolute top-7 right-6 text-stone-400 hover:text-stone-800 text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-40">
-                    Skip
-                </button>
-
-                {/* back */}
-                {step > 0 && (
-                    <button onClick={() => setStep(s => s - 1)}
-                        className="absolute top-7 left-6 flex items-center gap-1 text-stone-400 hover:text-stone-800 text-xs font-bold transition-colors">
-                        <ChevronLeft size={13} /> Back
-                    </button>
-                )}
-
-                <div className="flex-1 flex flex-col items-center justify-center px-6 sm:px-12 pb-6">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col items-center px-5 sm:px-12 pt-1 pb-6">
                     <AnimatePresence mode="wait">
                         <motion.div key={step}
                             initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }}
                             transition={{ duration: 0.25 }}
-                            className="w-full max-w-2xl">
-                            <h1 className="text-3xl sm:text-5xl font-black text-center leading-tight tracking-tight text-stone-900">
+                            className="w-full max-w-2xl my-auto">
+                            <h1 className="text-[26px] sm:text-5xl font-black text-center leading-[1.15] tracking-tight text-stone-900">
                                 {titles[step]}
                             </h1>
 
                             {/* step 0: language — FIRST */}
                             {step === 0 && (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-10">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 mt-6 sm:mt-10">
                                     {LANGS.map(l => {
                                         const on = lang === l.lang;
                                         return (
                                             <button key={l.lang} onClick={() => setLang(l.lang)} className={cardCls(on)}>
                                                 <div className="flex items-start justify-between">
-                                                    <span className="text-3xl">{l.flag}</span>
+                                                    <span className="text-2xl sm:text-3xl">{l.flag}</span>
                                                     <span className={radio(on)}>{on && <Check size={11} className="text-white" />}</span>
                                                 </div>
-                                                <p className="font-bold mt-3 text-stone-900">{l.lang}</p>
-                                                <p className="text-stone-400 text-sm mt-0.5">{l.note}</p>
+                                                <p className="font-bold mt-2 sm:mt-3 text-sm sm:text-base text-stone-900">{l.lang}</p>
+                                                <p className="text-stone-400 text-xs sm:text-sm mt-0.5">{l.note}</p>
                                             </button>
                                         );
                                     })}
@@ -219,7 +217,7 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
 
                             {/* step 1: goals — language-aware */}
                             {step === 1 && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-10">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mt-6 sm:mt-10">
                                     {getGoals(lang).map(g => {
                                         const on = goals.includes(g.id);
                                         return (
@@ -228,8 +226,8 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
                                                     <g.icon size={18} className={iconCls(on)} />
                                                     <span className={radio(on)}>{on && <Check size={11} className="text-white" />}</span>
                                                 </div>
-                                                <p className="font-bold mt-3 text-stone-900">{g.label}</p>
-                                                <p className="text-stone-400 text-sm mt-0.5">{g.sub}</p>
+                                                <p className="font-bold mt-2 sm:mt-3 text-sm sm:text-base text-stone-900">{g.label}</p>
+                                                <p className="text-stone-400 text-xs sm:text-sm mt-0.5">{g.sub}</p>
                                             </button>
                                         );
                                     })}
@@ -238,7 +236,7 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
 
                             {/* step 2: daily time */}
                             {step === 2 && (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-10">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 mt-6 sm:mt-10">
                                     {TIMES.map(t => {
                                         const on = time === t.id;
                                         return (
@@ -247,8 +245,8 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
                                                     <t.icon size={18} className={iconCls(on)} />
                                                     <span className={radio(on)}>{on && <Check size={11} className="text-white" />}</span>
                                                 </div>
-                                                <p className="font-bold mt-3 text-stone-900">{t.label}</p>
-                                                <p className="text-stone-400 text-sm mt-0.5">{t.sub}</p>
+                                                <p className="font-bold mt-2 sm:mt-3 text-sm sm:text-base text-stone-900">{t.label}</p>
+                                                <p className="text-stone-400 text-xs sm:text-sm mt-0.5">{t.sub}</p>
                                             </button>
                                         );
                                     })}
@@ -257,7 +255,7 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
 
                             {/* step 3: level */}
                             {step === 3 && (
-                                <div className="grid grid-cols-1 gap-3 mt-10">
+                                <div className="grid grid-cols-1 gap-2.5 sm:gap-3 mt-6 sm:mt-10">
                                     {LEVELS.map(l => {
                                         const on = levelId === l.id;
                                         return (
@@ -266,8 +264,8 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
                                                     <l.icon size={18} className={cn('mt-0.5', iconCls(on))} />
                                                     <span className={radio(on)}>{on && <Check size={11} className="text-white" />}</span>
                                                 </div>
-                                                <p className="font-bold mt-2 text-stone-900">{l.label}</p>
-                                                <p className="text-stone-400 text-sm mt-0.5">{l.sub}</p>
+                                                <p className="font-bold mt-2 text-sm sm:text-base text-stone-900">{l.label}</p>
+                                                <p className="text-stone-400 text-xs sm:text-sm mt-0.5">{l.sub}</p>
                                             </button>
                                         );
                                     })}
@@ -277,16 +275,16 @@ const OnboardingFlow = ({ onFinish }: { onFinish: (result: { skipPlacement: bool
                     </AnimatePresence>
                 </div>
 
-                {/* continue */}
-                <div className="pb-8 px-6 sm:px-12">
+                {/* continue — pinned at the bottom, always reachable */}
+                <div className="px-5 sm:px-12 pb-5 sm:pb-8 pt-3 shrink-0">
                     <button onClick={() => (step < DOT_STEPS - 1 ? setStep(s => s + 1) : finish())}
                         disabled={!canContinue || saving}
-                        className="w-full max-w-2xl mx-auto flex items-center justify-center gap-2 py-4 bg-stone-900 text-white text-sm font-black rounded-2xl hover:bg-emerald-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                        className="w-full max-w-2xl mx-auto flex items-center justify-center gap-2 py-3.5 sm:py-4 bg-stone-900 text-white text-sm font-black rounded-2xl hover:bg-emerald-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                         {saving ? <><Loader2 size={16} className="animate-spin" /> Setting things up…</>
                             : step < DOT_STEPS - 1 ? <>Continue <ArrowRight size={16} /></>
                                 : <><GraduationCap size={16} /> Start learning</>}
                     </button>
-                    <p className="text-center text-stone-400 text-xs mt-4">{helpers[step]}</p>
+                    <p className="text-center text-stone-400 text-[11px] sm:text-xs mt-3 sm:mt-4">{helpers[step]}</p>
                 </div>
             </div>
         </div>
