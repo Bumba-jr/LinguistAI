@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, Pencil, ClipboardList,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
@@ -18,11 +18,12 @@ import {
     setLastLesson, getLastLesson, cacheLesson, getCachedLesson,
 } from '../../services/hskStorage';
 import { recordAndTranscribe } from '../../services/speechService';
-import { LevelBar, ToneTrainer, PinyinGuide, SoundContrastTrainer, ZHEn, HSKListeningTrainer, HSKReadingTrainer, MCQ } from './HSKTrainers';
+import { LevelBar, ToneTrainer, PinyinGuide, PinyinChart, CheatSheet, CharactersGuide, SoundContrastTrainer, ZHEn, HSKListeningTrainer, HSKReadingTrainer, MCQ } from './HSKTrainers';
+import { StrokeOrderTeacher, StrokeWriter } from './StrokeOrderTeacher';
 import { HSKMockExam } from './HSKMockExam';
 
 const LEVELS: HskLevel[] = ['1', '2', '3', '4', '5', '6'];
-type HskTab = 'overview' | 'curriculum' | 'pinyin' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
+type HskTab = 'overview' | 'curriculum' | 'pinyin' | 'characters' | 'cheatsheet' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
 
 const SKILL_META = {
     listening: { label: 'Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: 'audio once · 100 pts' },
@@ -126,6 +127,16 @@ const Overview = ({ onGo }: { onGo: (t: HskTab) => void }) => {
                     <BookOpen size={18} className="text-emerald-500 mb-2" />
                     <p className="font-black text-stone-900 text-sm">Curriculum HSK 1 → 6</p>
                     <p className="text-xs text-stone-400 mt-0.5">Structured lessons: three-form vocabulary, characters, patterns, mini-tests</p>
+                </button>
+                <button onClick={() => onGo('characters')} className="bg-white rounded-3xl border border-stone-100 p-5 text-left hover:border-emerald-300 transition-colors">
+                    <Pencil size={18} className="text-amber-500 mb-2" />
+                    <p className="font-black text-stone-900 text-sm">Write characters</p>
+                    <p className="text-xs text-stone-400 mt-0.5">Watch stroke order animated, then trace it yourself stroke by stroke</p>
+                </button>
+                <button onClick={() => onGo('cheatsheet')} className="bg-white rounded-3xl border border-stone-100 p-5 text-left hover:border-emerald-300 transition-colors">
+                    <ClipboardList size={18} className="text-violet-500 mb-2" />
+                    <p className="font-black text-stone-900 text-sm">Cheat sheet</p>
+                    <p className="text-xs text-stone-400 mt-0.5">Tones, word order, particles, measure words — everything on one page</p>
                 </button>
                 <button onClick={() => onGo('progress')} className="bg-white rounded-3xl border border-stone-100 p-5 text-left hover:border-emerald-300 transition-colors">
                     <Trophy size={18} className="text-amber-500 mb-2" />
@@ -338,6 +349,8 @@ const Curriculum = () => {
                                         <p className="text-xs font-mono text-violet-500">{c.pinyin} · {c.en}</p>
                                         <p className="text-xs text-stone-600"><span className="font-black">Parts: </span>{c.components}</p>
                                         <p className="text-xs text-amber-700 bg-white rounded-xl p-2 border border-amber-100">💡 {c.mnemonic}</p>
+                                        <StrokeWriter hanzi={c.hanzi} size={110} />
+                                        <p className="text-[10px] text-stone-400 text-center">tap the drawing to replay</p>
                                     </div>
                                 ))}
                             </div>
@@ -970,6 +983,8 @@ const HSKPrepView = () => {
         { id: 'overview', label: 'Overview', icon: Flag },
         { id: 'curriculum', label: 'Learn', icon: BookOpen },
         { id: 'pinyin', label: 'Pinyin & Tones', icon: Languages },
+        { id: 'characters', label: 'Characters', icon: Pencil },
+        { id: 'cheatsheet', label: 'Cheat Sheet', icon: ClipboardList },
         { id: 'mock', label: 'Mock Exam', icon: FileCheck },
         { id: 'listening', label: 'Listening', icon: Headphones },
         { id: 'reading', label: 'Reading', icon: BookOpenCheck },
@@ -1006,6 +1021,7 @@ const HSKPrepView = () => {
             {tab === 'curriculum' && <Curriculum />}
             {tab === 'pinyin' && (
                 <div className="space-y-5">
+                    <PinyinChart />
                     <PinyinGuide />
                     <SoundContrastTrainer />
                     <ToneTrainer onDone={(pct, label) => {
@@ -1014,6 +1030,13 @@ const HSKPrepView = () => {
                     }} />
                 </div>
             )}
+            {tab === 'characters' && (
+                <div className="space-y-5">
+                    <CharactersGuide />
+                    <StrokeOrderTeacher />
+                </div>
+            )}
+            {tab === 'cheatsheet' && <CheatSheet />}
             {tab === 'mock' && (
                 <HSKMockExam level={level} onLevelChange={setLevel} />
             )}

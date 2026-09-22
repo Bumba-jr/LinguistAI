@@ -9,6 +9,7 @@ import {
     TONE_SETS, NEUTRAL_TONE_WORDS, TONE_SANDHI,
     MANDARIN_FACTS, PINYIN_INITIAL_GROUPS, PINYIN_FINAL_GROUPS, SPELLING_RULES,
     TONE_PAIR_WORDS, SOUND_CONTRASTS, BASIC_STROKES, STROKE_ORDER_RULES,
+    CHARACTER_INTRO, CHEAT_SHEET,
 } from '../../services/hskService';
 import { logWeakness } from '../../services/hskStorage';
 
@@ -69,6 +70,94 @@ export const ZHEn = ({ hanzi, pinyin, en, dark = false, speak = true }: { hanzi:
 
 const TONE_COLORS = ['', 'text-red-500', 'text-amber-500', 'text-violet-500', 'text-blue-500'];
 
+// ── The Pinyin Chart — compact, tappable, always-visible reference ──────────
+// (There is no Chinese "alphabet" — this chart IS the closest thing: the
+// complete sound inventory every syllable is built from.)
+export const PinyinChart = () => (
+    <div className="bg-white rounded-3xl border border-stone-100 p-5 sm:p-6">
+        <div className="flex items-baseline justify-between flex-wrap gap-1 mb-1">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">The pinyin chart</p>
+            <p className="text-[10px] text-stone-300">tap any sound to hear it</p>
+        </div>
+        <p className="text-sm font-black text-stone-900 mb-1">The closest thing to a Chinese "alphabet"</p>
+        <p className="text-xs text-stone-500 mb-4">Strictly there is no Chinese alphabet — pinyin is the complete <b>sound system</b>: 21 initials + 36 finals + 4 tones build every one of the ~400 Mandarin syllables. This is the whole inventory.</p>
+
+        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">21 initials — the starts of syllables</p>
+        <div className="space-y-1.5 mb-4">
+            {PINYIN_INITIAL_GROUPS.map(g => (
+                <div key={g.group} className="flex items-center gap-1.5 flex-wrap">
+                    {g.initials.map(it => (
+                        <button key={it.sound} onClick={() => speakText(it.sample.hanzi, 'Chinese')} title={`${it.sample.hanzi} ${it.sample.pinyin} — ${it.sample.en}`}
+                            className="w-11 h-11 rounded-xl bg-stone-50 hover:bg-emerald-50 hover:border-emerald-200 border border-stone-100 font-black font-mono text-sm text-stone-800 transition-all flex items-center justify-center">
+                            {it.sound}
+                        </button>
+                    ))}
+                </div>
+            ))}
+        </div>
+
+        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">36 finals — the rhymes</p>
+        <div className="space-y-1.5 mb-4">
+            {PINYIN_FINAL_GROUPS.map(g => (
+                <div key={g.name} className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] font-black text-stone-300 uppercase tracking-wider w-14 shrink-0">{g.name.split(' ')[0]}</span>
+                    {g.finals.map(f => {
+                        const sampleHanzi = f.sample?.hanzi;
+                        const Cell = (
+                            <span className="px-2.5 h-8 rounded-lg bg-stone-50 border border-stone-100 font-mono text-xs font-bold text-stone-700 flex items-center justify-center">
+                                {f.sound}
+                            </span>
+                        );
+                        return sampleHanzi
+                            ? <button key={f.sound} onClick={() => speakText(sampleHanzi, 'Chinese')} title={`${f.sample.pinyin} — ${f.sample.en}`} className="hover:bg-emerald-50 hover:border-emerald-200 transition-all">{Cell}</button>
+                            : <span key={f.sound} className="opacity-80">{Cell}</span>;
+                    })}
+                </div>
+            ))}
+        </div>
+
+        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">The tones</p>
+        <div className="flex gap-1.5">
+            {[{ m: 'ā', t: 1 }, { m: 'á', t: 2 }, { m: 'ǎ', t: 3 }, { m: 'à', t: 4 }, { m: 'a', t: 0 }].map(x => (
+                <div key={x.t} className={cn('flex-1 h-10 rounded-xl border border-stone-100 flex items-center justify-center font-black text-lg bg-stone-50',
+                    x.t === 0 ? 'text-stone-400' : TONE_COLORS[x.t])}>
+                    {x.m}
+                </div>
+            ))}
+        </div>
+        <p className="text-[10px] text-stone-300 mt-3 text-center">Initial + Final + Tone = every syllable in Mandarin</p>
+    </div>
+);
+
+// ── The Cheat Sheet — the whole language on one card ────────────────────────
+export const CheatSheet = () => (
+    <div className="space-y-4">
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">The cheat sheet</p>
+            <p className="text-sm font-black text-stone-900">All of essential Chinese on one page</p>
+            <p className="text-xs text-stone-500 mt-1">Tones, sandhi, word order, particles, measure words, question words, connectors, numbers, time, survival phrases — skim it daily until it's automatic.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {CHEAT_SHEET.map(section => (
+                <div key={section.title} className="bg-white rounded-3xl border border-stone-100 p-5">
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.15em] mb-3">{section.title}</p>
+                    <div className="space-y-2">
+                        {section.items.map((it, i) => (
+                            <div key={i} className="flex items-start gap-2.5 border-b border-stone-50 last:border-0 pb-2 last:pb-0">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-xs font-black text-stone-900 whitespace-nowrap">{it.label}</span>
+                                    {it.say && <button onClick={() => speakText(it.say, 'Chinese')} className="text-stone-300 hover:text-emerald-500 shrink-0"><Volume2 size={11} /></button>}
+                                </div>
+                                <span className="text-[11px] text-stone-500 flex-1">{it.detail}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
 // ── Pinyin Foundation Course — the complete system, in study order ──────────
 export const PinyinGuide = () => (
     <div className="space-y-4">
@@ -91,6 +180,9 @@ export const PinyinGuide = () => (
                 </div>
                 <div className="bg-violet-50 border border-violet-100 rounded-2xl p-3 text-violet-800">
                     <p className="font-black mb-1">The syllable math</p>{MANDARIN_FACTS.syllableMath}
+                </div>
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-amber-800 sm:col-span-2">
+                    <p className="font-black mb-1">Mandarin vs Cantonese</p>{MANDARIN_FACTS.cantoneseNote}
                 </div>
             </div>
             <p className="mt-3 text-[11px] font-black text-stone-400 uppercase tracking-widest text-center">The order: {MANDARIN_FACTS.order}</p>
@@ -244,10 +336,50 @@ export const PinyinGuide = () => (
                 ))}
             </div>
         </div>
+    </div>
+);
 
-        {/* Strokes */}
+// ── Characters Guide — what characters ARE, their components, the strokes ────
+export const CharactersGuide = () => (
+    <div className="space-y-4">
+        {/* Unit 17 — what are characters */}
         <div className="bg-white rounded-3xl border border-stone-100 p-6">
-            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Characters: the stroke system</p>
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">What are characters?</p>
+            <p className="text-sm font-black text-stone-900 mb-2">Not letters, not always words — meaning units built from parts</p>
+            <p className="text-sm text-stone-600 leading-relaxed">{CHARACTER_INTRO.intro}</p>
+        </div>
+
+        {/* radicals */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Radicals</p>
+            <p className="text-sm font-black text-stone-900 mb-1">The meaning-carrying components</p>
+            <p className="text-xs text-stone-500 mb-3">Spot the radical and you know the family the character belongs to — water, mouth, person…</p>
+            <div className="space-y-2">
+                {CHARACTER_INTRO.radicals.map(r => (
+                    <div key={r.radical} className="flex items-center gap-3 bg-stone-50 rounded-xl px-3 py-2.5">
+                        <span className="text-2xl font-black text-stone-900 w-8 text-center shrink-0">{r.radical}</span>
+                        <span className="text-xs font-black text-emerald-700 w-36 shrink-0">{r.name}</span>
+                        <span className="text-xs text-stone-500 flex-1">{r.appearsIn}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* phono-semantic */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">How most characters are made</p>
+            <p className="text-sm font-black text-stone-900 mb-3">Meaning part + sound part</p>
+            <div className="bg-amber-50/60 border border-amber-100 rounded-2xl p-5 text-center">
+                <p className="text-5xl font-black text-stone-900 mb-2">{CHARACTER_INTRO.phonetic.hanzi}</p>
+                <p className="text-sm font-bold text-stone-700">{CHARACTER_INTRO.phonetic.parts}</p>
+                <p className="text-sm text-stone-600 mt-1">{CHARACTER_INTRO.phonetic.result}</p>
+            </div>
+            <p className="text-xs text-stone-500 mt-3 leading-relaxed">{CHARACTER_INTRO.phonetic.note}</p>
+        </div>
+
+        {/* the stroke system */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">The stroke system</p>
             <p className="text-sm font-black text-stone-900 mb-1">8 basic strokes build every character</p>
             <p className="text-xs text-stone-500 mb-3">Handwriting is not required for the modern exam, but knowing strokes is how you describe, remember and look up characters.</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">

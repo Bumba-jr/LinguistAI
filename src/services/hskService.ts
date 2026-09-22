@@ -110,12 +110,15 @@ export const HSK_SYLLABUS: Record<HskLevel, { title: string; slug: string; focus
         { title: '把 Sentences — Moving Objects', slug: 'ba', focus: '把 structure: verb the object into a result, when 把 is required, classic mistakes' },
         { title: '被 & Passive Meaning', slug: 'bei', focus: '被 passive, notional passives (饭吃了), when Chinese avoids the passive' },
         { title: '了, 过 & 着 — Aspect Masterclass', slug: 'aspect', focus: 'The three aspect markers, perfective vs experiential vs continuative, verb never changes' },
+        { title: 'Serial Verbs & Coverbs', slug: 'serial-verbs', focus: 'Chained verbs with one subject (我去买东西 I go buy things), coverbs 给/跟/对/用 setting up the action' },
         { title: 'Measure Words Deep-Dive', slug: 'measure', focus: '只/条/张/辆/件/双, when measure words are obligatory, 个 as default' },
         { title: 'Directions & Location', slug: 'location', focus: '上/下/里/外/前/后, 在/有/是 for existence, 越来越' },
         { title: 'Opinions & Reasons', slug: 'opinions', focus: '觉得/认为, 因为…所以, 不但…而且, giving simple arguments' },
     ],
     '4': [
         { title: '是…的 & Emphasis', slug: 'shi-de', focus: 'Focusing on when/how/where with 是…的, topic-comment structure' },
+        { title: '的 / 得 / 地 — The Three de', slug: 'three-de', focus: 'possession 的 (我的书), degree 得 (说得快), manner 地 (慢慢地) — the classic confusion, settled forever' },
+        { title: 'Connectors: 虽然…但是， 除了…以外', slug: 'connectors', focus: 'Although/but, apart from, no matter, either/or — linking ideas the exam expects' },
         { title: '连…都/也, 甚至 & Focus', slug: 'focus', focus: 'Even/everything structures, exaggeration, stressing a point' },
         { title: 'Conditionals & Concessions', slug: 'conditionals', focus: '如果…就, 要是, 不管…都, 即使…也' },
         { title: 'Work & Society Topics', slug: 'work', focus: 'Interviews, offices, plans; 毕业/负责/机会 — exam-ready vocabulary' },
@@ -353,6 +356,7 @@ export const MANDARIN_FACTS = {
     order: 'Pinyin → Initials → Finals → Tones → Syllables → Words → Sentences → Characters',
     syllableMath: 'There are 21 initials, 36 finals, and 4 tones + neutral. Not every initial combines with every final: Mandarin has ~400 valid base syllables, and over 1,000 distinct pronunciations once tones are counted. You do NOT memorise 1,000 sounds — you learn the ~60 building blocks and combine them.',
     simplifiedNote: 'This portal teaches SIMPLIFIED characters (简体字) — the mainland China standard used by the HSK. Traditional (繁體字) is used in Taiwan, Hong Kong and most overseas communities. Read the shapes differently, speak the same.',
+    cantoneseNote: 'Mandarin (普通话 Pǔtōnghuà, "common speech") is the standard language of mainland China and Taiwan — the only thing the HSK tests. Cantonese (粤语 Yuèyǔ) is a separate spoken language, NOT a dialect of Mandarin: Guangzhou/Hong Kong speech is mutually unintelligible with Mandarin even though both write characters. Learn Mandarin first — it works everywhere.',
     example: { hanzi: '我爱你', pinyin: 'Wǒ ài nǐ', en: 'I love you — pinyin lets you SAY the sentence before you can write a single character of it' },
 };
 
@@ -518,4 +522,113 @@ export const STROKE_ORDER_RULES = [
     { rule: 'Outside → inside', example: '月 yuè: the frame first' },
     { rule: 'Inside before closing', example: '回 huí: fill the inside, then seal the bottom' },
     { rule: 'Centre before symmetric sides', example: '小 xiǎo: the centre hook first' },
+];
+
+// ── What are characters? (Unit 17 — components, radicals, phono-semantic) ───
+export const CHARACTER_INTRO = {
+    intro: 'A character (汉字) is not a letter, and not always a word — it is a meaning-bearing unit. Most Chinese words are 1–2 characters: 人 rén = person, but 中 + 文 = 中文 Zhōngwén (Chinese language). Characters are built from reusable components — learn the components and thousands of characters become familiar combinations instead of random drawings.',
+    radicals: [
+        { radical: '氵', name: 'water (three-dot water)', appearsIn: '河 hé river · 湖 hú lake · 喝 hē drink' },
+        { radical: '口', name: 'mouth / opening', appearsIn: '吃 chī eat · 叫 jiào to call · 唱 chàng to sing' },
+        { radical: '亻', name: 'person', appearsIn: '你 nǐ you · 他 tā he · 们 men (plural)' },
+        { radical: '心', name: 'heart / mind', appearsIn: '想 xiǎng to think · 忘 wàng to forget · 情qíng feeling' },
+        { radical: '女', name: 'woman', appearsIn: '妈 mā mum · 姐 jiě older sister · 她 tā she' },
+        { radical: '讠', name: 'speech / words', appearsIn: '说 shuō to speak · 读 dú to read · 话 huà speech' },
+    ],
+    phonetic: {
+        hanzi: '妈',
+        parts: '女 (woman → MEANING) + 马 mǎ (horse → SOUND)',
+        result: 'mā = mum. One component carries the meaning family, the other tells you roughly how it sounds.',
+        note: 'Roughly 80% of characters are phono-semantic compounds like this — one part for meaning, one part for sound. Once you know ~100 common components, new characters start explaining themselves.',
+    },
+};
+
+// ── The Cheat Sheet — one compact reference for everything essential ─────────
+export const CHEAT_SHEET: { title: string; items: { label: string; detail: string; say?: string }[] }[] = [
+    { title: 'Tones', items: [
+        { label: '1st ā', detail: 'high & flat ─────' },
+        { label: '2nd á', detail: 'rising ╱ (like "Really?")' },
+        { label: '3rd ǎ', detail: 'low dip ╲╱ — don\'t over-exaggerate' },
+        { label: '4th à', detail: 'sharp fall ╲' },
+        { label: 'neutral a', detail: 'light & unstressed — 妈妈 māma' },
+    ]},
+    { title: 'Tone sandhi', items: [
+        { label: '3rd + 3rd', detail: 'say 2nd + 3rd — nǐ hǎo → ní hǎo' },
+        { label: '一 yī', detail: 'yí before a 4th tone, yì otherwise — 一个 yí ge' },
+        { label: '不 bù', detail: 'becomes bú before a 4th tone — 不是 bú shì' },
+    ]},
+    { title: 'Word order', items: [
+        { label: 'S + V + O', detail: '我吃饭 Wǒ chī fàn — the verb NEVER conjugates' },
+        { label: 'Time first', detail: '我明天去 — time comes before the verb' },
+        { label: 'Past', detail: 'time word + verb + 了: 我昨天吃了' },
+        { label: 'Future', detail: '要…了: 我明天要去' },
+        { label: 'Question', detail: 'statement + 吗 ma: 你好吗？' },
+        { label: 'Negation', detail: '不 bù (don\'t/won\'t) vs 没 méi (didn\'t / don\'t have)' },
+    ]},
+    { title: 'Particles', items: [
+        { label: '了 le', detail: 'completed action — 吃了 chī le' },
+        { label: '过 guo', detail: 'past experience — 去过 qù guo (have been)' },
+        { label: '着 zhe', detail: 'ongoing state — 穿着 chuān zhe (wearing)' },
+        { label: '的 de', detail: 'possession / description — 我的书 my book' },
+        { label: '得 de', detail: 'degree after a verb — 说得快 speaks fast' },
+        { label: '地 de', detail: 'manner before a verb — 慢慢地 slowly' },
+        { label: '吗 / 呢 / 吧', detail: 'yes-no? / follow-up? / suggestion' },
+    ]},
+    { title: 'Measure words', items: [
+        { label: '个 gè', detail: 'the default — 一个人 one person' },
+        { label: '本 běn', detail: 'books — 一本书' },
+        { label: '张 zhāng', detail: 'flat things — 一张纸 a paper' },
+        { label: '杯 bēi', detail: 'cups — 一杯水 a glass of water' },
+        { label: '件 jiàn', detail: 'clothes / matters — 一件衣服' },
+        { label: '只 zhī', detail: 'animals — 一只猫 a cat' },
+        { label: '条 tiáo', detail: 'long things — 一条路 a road' },
+        { label: '块 kuài', detail: 'money / yuan — 五块钱 5 kuai' },
+    ]},
+    { title: 'Question words', items: [
+        { label: '什么 shénme', detail: 'what' },
+        { label: '谁 shéi', detail: 'who' },
+        { label: '哪里 / 哪儿', detail: 'nǎlǐ / nǎr — where' },
+        { label: '什么时候', detail: 'shénme shíhou — when' },
+        { label: '为什么', detail: 'wèishénme — why' },
+        { label: '怎么 zěnme', detail: 'how' },
+        { label: '多少 duōshao', detail: 'how many / how much' },
+    ]},
+    { title: 'Connectors', items: [
+        { label: '因为…所以…', detail: 'because… therefore…' },
+        { label: '虽然…但是…', detail: 'although… but…' },
+        { label: '不但…而且…', detail: 'not only… but also…' },
+        { label: '如果…就…', detail: 'if… then…' },
+        { label: '除了…以外', detail: 'apart from… (以外)' },
+        { label: '要么…要么…', detail: 'either… or…' },
+    ]},
+    { title: 'Comparing', items: [
+        { label: '比 bǐ', detail: 'A 比 B + adjective — A is more … than B' },
+        { label: '更 gèng', detail: 'even more' },
+        { label: '最 zuì', detail: 'the most' },
+        { label: '一样 yíyàng', detail: 'the same — 和…一样' },
+    ]},
+    { title: 'Numbers', items: [
+        { label: '1–10', detail: '一 二 三 四 五 六 七 八 九 十' },
+        { label: '11–19', detail: '十 + digit — 十一 shíyī eleven' },
+        { label: 'Tens', detail: 'digit + 十 — 二十 èrshí twenty' },
+        { label: 'Big units', detail: '百 hundred · 千 thousand · 万 10,000' },
+        { label: 'Phone numbers', detail: 'read digit by digit — 一三九… (1 yāo for 1)' },
+    ]},
+    { title: 'Time words', items: [
+        { label: '今天 / 明天 / 昨天', detail: 'today / tomorrow / yesterday' },
+        { label: '现在 xiànzài', detail: 'now' },
+        { label: '早上 / 中午 / 晚上', detail: 'morning / noon / evening' },
+        { label: '…点…分', detail: '…diǎn…fēn — 3:05 三点零五' },
+        { label: '星期一…星期天', detail: 'Monday… Sunday' },
+    ]},
+    { title: 'Survival phrases', items: [
+        { label: '你好 nǐ hǎo', detail: 'hello', say: '你好' },
+        { label: '谢谢 xièxie', detail: 'thank you', say: '谢谢' },
+        { label: '对不起 duìbuqǐ', detail: 'sorry', say: '对不起' },
+        { label: '多少钱？', detail: 'duōshao qián — how much?', say: '多少钱' },
+        { label: '…在哪儿？', detail: '… zài nǎr — where is…?', say: '厕所在哪儿' },
+        { label: '我不明白', detail: 'Wǒ bù míngbai — I don\'t understand', say: '我不明白' },
+        { label: '请再说一遍', detail: 'please say it again', say: '请再说一遍' },
+        { label: '我要这个', detail: 'Wǒ yào zhège — I want this one', say: '我要这个' },
+    ]},
 ];
