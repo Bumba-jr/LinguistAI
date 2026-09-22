@@ -341,3 +341,181 @@ export const TONE_SANDHI = [
     { rule: '一 yī changes tone', example: { hanzi: '一个', spoken: 'yí ge', written: 'yī gè', en: 'one — 一 is yí before 4th tone, yì before 1st/2nd/3rd' } },
     { rule: '不 bù changes tone', example: { hanzi: '不是', spoken: 'bú shì', written: 'bù shì', en: 'to not be — 不 becomes bú before a 4th tone' } },
 ];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PINYIN FOUNDATION COURSE DATA — the complete system: initials → finals → tones
+// → syllables → words → sentences (Phase 0-4 of the master Chinese syllabus).
+// A syllable = Initial + Final + Tone. ~400 base syllables, 1000+ with tones.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const MANDARIN_FACTS = {
+    intro: 'Pinyin (拼音, pīnyīn) is NOT the Chinese alphabet — it is a pronunciation system (romanisation) that tells you how to say the characters. The characters (汉字, hànzì) are the actual writing. You are learning TWO systems at once: Pinyin for the ear and mouth, 汉字 for the eye and hand.',
+    order: 'Pinyin → Initials → Finals → Tones → Syllables → Words → Sentences → Characters',
+    syllableMath: 'There are 21 initials, 36 finals, and 4 tones + neutral. Not every initial combines with every final: Mandarin has ~400 valid base syllables, and over 1,000 distinct pronunciations once tones are counted. You do NOT memorise 1,000 sounds — you learn the ~60 building blocks and combine them.',
+    simplifiedNote: 'This portal teaches SIMPLIFIED characters (简体字) — the mainland China standard used by the HSK. Traditional (繁體字) is used in Taiwan, Hong Kong and most overseas communities. Read the shapes differently, speak the same.',
+    example: { hanzi: '我爱你', pinyin: 'Wǒ ài nǐ', en: 'I love you — pinyin lets you SAY the sentence before you can write a single character of it' },
+};
+
+export interface PinyinInitial { sound: string; english: string; mouth: string; mistake: string; sample: { hanzi: string; pinyin: string; en: string }; }
+export const PINYIN_INITIAL_GROUPS: { group: string; note: string; initials: PinyinInitial[] }[] = [
+    {
+        group: 'b p m f', note: 'The labial sounds — made with the lips.',
+        initials: [
+            { sound: 'b', english: 'like "b" in SPIN — no puff of air (unaspirated)', mouth: 'Lips close, then open. English b has no air puff either here — it is already close.', mistake: 'Adding an English "b" puff makes it sound like p.', sample: { hanzi: '爸', pinyin: 'bà', en: 'dad' } },
+            { sound: 'p', english: 'like "p" in PIN — strong puff of air (aspirated)', mouth: 'Same lip position as b, but release with a strong puff of air you can feel on your hand.', mistake: 'Not aspirating enough — b and p must sound clearly different.', sample: { hanzi: '怕', pinyin: 'pà', en: 'to fear' } },
+            { sound: 'm', english: 'exactly like English m', mouth: 'Lips together, hum through the nose.', mistake: 'None — this one is free.', sample: { hanzi: '妈', pinyin: 'mā', en: 'mum' } },
+            { sound: 'f', english: 'exactly like English f', mouth: 'Top teeth on bottom lip, blow.', mistake: 'None — this one is free.', sample: { hanzi: '飞', pinyin: 'fēi', en: 'to fly' } },
+        ],
+    },
+    {
+        group: 'd t n l', note: 'Tongue-tip sounds at the ridge behind your top teeth.',
+        initials: [
+            { sound: 'd', english: 'like "d" in STAND — no puff of air', mouth: 'Tongue tip on the ridge, release without a puff.', mistake: 'Aspirating it (turning it into t).', sample: { hanzi: '大', pinyin: 'dà', en: 'big' } },
+            { sound: 't', english: 'like "t" in TOP — strong puff of air', mouth: 'Same position as d, release with a strong puff.', mistake: 'Under-aspirating — d and t must contrast.', sample: { hanzi: '他', pinyin: 'tā', en: 'he' } },
+            { sound: 'n', english: 'exactly like English n', mouth: 'Tongue tip on the ridge, air through the nose.', mistake: 'Confusing with l at the end of syllables (nán vs lán).', sample: { hanzi: '你', pinyin: 'nǐ', en: 'you' } },
+            { sound: 'l', english: 'exactly like English l', mouth: 'Tongue tip on the ridge, air around the sides.', mistake: 'Confusing with n — practise nǐ (you) vs lǐ (plum).', sample: { hanzi: '来', pinyin: 'lái', en: 'to come' } },
+        ],
+    },
+    {
+        group: 'g k h', note: 'Back-of-the-mouth sounds.',
+        initials: [
+            { sound: 'g', english: 'like "g" in SKY — no puff of air (never a hard English "g" in "go" with extra force)', mouth: 'Back of the tongue touches the soft palate, release without a puff.', mistake: 'Adding aspiration.', sample: { hanzi: '哥', pinyin: 'gē', en: 'older brother' } },
+            { sound: 'k', english: 'like "k" in KITE — strong puff of air', mouth: 'Same position as g, with a strong puff.', mistake: 'Under-aspirating.', sample: { hanzi: '课', pinyin: 'kè', en: 'lesson' } },
+            { sound: 'h', english: 'like English h but further back — almost a soft throat sound', mouth: 'Back of tongue near the soft palate, gentle friction — like breathing on glasses.', mistake: 'Making it too soft (silent) or too harsh (like German ach).', sample: { hanzi: '好', pinyin: 'hǎo', en: 'good' } },
+        ],
+    },
+    {
+        group: 'j q x', note: 'THE sounds to train specifically — no true English equivalents. Tongue FORWARD (flat, at the hard ridge), lips spread.',
+        initials: [
+            { sound: 'j', english: 'between "j" in JEEP and "tch" — but made with the tongue forward and a smile', mouth: 'Tongue tip DOWN behind the bottom teeth, the flat blade of the tongue touches the hard ridge. Lips spread wide.', mistake: 'Saying English "j" (tongue pulled back, lips rounded) — completely wrong sound.', sample: { hanzi: '家', pinyin: 'jiā', en: 'home' } },
+            { sound: 'q', english: 'same family as j but strongly aspirated — like a hissy "ch"', mouth: 'Same forward tongue position as j, release with a strong puff of air.', mistake: 'Saying English "q" (kw sound) — q in pinyin is NOTHING like English.', sample: { hanzi: '七', pinyin: 'qī', en: 'seven' } },
+            { sound: 'x', english: 'a soft hissing "sh", made further forward than English sh', mouth: 'Forward tongue like j/q, long soft friction — like a gentle hiss. Lips spread.', mistake: 'Saying English "x" (ks) — wrong language entirely. Also confusing with sh (tongue back).', sample: { hanzi: '先', pinyin: 'xiān', en: 'first' } },
+        ],
+    },
+    {
+        group: 'zh ch sh r', note: 'The RETROFLEX series — tongue curled slightly BACK. Treat zh/ch/sh as single initial sounds, not letter combos.',
+        initials: [
+            { sound: 'zh', english: 'like a "j"-ish sound with the tongue curled back', mouth: 'Curl the tongue tip up toward the hard palate (roof), make a voiced stop.', mistake: 'Merging with z — zh is curled back, z is flat. 站 zhàn ≠ 赞 zàn.', sample: { hanzi: '中', pinyin: 'zhōng', en: 'middle / China' } },
+            { sound: 'ch', english: 'same family as zh, but strongly aspirated', mouth: 'Curled-back tongue like zh, with a strong puff of air.', mistake: 'Merging with c — 吃 chī ≠ 次 cì.', sample: { hanzi: '吃', pinyin: 'chī', en: 'to eat' } },
+            { sound: 'sh', english: 'like English sh, but tongue curled back and further up', mouth: 'Retroflex the tongue tip, long friction.', mistake: 'Merging with s — 是 shì ≠ 四 sì. This is THE classic listening mistake.', sample: { hanzi: '是', pinyin: 'shì', en: 'to be' } },
+            { sound: 'r', english: 'NOT the English r — closer to the "s" in MEASURE (ʒ) with a curled tongue', mouth: 'Same retroflex position as sh, but voiced with a buzz.', mistake: 'Saying English "r" (lips rounded) — keep lips unrounded and buzz.', sample: { hanzi: '人', pinyin: 'rén', en: 'person' } },
+        ],
+    },
+    {
+        group: 'z c s', note: 'The DENTAL series — tongue FLAT against the back of the teeth. The zh/z, ch/c, sh/s contrasts are critical for listening.',
+        initials: [
+            { sound: 'z', english: 'like "ds" in KIDS — a buzzing dz', mouth: 'Flat tongue against the teeth, voiced buzz.', mistake: 'Merging with zh (curled back).', sample: { hanzi: '字', pinyin: 'zì', en: 'character / word' } },
+            { sound: 'c', english: 'like "ts" in CATS — strongly aspirated (NEVER a k sound!)', mouth: 'Flat tongue at the teeth, release a strong ts puff.', mistake: 'Saying English "c/k" — 菜 cài (vegetable) is "tsai", never "kai".', sample: { hanzi: '菜', pinyin: 'cài', en: 'vegetable / dish' } },
+            { sound: 's', english: 'exactly like English s', mouth: 'Flat tongue, thin stream of air.', mistake: 'Merging with sh (curled back).', sample: { hanzi: '三', pinyin: 'sān', en: 'three' } },
+        ],
+    },
+];
+
+export interface PinyinFinalGroup { name: string; finals: { sound: string; english: string; sample?: { hanzi: string; pinyin: string; en: string } }[]; note: string; }
+export const PINYIN_FINAL_GROUPS: PinyinFinalGroup[] = [
+    {
+        name: 'Simple finals (the 6 building blocks)', note: 'Every other final is built from these. Learn the ones that differ from English especially well.',
+        finals: [
+            { sound: 'a', english: 'like "ah" — open and bright', sample: { hanzi: '妈', pinyin: 'mā', en: 'mum' } },
+            { sound: 'o', english: 'like "aw" — rounded lips (after b/p/m/f it is actually "uo")', sample: { hanzi: '我', pinyin: 'wǒ', en: 'I / me' } },
+            { sound: 'e', english: 'like the "u" in "uh" — a relaxed mid sound, NOT English "e"', sample: { hanzi: '饿', pinyin: 'è', en: 'hungry' } },
+            { sound: 'i', english: 'like "ee" — BUT after zh/ch/sh/r/z/c/s it becomes a buzzing continuation of that consonant (shì is not "shee")', sample: { hanzi: '你', pinyin: 'nǐ', en: 'you' } },
+            { sound: 'u', english: 'like "oo" in food', sample: { hanzi: '不', pinyin: 'bù', en: 'not' } },
+            { sound: 'ü', english: 'like French "u" / German "ü" — say "ee" with rounded lips. English has no equivalent', sample: { hanzi: '绿', pinyin: 'lǜ', en: 'green' } },
+        ],
+    },
+    { name: 'Compound finals', note: 'Two vowels gliding together.', finals: [
+        { sound: 'ai', english: 'like "eye"', sample: { hanzi: '爱', pinyin: 'ài', en: 'to love' } },
+        { sound: 'ei', english: 'like "ay" in "say"', sample: { hanzi: '杯', pinyin: 'bēi', en: 'cup' } },
+        { sound: 'ao', english: 'like "ow" in "cow"', sample: { hanzi: '好', pinyin: 'hǎo', en: 'good' } },
+        { sound: 'ou', english: 'like "oh" gliding from an o', sample: { hanzi: '都', pinyin: 'dōu', en: 'all' } },
+    ]},
+    { name: 'Nasal finals (end in n or ng)', note: 'The n/ng contrast is one of the most important listening skills — an vs ang, en vs eng, in vs ing.', finals: [
+        { sound: 'an', english: 'like "ahn" ending with n (tongue forward)', sample: { hanzi: '班', pinyin: 'bān', en: 'class' } },
+        { sound: 'en', english: 'like "un" in "fun" ending with n', sample: { hanzi: '人', pinyin: 'rén', en: 'person' } },
+        { sound: 'ang', english: 'like "ahng" — open, ending with ng (tongue back)', sample: { hanzi: '帮', pinyin: 'bāng', en: 'to help' } },
+        { sound: 'eng', english: 'like "ung" ending with ng', sample: { hanzi: '风', pinyin: 'fēng', en: 'wind' } },
+        { sound: 'ong', english: 'like "ong" — starts rounded, unique to Mandarin', sample: { hanzi: '中', pinyin: 'zhōng', en: 'middle' } },
+    ]},
+    { name: 'i-family finals', note: 'i + another sound gliding through.', finals: [
+        { sound: 'ia / ie / iao / iu', english: 'ya / yeh / yao (like "meow") / yo (like "yo-yo")', sample: { hanzi: '叫', pinyin: 'jiào', en: 'to be called' } },
+        { sound: 'ian / in', english: 'yen / een', sample: { hanzi: '钱', pinyin: 'qián', en: 'money' } },
+        { sound: 'iang / ing', english: 'yahng / eeng', sample: { hanzi: '明', pinyin: 'míng', en: 'bright' } },
+    ]},
+    { name: 'u-family finals', note: 'u + another sound gliding through.', finals: [
+        { sound: 'ua / uo / uai / ui', english: 'wa / wo / why / way', sample: { hanzi: '水', pinyin: 'shuǐ', en: 'water' } },
+        { sound: 'uan / un / uang', english: 'wan / wun / wahng', sample: { hanzi: '饭', pinyin: 'fàn', en: 'rice / meal' } },
+    ]},
+    { name: 'ü-family finals', note: 'After j / q / x, ü loses its dots in writing (ju qu xu) but still SOUNDS like ü.', finals: [
+        { sound: 'üe / üan / ün', english: 'üweh / üwen / ün — written ue/uan/un after j q x (and y)', sample: { hanzi: '月', pinyin: 'yuè', en: 'moon / month' } },
+    ]},
+];
+
+export const SPELLING_RULES = [
+    { rule: 'ü after j / q / x / y', detail: 'ü loses its two dots: 去 qù (go), 月 yuè (month). It still SOUNDS like ü — the dots are just not written. Everywhere else (nü, lü) the dots stay: 绿 lǜ.' },
+    { rule: 'i alone / starting a syllable', detail: 'written y: 一 yī, 也 yě. After zh/ch/sh/r/z/c/s, the i is a buzz, not "ee": 是 shì, 字 zì.' },
+    { rule: 'u alone / starting a syllable', detail: 'written w: 五 wǔ, 我 wǒ (w+o).' },
+    { rule: 'Tone mark placement', detail: 'The mark goes on the main vowel: on a if there is one, else on o/e, else on the LAST vowel. The dot on i is dropped under a tone mark: 你 nǐ.' },
+    { rule: 'Apostrophe before a- o- e- syllables', detail: 'When a syllable starting with a/o/e follows another syllable, separate with an apostrophe: 西安 Xī\'ān (Xi\'an), not "Xīān".' },
+    { rule: 'The neutral tone', detail: 'Never gets a tone mark: the second syllable of 妈妈 māma, 谢谢 xièxie, 朋友 péngyou is light and unstressed.' },
+];
+
+// All 16 two-syllable tone combinations, with a real word for each (Unit 14 — tone pairs)
+export const TONE_PAIR_WORDS: { pair: string; hanzi: string; pinyin: string; en: string }[] = [
+    { pair: '1+1', hanzi: '咖啡', pinyin: 'kāfēi', en: 'coffee' },
+    { pair: '1+2', hanzi: '中国', pinyin: 'Zhōngguó', en: 'China' },
+    { pair: '1+3', hanzi: '开始', pinyin: 'kāishǐ', en: 'to begin' },
+    { pair: '1+4', hanzi: '工作', pinyin: 'gōngzuò', en: 'work' },
+    { pair: '2+1', hanzi: '回家', pinyin: 'huíjiā', en: 'to go home' },
+    { pair: '2+2', hanzi: '学习', pinyin: 'xuéxí', en: 'to study' },
+    { pair: '2+3', hanzi: '牛奶', pinyin: 'niúnǎi', en: 'milk' },
+    { pair: '2+4', hanzi: '决定', pinyin: 'juédìng', en: 'to decide' },
+    { pair: '3+1', hanzi: '老师', pinyin: 'lǎoshī', en: 'teacher' },
+    { pair: '3+2', hanzi: '旅行', pinyin: 'lǚxíng', en: 'to travel' },
+    { pair: '3+3', hanzi: '你好', pinyin: 'nǐ hǎo (→ní hǎo)', en: 'hello — sandhi!' },
+    { pair: '3+4', hanzi: '米饭', pinyin: 'mǐfàn', en: 'cooked rice' },
+    { pair: '4+1', hanzi: '大家', pinyin: 'dàjiā', en: 'everyone' },
+    { pair: '4+2', hanzi: '电梯', pinyin: 'diàntí', en: 'lift / elevator' },
+    { pair: '4+3', hanzi: '汉语', pinyin: 'Hànyǔ', en: 'Chinese language' },
+    { pair: '4+4', hanzi: '再见', pinyin: 'zàijiàn', en: 'goodbye' },
+];
+
+// Difficult sound contrasts — minimal pairs for listening discrimination (Unit 16)
+export interface SoundContrast { contrast: string; tip: string; a: { hanzi: string; pinyin: string; en: string }; b: { hanzi: string; pinyin: string; en: string }; }
+export const SOUND_CONTRASTS: SoundContrast[] = [
+    { contrast: 'sh vs s', tip: 'sh: tongue curled back · s: tongue flat. The #1 listening mistake.', a: { hanzi: '是', pinyin: 'shì', en: 'to be' }, b: { hanzi: '四', pinyin: 'sì', en: 'four' } },
+    { contrast: 'ch vs c', tip: 'ch: retroflex + puff · c: flat tongue ts.', a: { hanzi: '吃', pinyin: 'chī', en: 'to eat' }, b: { hanzi: '次', pinyin: 'cì', en: 'time / occurrence' } },
+    { contrast: 'zh vs z', tip: 'zh: curled back · z: flat dental dz.', a: { hanzi: '纸', pinyin: 'zhǐ', en: 'paper' }, b: { hanzi: '字', pinyin: 'zì', en: 'character' } },
+    { contrast: 'b vs p', tip: 'b: no puff of air · p: strong puff.', a: { hanzi: '爸', pinyin: 'bà', en: 'dad' }, b: { hanzi: '怕', pinyin: 'pà', en: 'to fear' } },
+    { contrast: 'd vs t', tip: 'd: no puff · t: strong puff.', a: { hanzi: '肚', pinyin: 'dù', en: 'belly' }, b: { hanzi: '兔', pinyin: 'tù', en: 'rabbit' } },
+    { contrast: 'g vs k', tip: 'g: no puff · k: strong puff.', a: { hanzi: '歌', pinyin: 'gē', en: 'song' }, b: { hanzi: '渴', pinyin: 'kě', en: 'thirsty' } },
+    { contrast: 'j vs q', tip: 'both tongue-forward: j voiced, q aspirated hiss.', a: { hanzi: '鸡', pinyin: 'jī', en: 'chicken' }, b: { hanzi: '七', pinyin: 'qī', en: 'seven' } },
+    { contrast: 'x vs sh', tip: 'x: tongue FORWARD, lips spread · sh: tongue BACK.', a: { hanzi: '西', pinyin: 'xī', en: 'west' }, b: { hanzi: '十', pinyin: 'shí', en: 'ten' } },
+    { contrast: 'n vs l', tip: 'n: air through the nose · l: air around the sides.', a: { hanzi: '你', pinyin: 'nǐ', en: 'you' }, b: { hanzi: '李', pinyin: 'lǐ', en: 'Li (surname)' } },
+    { contrast: 'r vs l', tip: 'r: retroflex buzz, lips NOT rounded — not an English r.', a: { hanzi: '热', pinyin: 'rè', en: 'hot' }, b: { hanzi: '乐', pinyin: 'lè', en: 'happy' } },
+    { contrast: 'an vs ang', tip: 'an ends with the tongue FORWARD · ang ends back, more open.', a: { hanzi: '班', pinyin: 'bān', en: 'class' }, b: { hanzi: '帮', pinyin: 'bāng', en: 'to help' } },
+    { contrast: 'en vs eng', tip: 'en: forward n ending · eng: back ng ending.', a: { hanzi: '分', pinyin: 'fēn', en: 'minute' }, b: { hanzi: '风', pinyin: 'fēng', en: 'wind' } },
+    { contrast: 'in vs ing', tip: 'in: forward · ing: back and slightly longer.', a: { hanzi: '心', pinyin: 'xīn', en: 'heart' }, b: { hanzi: '星', pinyin: 'xīng', en: 'star' } },
+    { contrast: 'ü vs u', tip: 'ü: say "ee" with rounded lips · u: plain "oo".', a: { hanzi: '绿', pinyin: 'lǜ', en: 'green' }, b: { hanzi: '路', pinyin: 'lù', en: 'road' } },
+];
+
+// ── Characters: the stroke system (Phase 5 of the master syllabus) ───────────
+export const BASIC_STROKES = [
+    { hanzi: '横', pinyin: 'héng', en: 'horizontal stroke — write left → right' },
+    { hanzi: '竖', pinyin: 'shù', en: 'vertical stroke — write top → bottom' },
+    { hanzi: '撇', pinyin: 'piě', en: 'left-falling slash' },
+    { hanzi: '捺', pinyin: 'nà', en: 'right-falling slash' },
+    { hanzi: '点', pinyin: 'diǎn', en: 'dot' },
+    { hanzi: '提', pinyin: 'tí', en: 'rising stroke (bottom-left → up-right)' },
+    { hanzi: '折', pinyin: 'zhé', en: 'turning stroke (a bend, e.g. horizontal then down)' },
+    { hanzi: '钩', pinyin: 'gōu', en: 'hook (a stroke that flicks at the end)' },
+];
+
+export const STROKE_ORDER_RULES = [
+    { rule: 'Top → bottom', example: '三 sān: the three horizontals, top one first' },
+    { rule: 'Left → right', example: '你 nǐ: 亻 before 尔' },
+    { rule: 'Horizontal before vertical', example: '十 shí: the horizontal first, then the vertical' },
+    { rule: 'Outside → inside', example: '月 yuè: the frame first' },
+    { rule: 'Inside before closing', example: '回 huí: fill the inside, then seal the bottom' },
+    { rule: 'Centre before symmetric sides', example: '小 xiǎo: the centre hook first' },
+];

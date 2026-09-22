@@ -18,7 +18,7 @@ import {
     setLastLesson, getLastLesson, cacheLesson, getCachedLesson,
 } from '../../services/hskStorage';
 import { recordAndTranscribe } from '../../services/speechService';
-import { LevelBar, ToneTrainer, PinyinGuide, ZHEn, HSKListeningTrainer, HSKReadingTrainer, MCQ } from './HSKTrainers';
+import { LevelBar, ToneTrainer, PinyinGuide, SoundContrastTrainer, ZHEn, HSKListeningTrainer, HSKReadingTrainer, MCQ } from './HSKTrainers';
 import { HSKMockExam } from './HSKMockExam';
 
 const LEVELS: HskLevel[] = ['1', '2', '3', '4', '5', '6'];
@@ -1007,6 +1007,7 @@ const HSKPrepView = () => {
             {tab === 'pinyin' && (
                 <div className="space-y-5">
                     <PinyinGuide />
+                    <SoundContrastTrainer />
                     <ToneTrainer onDone={(pct, label) => {
                         const est = practiceToScore(pct, level);
                         addHskScore({ pct, skill: 'tones', label, band: est.verdict, score: Math.round((pct / 100) * 100) });

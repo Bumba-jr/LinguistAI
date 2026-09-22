@@ -7,6 +7,8 @@ import {
     generateHskListening, generateHskReading,
     HskListening, HskReading, HskLevel,
     TONE_SETS, NEUTRAL_TONE_WORDS, TONE_SANDHI,
+    MANDARIN_FACTS, PINYIN_INITIAL_GROUPS, PINYIN_FINAL_GROUPS, SPELLING_RULES,
+    TONE_PAIR_WORDS, SOUND_CONTRASTS, BASIC_STROKES, STROKE_ORDER_RULES,
 } from '../../services/hskService';
 import { logWeakness } from '../../services/hskStorage';
 
@@ -66,54 +68,146 @@ export const ZHEn = ({ hanzi, pinyin, en, dark = false, speak = true }: { hanzi:
 );
 
 const TONE_COLORS = ['', 'text-red-500', 'text-amber-500', 'text-violet-500', 'text-blue-500'];
-const TONE_NAMES = ['', '1st — flat & high (mā)', '2nd — rising (má)', '3rd — dip down (mǎ)', '4th — sharp fall (mà)'];
 
-// ── Pinyin primer — static reference, always available ──────────────────────
+// ── Pinyin Foundation Course — the complete system, in study order ──────────
 export const PinyinGuide = () => (
     <div className="space-y-4">
+        {/* Phase 0 — Understanding Mandarin */}
         <div className="bg-white rounded-3xl border border-stone-100 p-6">
-            <p className="font-black text-stone-900 mb-1">What pinyin is</p>
-            <p className="text-sm text-stone-600 leading-relaxed">
-                Pinyin (拼音) is the official romanisation: it spells Chinese sounds with the Latin alphabet.
-                汉字 are the actual writing; pinyin tells you how to say them. Every new word in this portal
-                always shows all three forms: <span className="font-bold">汉字 — pinyin — English</span>.
-            </p>
-            <div className="mt-3 bg-stone-50 rounded-2xl p-3 flex items-center justify-between">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Phase 0 · Understanding Mandarin</p>
+            <p className="text-sm font-black text-stone-900 mb-2">Pinyin is not the alphabet</p>
+            <p className="text-sm text-stone-600 leading-relaxed">{MANDARIN_FACTS.intro}</p>
+            <div className="mt-3 bg-stone-50 rounded-2xl p-3 flex items-center justify-between gap-3">
                 <div>
-                    <p className="font-bold text-stone-900">你好</p>
-                    <p className="text-xs font-mono text-violet-500">nǐ hǎo</p>
+                    <p className="text-lg font-black text-stone-900">{MANDARIN_FACTS.example.hanzi}</p>
+                    <p className="text-xs font-mono text-violet-500">{MANDARIN_FACTS.example.pinyin}</p>
                 </div>
-                <p className="text-sm text-stone-500">hello</p>
-                <button onClick={() => speakText('你好', 'Chinese')} className="text-stone-300 hover:text-emerald-500"><Volume2 size={14} /></button>
+                <p className="text-xs text-stone-500 flex-1">{MANDARIN_FACTS.example.en}</p>
+                <button onClick={() => speakText(MANDARIN_FACTS.example.hanzi, 'Chinese')} className="text-stone-300 hover:text-emerald-500 shrink-0"><Volume2 size={15} /></button>
             </div>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 text-blue-800">
+                    <p className="font-black mb-1">Simplified 简体字</p>{MANDARIN_FACTS.simplifiedNote}
+                </div>
+                <div className="bg-violet-50 border border-violet-100 rounded-2xl p-3 text-violet-800">
+                    <p className="font-black mb-1">The syllable math</p>{MANDARIN_FACTS.syllableMath}
+                </div>
+            </div>
+            <p className="mt-3 text-[11px] font-black text-stone-400 uppercase tracking-widest text-center">The order: {MANDARIN_FACTS.order}</p>
         </div>
 
+        {/* Syllable structure */}
         <div className="bg-white rounded-3xl border border-stone-100 p-6">
-            <p className="font-black text-stone-900 mb-1">The 4 tones + neutral tone</p>
-            <p className="text-sm text-stone-600 mb-3">Same sound, different tone, different word. This is the single most important habit from day one.</p>
-            <div className="space-y-1.5">
-                {TONE_NAMES.slice(1).map((n, i) => (
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">How a syllable works</p>
+            <p className="text-sm font-black text-stone-900 mb-2">Every syllable = Initial + Final + Tone</p>
+            <div className="space-y-2">
+                {[
+                    { hanzi: '你', parts: 'n + i + 3rd tone', pinyin: 'nǐ', en: 'you' },
+                    { hanzi: '好', parts: 'h + ao + 3rd tone', pinyin: 'hǎo', en: 'good' },
+                    { hanzi: '吗', parts: '(no initial) + a + neutral', pinyin: 'ma', en: 'question particle' },
+                ].map((s, i) => (
                     <div key={i} className="flex items-center gap-3 bg-stone-50 rounded-xl px-3 py-2">
-                        <span className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white', TONE_COLORS[i + 1])}>{i + 1}</span>
-                        <span className="text-xs font-bold text-stone-700 flex-1">{n}</span>
-                    </div>
-                ))}
-                <div className="flex items-center gap-3 bg-stone-50 rounded-xl px-3 py-2">
-                    <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-stone-400 text-white">·</span>
-                    <span className="text-xs font-bold text-stone-700 flex-1">Neutral — light & quick, unstressed (māma mum)</span>
-                </div>
-            </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {NEUTRAL_TONE_WORDS.map((w, i) => (
-                    <div key={i} className="bg-stone-50 rounded-2xl p-3">
-                        <ZHEn hanzi={w.hanzi} pinyin={w.pinyin} en={w.en} />
+                        <span className="text-xl font-black text-stone-900 w-8 text-center">{s.hanzi}</span>
+                        <span className="text-xs font-mono text-violet-500 w-32 shrink-0">{s.pinyin}</span>
+                        <span className="text-xs font-bold text-stone-600 flex-1">{s.parts}</span>
+                        <span className="text-xs text-stone-400 shrink-0">{s.en}</span>
+                        <button onClick={() => speakText(s.hanzi, 'Chinese')} className="text-stone-300 hover:text-emerald-500"><Volume2 size={13} /></button>
                     </div>
                 ))}
             </div>
         </div>
 
+        {/* The 21 initials */}
+        {PINYIN_INITIAL_GROUPS.map(g => (
+            <div key={g.group} className="bg-white rounded-3xl border border-stone-100 p-6">
+                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">The 21 initials</p>
+                <p className="text-lg font-black text-stone-900 font-mono mb-1">{g.group}</p>
+                <p className="text-xs text-stone-500 mb-3">{g.note}</p>
+                <div className="space-y-2">
+                    {g.initials.map(it => (
+                        <div key={it.sound} className="border border-stone-100 rounded-2xl p-3.5 space-y-1.5 bg-stone-50/50">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-lg font-black font-mono text-stone-900">{it.sound}</span>
+                                    <span className="text-xs text-stone-500">{it.english}</span>
+                                </div>
+                                <button onClick={() => speakText(it.sample.hanzi, 'Chinese')} className="text-stone-300 hover:text-emerald-500 shrink-0"><Volume2 size={14} /></button>
+                            </div>
+                            <p className="text-xs text-stone-600"><span className="font-black text-stone-700">Mouth: </span>{it.mouth}</p>
+                            <p className="text-xs text-amber-700"><span className="font-black">Watch out: </span>{it.mistake}</p>
+                            <p className="text-xs font-bold text-stone-700">{it.sample.hanzi} <span className="font-mono text-violet-500">{it.sample.pinyin}</span> <span className="text-stone-400 font-normal">— {it.sample.en}</span></p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        ))}
+
+        {/* The finals */}
+        {PINYIN_FINAL_GROUPS.map(g => (
+            <div key={g.name} className="bg-white rounded-3xl border border-stone-100 p-6">
+                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">The 36 finals</p>
+                <p className="text-sm font-black text-stone-900 mb-1">{g.name}</p>
+                <p className="text-xs text-stone-500 mb-3">{g.note}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {g.finals.map(f => (
+                        <div key={f.sound} className="bg-stone-50 rounded-2xl p-3 space-y-0.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-black font-mono text-stone-900">{f.sound}</p>
+                                {f.sample && <button onClick={() => speakText(f.sample.hanzi, 'Chinese')} className="text-stone-300 hover:text-emerald-500"><Volume2 size={13} /></button>}
+                            </div>
+                            <p className="text-xs text-stone-500">{f.english}</p>
+                            {f.sample && <p className="text-xs font-bold text-stone-600">{f.sample.hanzi} <span className="font-mono text-violet-500">{f.sample.pinyin}</span> <span className="text-stone-400 font-normal">— {f.sample.en}</span></p>}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        ))}
+
+        {/* The four tones */}
         <div className="bg-white rounded-3xl border border-stone-100 p-6">
-            <p className="font-black text-stone-900 mb-1">Tone sandhi — tones change in real speech</p>
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">The 4 tones + neutral</p>
+            <p className="text-sm font-black text-stone-900 mb-1">The tone mark tells you the pitch — read it and know the tone instantly</p>
+            <div className="space-y-1.5 mt-3">
+                {[
+                    { mark: 'ā', tone: 1, contour: '─────', desc: 'High and flat — hold a high, level note', word: { hanzi: '妈', pinyin: 'mā', en: 'mother' } },
+                    { mark: 'á', tone: 2, contour: '╱', desc: 'Rising — like asking "Really?"', word: { hanzi: '麻', pinyin: 'má', en: 'hemp' } },
+                    { mark: 'ǎ', tone: 3, contour: '╲╱', desc: 'Falling-rising — but don\'t exaggerate; in real speech it is usually a low dip', word: { hanzi: '马', pinyin: 'mǎ', en: 'horse' } },
+                    { mark: 'à', tone: 4, contour: '╲', desc: 'Sharp fall — starts high, drops firmly', word: { hanzi: '骂', pinyin: 'mà', en: 'to scold' } },
+                    { mark: 'a', tone: 0, contour: '·', desc: 'Neutral — short, light, unstressed (no tone mark)', word: { hanzi: '吗', pinyin: 'ma', en: 'question particle' } },
+                ].map(t => (
+                    <div key={t.tone} className="flex items-center gap-3 bg-stone-50 rounded-xl px-3 py-2.5">
+                        <span className={cn('text-xl font-black w-10 text-center', t.tone === 0 ? 'text-stone-400' : TONE_COLORS[t.tone])}>{t.mark}</span>
+                        <span className={cn('font-mono text-stone-400 w-14 text-center text-sm shrink-0', t.tone === 0 && 'text-stone-300')}>{t.contour}</span>
+                        <span className="text-xs text-stone-600 flex-1">{t.desc}</span>
+                        <span className="text-xs font-bold text-stone-700 shrink-0">{t.word.hanzi} <span className="font-mono text-violet-500">{t.word.pinyin}</span></span>
+                        <button onClick={() => speakText(t.word.hanzi, 'Chinese')} className="text-stone-300 hover:text-emerald-500 shrink-0"><Volume2 size={13} /></button>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* 16 tone combinations */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">The 16 tone combinations</p>
+            <p className="text-sm font-black text-stone-900 mb-1">Train tone PAIRS, not just single syllables</p>
+            <p className="text-xs text-stone-500 mb-3">Two-syllable words are where tones get hard. Tap each to hear a real word with that tone pattern — train your ear through all 16.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {TONE_PAIR_WORDS.map(t => (
+                    <button key={t.pair} onClick={() => speakText(t.hanzi, 'Chinese')}
+                        className="flex items-center gap-3 bg-stone-50 hover:bg-stone-100 rounded-2xl px-3 py-2.5 text-left transition-colors">
+                        <span className="text-[10px] font-black text-white bg-stone-400 rounded-lg px-1.5 py-0.5 w-9 text-center shrink-0">{t.pair}</span>
+                        <span className="text-base font-black text-stone-900">{t.hanzi}</span>
+                        <span className="text-xs font-mono text-violet-500 flex-1 truncate">{t.pinyin}</span>
+                        <span className="text-[11px] text-stone-400 truncate max-w-[110px]">{t.en}</span>
+                        <Volume2 size={13} className="text-stone-300 shrink-0" />
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        {/* Tone sandhi */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Tone sandhi — tones change in real speech</p>
             <p className="text-sm text-stone-600 mb-3">You write one tone but say another. Learners who skip this sound robotic.</p>
             <div className="space-y-2">
                 {TONE_SANDHI.map((s, i) => (
@@ -129,20 +223,147 @@ export const PinyinGuide = () => (
                     </div>
                 ))}
             </div>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {NEUTRAL_TONE_WORDS.map((w, i) => (
+                    <div key={i} className="bg-stone-50 rounded-2xl p-3">
+                        <ZHEn hanzi={w.hanzi} pinyin={w.pinyin} en={w.en} />
+                    </div>
+                ))}
+            </div>
         </div>
 
+        {/* Spelling rules */}
         <div className="bg-white rounded-3xl border border-stone-100 p-6">
-            <p className="font-black text-stone-900 mb-1">Pinyin spelling traps for English speakers</p>
-            <ul className="text-sm text-stone-600 space-y-1.5">
-                <li>• <b>c</b> is always "ts" (从来 cónglái = tsong-lie), never a "k" sound.</li>
-                <li>• <b>q</b> sounds like "ch" in cheese; <b>x</b> is a soft "sh"; <b>zh</b> is a "j"-like sound.</li>
-                <li>• <b>zh/ch/sh</b> are retroflex (tongue curled back) vs <b>z/c/s</b> flat — 他 tā vs 茶 chá.</li>
-                <li>• <b>ü</b> says "ü" like French <i>u</i>; after j/q/x it is written u (去 qù = "chü").</li>
-                <li>• <b>-e</b> in 他她它 (tā class) vs 饿 è differs from English e — listen, don't map to English letters.</li>
-            </ul>
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Pinyin spelling rules</p>
+            <div className="space-y-2">
+                {SPELLING_RULES.map((r, i) => (
+                    <div key={i} className="border border-stone-100 rounded-2xl p-3.5">
+                        <p className="text-sm font-black text-stone-900">{r.rule}</p>
+                        <p className="text-xs text-stone-600 mt-0.5">{r.detail}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Strokes */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Characters: the stroke system</p>
+            <p className="text-sm font-black text-stone-900 mb-1">8 basic strokes build every character</p>
+            <p className="text-xs text-stone-500 mb-3">Handwriting is not required for the modern exam, but knowing strokes is how you describe, remember and look up characters.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                {BASIC_STROKES.map(s => (
+                    <div key={s.pinyin} className="bg-stone-50 rounded-2xl p-3 text-center">
+                        <p className="text-2xl font-black text-stone-900">{s.hanzi}</p>
+                        <p className="text-xs font-mono text-violet-500">{s.pinyin}</p>
+                        <p className="text-[10px] text-stone-400 mt-1 leading-snug">{s.en}</p>
+                    </div>
+                ))}
+            </div>
+            <p className="text-sm font-black text-stone-900 mb-2">Stroke order principles</p>
+            <div className="space-y-1.5">
+                {STROKE_ORDER_RULES.map((r, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-stone-600">
+                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 text-[10px] font-black flex items-center justify-center shrink-0">{i + 1}</span>
+                        <span className="font-black text-stone-800">{r.rule}</span>
+                        <span className="text-stone-400">— {r.example}</span>
+                    </div>
+                ))}
+            </div>
         </div>
     </div>
 );
+
+// ── Sound contrast trainer — hear a word, pick which of the confusable pair ──
+export const SoundContrastTrainer = () => {
+    const [current, setCurrent] = useState<{ c: (typeof SOUND_CONTRASTS)[0]; target: 'a' | 'b'; round: number } | null>(null);
+    const [picked, setPicked] = useState<'a' | 'b' | null>(null);
+    const [score, setScore] = useState({ right: 0, total: 0 });
+    const [playing, setPlaying] = useState(false);
+
+    const nextRound = () => {
+        const c = SOUND_CONTRASTS[Math.floor(Math.random() * SOUND_CONTRASTS.length)];
+        const target: 'a' | 'b' = Math.random() < 0.5 ? 'a' : 'b';
+        setCurrent({ c, target, round: (current?.round || 0) + 1 });
+        setPicked(null);
+    };
+
+    const play = () => {
+        if (!current) return;
+        setPlaying(true);
+        speakText(current.c[current.target].hanzi, 'Chinese', () => setPlaying(false));
+    };
+
+    const pick = (side: 'a' | 'b') => {
+        if (!current || picked !== null) return;
+        setPicked(side);
+        const right = side === current.target;
+        setScore(s => ({ right: s.right + (right ? 1 : 0), total: s.total + 1 }));
+        if (!right) logWeakness({ skill: 'tones', level: current.c.contrast, question: `Which did you hear: ${current.c.a.pinyin} or ${current.c.b.pinyin}?`, chosen: side === 'a' ? current.c.a.pinyin : current.c.b.pinyin, answer: current.c[current.target].pinyin });
+    };
+
+    const pct = score.total ? Math.round((score.right / score.total) * 100) : 0;
+
+    return (
+        <div className="bg-white rounded-3xl border border-stone-100 p-6 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                    <p className="font-black text-stone-900">Difficult sound contrasts</p>
+                    <p className="text-xs text-stone-400 mt-0.5">The pairs English ears merge: sh/s, zh/z, q/ch, an/ang… Hear a word → which of the pair was it?</p>
+                </div>
+                {score.total > 0 && (
+                    <span className={cn('text-xs font-black px-3 py-1.5 rounded-xl', pct >= 75 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')}>
+                        {score.right}/{score.total} · {pct}%
+                    </span>
+                )}
+            </div>
+
+            {!current ? (
+                <button onClick={nextRound}
+                    className="w-full py-3.5 bg-indigo-600 text-white text-sm font-bold rounded-2xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                    <Play size={15} /> Start ear training
+                </button>
+            ) : (
+                <>
+                    <button onClick={play} disabled={playing}
+                        className={cn('w-20 h-20 rounded-full mx-auto flex items-center justify-center text-white shadow-xl transition-all',
+                            playing ? 'bg-stone-300 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700')}>
+                        <Volume2 size={30} />
+                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                        {(['a', 'b'] as const).map(side => {
+                            const w = current.c[side];
+                            const revealed = picked !== null;
+                            const isAnswer = side === current.target;
+                            return (
+                                <button key={side} onClick={() => pick(side)}
+                                    className={cn('rounded-2xl border-2 p-4 text-center transition-all',
+                                        !revealed ? 'bg-white border-stone-200 hover:border-indigo-400'
+                                            : isAnswer ? 'bg-emerald-50 border-emerald-400'
+                                                : side === picked ? 'bg-red-50 border-red-300' : 'bg-white border-stone-100 opacity-60')}>
+                                    <p className="text-2xl font-black text-stone-900">{w.hanzi}</p>
+                                    <p className="text-sm font-mono text-violet-500">{w.pinyin}</p>
+                                    <p className="text-xs text-stone-400 mt-0.5">{w.en}</p>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {picked !== null && (
+                        <div className="space-y-2">
+                            <p className={cn('text-sm font-bold text-center', picked === current.target ? 'text-emerald-600' : 'text-red-500')}>
+                                {picked === current.target ? '✓ Correct' : `✗ It was ${current.c[current.target].hanzi} (${current.c[current.target].pinyin})`}
+                            </p>
+                            <p className="text-xs text-stone-500 text-center">💡 {current.c.tip}</p>
+                            <button onClick={nextRound}
+                                className="w-full py-3 bg-stone-900 text-white text-sm font-bold rounded-2xl hover:bg-stone-700 transition-colors flex items-center justify-center gap-2">
+                                <RotateCcw size={14} /> Next contrast
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+};
 
 // ── Tone trainer — hear a word, pick the tone you heard ──────────────────────
 export const ToneTrainer = ({ onDone }: { onDone?: (pct: number, label: string) => void }) => {
