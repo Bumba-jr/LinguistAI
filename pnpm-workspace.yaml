@@ -1,5 +1,5 @@
 allowBuilds:
   esbuild: false
-  msedge-tts: set this to true or false
+  msedge-tts: false
   protobufjs: false
   tesseract.js: false
