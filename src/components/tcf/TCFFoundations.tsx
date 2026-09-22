@@ -1,6 +1,7 @@
-import React from 'react';
-import { Volume2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Volume2, MessagesSquare } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { InteractiveText } from '../WordBreakdown';
 import { speakText } from '../../services/voiceService';
 import {
     FRENCH_WRITING_FACTS, FRENCH_ALPHABET, FRENCH_ACCENTS, ACCENT_MEANING_TRAPS,
@@ -236,30 +237,69 @@ export const FrenchFoundations = () => (
 );
 
 // ── The French Cheat Sheet ──────────────────────────────────────────────────
-export const FrenchCheatSheet = () => (
-    <div className="space-y-4">
-        <div className="bg-white rounded-3xl border border-stone-100 p-6">
-            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">The cheat sheet</p>
-            <p className="text-sm font-black text-stone-900">All of essential French on one page</p>
-            <p className="text-xs text-stone-500 mt-1">Articles, gender, the verb patterns, past & future, questions, negation, connectors, numbers, survival phrases — skim it daily until it's automatic.</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {FRENCH_CHEAT_SHEET.map(section => (
-                <div key={section.title} className="bg-white rounded-3xl border border-stone-100 p-5">
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.15em] mb-3">{section.title}</p>
-                    <div className="space-y-2">
-                        {section.items.map((it, i) => (
-                            <div key={i} className="flex items-start gap-2.5 border-b border-stone-50 last:border-0 pb-2 last:pb-0">
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className="text-xs font-black text-stone-900 whitespace-nowrap">{it.label}</span>
-                                    {it.say && <Say text={it.say} />}
-                                </div>
-                                <span className="text-[11px] text-stone-500 flex-1">{it.detail}</span>
-                            </div>
-                        ))}
+// Labels that are category names rather than French words — never tooltip these
+const PLAIN_LABELS = new Set([
+    'usually feminine', 'usually masculine', 'agreement', 'learn the article',
+    'être verbs', 'near future', 'future simple', 'conditional',
+    'subject', 'direct object', 'indirect object', 'reflexive', 'stressed',
+    'relative', 'demonstrative', 'possessive', 'de + person', 'inversion',
+    'spoken French', '0–10', '11–16', '70 / 80 / 90', '100 / 1000', 'Canada tip',
+]);
+
+export const FrenchCheatSheet = () => {
+    const [tooltips, setTooltips] = useState(() => localStorage.getItem('linguistai-tcf-cheat-tooltips') !== '0');
+
+    const toggle = () => {
+        const next = !tooltips;
+        setTooltips(next);
+        try { localStorage.setItem('linguistai-tcf-cheat-tooltips', next ? '1' : '0'); } catch { /* quota */ }
+    };
+
+    return (
+        <div className="space-y-4">
+            <div className="bg-white rounded-3xl border border-stone-100 p-6">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div>
+                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">The cheat sheet</p>
+                        <p className="text-sm font-black text-stone-900">All of essential French on one page</p>
+                        <p className="text-xs text-stone-500 mt-1">Articles, gender, the verb patterns, past & future, questions, negation, connectors, numbers, survival phrases — skim it daily until it's automatic.</p>
                     </div>
+                    <button onClick={toggle}
+                        className={cn('shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[11px] font-black transition-colors border-2',
+                            tooltips ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-stone-200 bg-white text-stone-400')}>
+                        <MessagesSquare size={13} />
+                        Word tooltips {tooltips ? 'ON' : 'OFF'}
+                    </button>
                 </div>
-            ))}
+                {tooltips && (
+                    <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 mt-3">
+                        Tooltips are ON — tap any French term for its word card (meaning, grammar, hear it, add to your flashcard deck).
+                    </p>
+                )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {FRENCH_CHEAT_SHEET.map(section => (
+                    <div key={section.title} className="bg-white rounded-3xl border border-stone-100 p-5">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.15em] mb-3">{section.title}</p>
+                        <div className="space-y-2">
+                            {section.items.map((it, i) => {
+                                const canTooltip = tooltips && !PLAIN_LABELS.has(it.label);
+                                return (
+                                    <div key={i} className="flex items-start gap-2.5 border-b border-stone-50 last:border-0 pb-2 last:pb-0">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                            {canTooltip
+                                                ? <InteractiveText text={it.label} language="French" className="text-xs font-black text-stone-900 whitespace-nowrap" />
+                                                : <span className="text-xs font-black text-stone-900 whitespace-nowrap">{it.label}</span>}
+                                            {it.say && <Say text={it.say} />}
+                                        </div>
+                                        <span className="text-[11px] text-stone-500 flex-1">{it.detail}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
-    </div>
-);
+    );
+};
