@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, ClipboardList,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
@@ -21,12 +21,13 @@ import {
 import { recordAndTranscribe } from '../../services/speechService';
 import { LevelBar, TCFListeningTrainer, TCFReadingTrainer } from './TCFTrainers';
 import { TCFMockExam } from './TCFMockExam';
+import { FrenchAlphabetChart, FrenchFoundations, FrenchCheatSheet } from './TCFFoundations';
 import ExamPlanCard from '../exam/ExamPlanCard';
 import CheckpointQuiz from '../exam/CheckpointQuiz';
 import InteractiveExaminer from '../exam/InteractiveExaminer';
 
 const LEVELS: TcfLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-type TcfTab = 'overview' | 'curriculum' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
+type TcfTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
 
 const SKILL_META = {
     listening: { label: 'Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: '39 questions · 35 min · audio once' },
@@ -1055,6 +1056,8 @@ const TCFPrepView = () => {
     const TABS: { id: TcfTab; label: string; icon: any }[] = [
         { id: 'overview', label: 'Overview', icon: Flag },
         { id: 'curriculum', label: 'Learn', icon: BookOpen },
+        { id: 'foundations', label: 'Foundations', icon: Languages },
+        { id: 'cheatsheet', label: 'Cheat Sheet', icon: ClipboardList },
         { id: 'mock', label: 'Mock Exam', icon: FileCheck },
         { id: 'listening', label: 'Listening', icon: Headphones },
         { id: 'reading', label: 'Reading', icon: BookOpenCheck },
@@ -1089,6 +1092,13 @@ const TCFPrepView = () => {
 
             {tab === 'overview' && <Overview onGo={setTab} />}
             {tab === 'curriculum' && <Curriculum language={language} />}
+            {tab === 'foundations' && (
+                <div className="space-y-5">
+                    <FrenchAlphabetChart />
+                    <FrenchFoundations />
+                </div>
+            )}
+            {tab === 'cheatsheet' && <FrenchCheatSheet />}
             {tab === 'mock' && (
                 <TCFMockExam level={level} onLevelChange={setLevel} />
             )}
