@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, ClipboardList,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, ClipboardList, Layers, ArrowRightLeft,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
@@ -19,15 +19,16 @@ import {
     getCheckpoints, passCheckpoint, getPlan, savePlan, clearPlan,
 } from '../../services/tcfStorage';
 import { recordAndTranscribe } from '../../services/speechService';
-import { LevelBar, TCFListeningTrainer, TCFReadingTrainer } from './TCFTrainers';
+import { LevelBar, TCFListeningTrainer, TCFReadingTrainer, TCFVocabTrainer, SentenceBuilder } from './TCFTrainers';
 import { TCFMockExam } from './TCFMockExam';
 import { FrenchAlphabetChart, FrenchFoundations, FrenchCheatSheet } from './TCFFoundations';
 import ExamPlanCard from '../exam/ExamPlanCard';
 import CheckpointQuiz from '../exam/CheckpointQuiz';
 import InteractiveExaminer from '../exam/InteractiveExaminer';
+import { TCF_STRATEGY } from '../../services/frenchFoundation';
 
 const LEVELS: TcfLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-type TcfTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
+type TcfTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'vocab' | 'builder' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
 
 const SKILL_META = {
     listening: { label: 'Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: '39 questions · 35 min · audio once' },
@@ -133,6 +134,24 @@ const Overview = ({ onGo }: { onGo: (t: TcfTab) => void }) => {
                 onSavePlan={savePlan}
                 onClearPlan={clearPlan}
             />
+
+            {/* exam strategy — how the test tries to trick you */}
+            <div className="bg-white rounded-3xl border border-stone-100 p-6">
+                <h2 className="font-black text-stone-900 mb-1">Exam strategy — how TCF tries to trick you</h2>
+                <p className="text-xs text-stone-400 mb-3">Knowing the traps is worth as many points as knowing the French.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {TCF_STRATEGY.map(s => (
+                        <div key={s.skill} className="bg-stone-50 rounded-2xl p-4">
+                            <p className={cn('text-xs font-black mb-1.5', s.color)}>{s.skill}</p>
+                            <ul className="space-y-1">
+                                {s.points.map((p, i) => (
+                                    <li key={i} className="text-[11px] text-stone-600 flex gap-1.5"><span className="text-stone-300">•</span>{p}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
             {/* quick actions */}
             <div className="grid grid-cols-2 gap-3">
@@ -1058,6 +1077,8 @@ const TCFPrepView = () => {
         { id: 'curriculum', label: 'Learn', icon: BookOpen },
         { id: 'foundations', label: 'Foundations', icon: Languages },
         { id: 'cheatsheet', label: 'Cheat Sheet', icon: ClipboardList },
+        { id: 'vocab', label: 'Vocabulary', icon: Layers },
+        { id: 'builder', label: 'Sentence Builder', icon: ArrowRightLeft },
         { id: 'mock', label: 'Mock Exam', icon: FileCheck },
         { id: 'listening', label: 'Listening', icon: Headphones },
         { id: 'reading', label: 'Reading', icon: BookOpenCheck },
@@ -1092,6 +1113,8 @@ const TCFPrepView = () => {
 
             {tab === 'overview' && <Overview onGo={setTab} />}
             {tab === 'curriculum' && <Curriculum language={language} />}
+            {tab === 'vocab' && <TCFVocabTrainer level={level} onLevelChange={setLevel} />}
+            {tab === 'builder' && <SentenceBuilder level={level} onLevelChange={setLevel} />}
             {tab === 'foundations' && (
                 <div className="space-y-5">
                     <FrenchAlphabetChart />

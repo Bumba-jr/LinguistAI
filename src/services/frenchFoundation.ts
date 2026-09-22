@@ -159,6 +159,34 @@ export const LIAISON_ZONES = [
     { zone: 'FORBIDDEN', detail: 'after et (and) — always say [ay AMI] for "et ami", never "et-zami". Also before an h aspiré (le‿héros), and a singular noun must never liaison with its verb', example: { w: 'et‿ami ❌', spoken: '[ay ah-MEE]', en: 'and friend — the t stays dead' } },
 ];
 
+// ── TCF strategy (master curriculum Phase 34) — how the exam tries to trick you ──
+export const TCF_STRATEGY: { skill: string; color: string; points: string[] }[] = [
+    { skill: 'Listening', color: 'text-indigo-500', points: [
+        'Each recording plays ONCE — train one-listen comprehension, never relisten while practising',
+        'Distractors are built from words you hear in the audio but with changed details (numbers, days, names) — check WHICH person/time the detail belongs to',
+        'Read the question options BEFORE the audio starts so you know what to hunt for',
+        'Speaker intention questions: is it a request, a complaint, a suggestion? Listen to tone, not just words',
+    ]},
+    { skill: 'Reading', color: 'text-teal-500', points: [
+        '39 questions in 60 minutes = ~90 seconds each — skim the question first, then scan the text for the answer zone',
+        'Wrong options usually copy exact words from the text but reverse or exaggerate the meaning — the right answer is usually a PARAPHRASE',
+        'For inference questions, the answer is never stated literally — eliminate the literal ones',
+        'Never leave blanks — there is no penalty for guessing',
+    ]},
+    { skill: 'Writing', color: 'text-amber-500', points: [
+        'Structure scores: opening line, organised body, closing line — examiners read for coherence first',
+        'Use 2-3 connectors (d\'abord, ensuite, parce que, donc) — they are explicitly graded',
+        'Respect the register: Task 1 friendly (tu with a friend), Task 3 formal (vous, structured argument)',
+        'Leave 2 minutes to re-read for gender/agreement errors — the cheapest points to win back',
+    ]},
+    { skill: 'Speaking', color: 'text-rose-500', points: [
+        'Speak continuously — long pauses cost more than small mistakes',
+        'Use the ORECC frame for opinions: Opinion → Reason → Example → Counterpoint → Conclusion',
+        'If you freeze, buy time with a filler: "C\'est une question intéressante…" then restate the question',
+        'Self-correct quickly and move on — do not restart the whole sentence',
+    ]},
+];
+
 // ── The French Cheat Sheet — one page of the whole language ─────────────────
 export const FRENCH_CHEAT_SHEET: { title: string; items: { label: string; detail: string; say?: string }[] }[] = [
     { title: 'Articles', items: [

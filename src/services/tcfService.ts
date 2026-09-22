@@ -78,6 +78,26 @@ export const practiceToScore = (pct: number): { score: number; nclc: string } =>
     return { score, nclc: band ? band.nclc : '<4' };
 };
 
+// ── Vocabulary: TCF Canada themed domains (master curriculum Phase 33) ──────
+// AI-generated per (level, topic) and cached in localStorage.
+export const TCF_VOCAB_TOPICS: { id: string; label: string; hint: string }[] = [
+    { id: 'core', label: 'TCF Core Words', hint: 'the absolute highest-frequency words for this CEFR level — pronouns, key verbs, essential nouns and function words the exam repeats constantly' },
+    { id: 'housing', label: 'Housing', hint: 'apartments, rent, leases, landlords, furnishing, utilities, searching for housing in Canada' },
+    { id: 'employment', label: 'Employment', hint: 'jobs, interviews, CVs, workplaces, salaries, contracts, work permits, career plans' },
+    { id: 'education', label: 'Education', hint: 'school, university, diplomas, exams, studying, enrolling, student life' },
+    { id: 'immigration', label: 'Immigration', hint: 'immigrating to Canada: visas, permanent residence, applications, customs, integration, citizenship' },
+    { id: 'transport', label: 'Transportation', hint: 'public transit, driving, tickets, commuting, airports, getting around a Canadian city' },
+    { id: 'environment', label: 'Environment', hint: 'climate, pollution, recycling, energy, protecting nature, weather events' },
+    { id: 'health', label: 'Health', hint: 'the body, illness, doctors, hospitals, health insurance, appointments, healthy habits' },
+    { id: 'tech', label: 'Technology', hint: 'phones, computers, the internet, apps, social media, AI, online life' },
+    { id: 'family', label: 'Family & Society', hint: 'family members, relationships, community, social life, helping others' },
+    { id: 'government', label: 'Government & Services', hint: 'government, public services, taxes, rights, administration, dealing with offices' },
+    { id: 'culture', label: 'Culture & Media', hint: 'culture, cinema, music, books, news, press, weekends and leisure, [Canada] cultural context' },
+    { id: 'economy', label: 'Economy & Money', hint: 'money, banking, prices, budgeting, shopping, consumer life, spending and saving' },
+    { id: 'travel', label: 'Tourism & Travel', hint: 'travelling, hotels, holidays, sightseeing, reservations, travel problems' },
+    { id: 'daily', label: 'Daily Life', hint: 'everyday routines, food, cooking, errands, appointments, weather, neighbours' },
+];
+
 // ── Curriculum syllabus (per the master teaching framework) ───────────────────
 export const TCF_SYLLABUS: Record<TcfLevel, { title: string; slug: string; focus: string }[]> = {
     A1: [

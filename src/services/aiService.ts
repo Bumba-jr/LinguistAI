@@ -1245,6 +1245,39 @@ Rules: ${weeksCount <= 2 ? 'tight triage plan — highest-yield exam tasks first
     };
 };
 
+// ── Exam portal: sentence-building tasks (the transformation engine) ────────
+export interface SentenceTask { instruction: string; base: string; baseEnglish: string; answer: string; answerEnglish: string; }
+export const generateSentenceTasks = async (
+    targetLanguage: Language,
+    levelLabel: string,
+    count = 5
+): Promise<{ tasks: SentenceTask[] }> => {
+    const system = `You are an expert ${targetLanguage} teacher building SENTENCE-BUILDING drills for a ${levelLabel} student. The goal: the learner learns to TRANSFORM and EXPAND one core sentence instead of memorising isolated phrases.
+Return ONLY valid JSON: {"tasks":[{"instruction":"what to do with the base sentence","base":"the base sentence in ${targetLanguage}","baseEnglish":"its English translation","answer":"the model answer in ${targetLanguage}","answerEnglish":"the answer's English"}]}
+Rules: exactly ${count} tasks, ALL built on the SAME base sentence so the learner sees the scaffolding change. Mix:
+- 3 transformations (choose from: make it negative / make it a question / put it in the past / future / conditional / imperfect — as appropriate for ${levelLabel})
+- 1-2 EXPANSIONS (add a reason with a connector, add a time expression, add a place, add a contrast — the expansion must stay natural)
+The base sentence must be realistic and exactly ${levelLabel}-appropriate. Provide perfect model answers.`;
+    const raw = await chat(system, `Create ${count} sentence-building tasks for ${levelLabel} ${targetLanguage}.`, 1500);
+    const d = parseJSON(raw);
+    return { tasks: (Array.isArray(d.tasks) ? d.tasks : []).filter((t: any) => t && t.base && t.answer && t.instruction).slice(0, count) };
+};
+
+// Grade a batch of the learner's attempts in one call
+export const checkSentenceAttempts = async (
+    targetLanguage: Language,
+    levelLabel: string,
+    attempts: { instruction: string; base: string; modelAnswer: string; userAnswer: string }[]
+): Promise<{ results: { verdict: 'correct' | 'fixed' | 'wrong'; corrected: string; why: string }[] }> => {
+    const system = `You are a ${targetLanguage} examiner grading sentence-building attempts for a ${levelLabel} student. For each attempt, compare the student's sentence to the model answer.
+Return ONLY valid JSON: {"results":[{"verdict":"correct|fixed|wrong — 'correct' = same meaning and natural grammar; 'fixed' = understandable but has correctable errors; 'wrong' = wrong transformation or incomprehensible","corrected":"the student's sentence corrected if needed (or '—' if already perfect)","why":"ONE short sentence in English explaining the main issue or praising what was right"}]}
+Grade the MEANING and the requested transformation, not stylistic preference. Count every attempt in order — one result per attempt.`;
+    const body = attempts.map((a, i) => `Task ${i + 1}: ${a.instruction}\nBase: ${a.base}\nModel: ${a.modelAnswer}\nStudent: ${a.userAnswer || '(empty)'}`).join('\n\n');
+    const raw = await chat(system, body, 2000);
+    const d = parseJSON(raw);
+    return { results: (Array.isArray(d.results) ? d.results : []).slice(0, attempts.length).map((r: any) => ({ verdict: (['correct', 'fixed', 'wrong'].includes(r?.verdict) ? r.verdict : 'wrong'), corrected: String(r?.corrected || '—'), why: String(r?.why || '') })) };
+};
+
 // Translate a partner's message into English
 export const translateToEnglish = async (text: string, fromLanguage: Language): Promise<string> => {
     const system = `Translate the given ${fromLanguage} message into natural English. Return ONLY valid JSON: {"translation":"the English translation"}`;
