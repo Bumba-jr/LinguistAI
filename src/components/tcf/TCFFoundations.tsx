@@ -5,6 +5,7 @@ import { speakText } from '../../services/voiceService';
 import {
     FRENCH_WRITING_FACTS, FRENCH_ALPHABET, FRENCH_ACCENTS, ACCENT_MEANING_TRAPS,
     FRENCH_SOUND_GROUPS, FRENCH_PRONUNCIATION_RULES, TU_VOUS, NUMBER_QUIRKS,
+    FRENCH_VOWEL_COMBINATIONS, FRENCH_CONSONANT_SOUNDS, LIAISON_ZONES,
     FRENCH_CHEAT_SHEET,
 } from '../../services/frenchFoundation';
 
@@ -117,6 +118,44 @@ export const FrenchFoundations = () => (
             </div>
         ))}
 
+        {/* spelling → sound combinations */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">See spelling → know the sound</p>
+            <p className="text-sm font-black text-stone-900 mb-1">The vowel & letter combinations</p>
+            <p className="text-xs text-stone-500 mb-3">French spelling looks chaotic until you learn the combinations — then reading aloud becomes predictable. This is the French "pinyin table".</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {FRENCH_VOWEL_COMBINATIONS.map(c => (
+                    <div key={c.combo} className="bg-stone-50 rounded-2xl p-3 space-y-0.5">
+                        <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-black font-mono text-stone-900">{c.combo}</p>
+                            <Say text={c.sample.w} />
+                        </div>
+                        <p className="text-xs text-stone-500">{c.sound}</p>
+                        <p className="text-xs font-bold text-stone-600">{c.sample.w} <span className="font-mono text-violet-500">{c.sample.spoken}</span> <span className="text-stone-400 font-normal">— {c.sample.en}</span></p>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* consonants */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Consonants — the traps</p>
+            <p className="text-sm font-black text-stone-900 mb-1">The letters that lie to English speakers</p>
+            <div className="space-y-2">
+                {FRENCH_CONSONANT_SOUNDS.map(s => (
+                    <div key={s.sound} className="border border-stone-100 rounded-2xl p-3.5 space-y-1 bg-stone-50/50">
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-black font-mono text-stone-900">{s.sound}</span>
+                            <Say text={s.sample.w} />
+                        </div>
+                        <p className="text-xs text-stone-600"><span className="font-black text-stone-700">Sounds like: </span>{s.english}</p>
+                        <p className="text-xs text-stone-600"><span className="font-black text-stone-700">Mouth: </span>{s.mouth}</p>
+                        <p className="text-xs font-bold text-stone-700">{s.sample.w} <span className="font-mono text-violet-500">{s.sample.spoken}</span> <span className="text-stone-400 font-normal">— {s.sample.en}</span></p>
+                    </div>
+                ))}
+            </div>
+        </div>
+
         {/* pronunciation rules */}
         <div className="bg-white rounded-3xl border border-stone-100 p-6">
             <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Spelling ≠ sound — the rules that run French</p>
@@ -130,6 +169,26 @@ export const FrenchFoundations = () => (
                         </div>
                         <p className="text-xs text-stone-600">{r.detail}</p>
                         <p className="text-xs font-bold text-stone-700">{r.example.w} <span className="font-mono text-violet-500">{r.example.spoken}</span> <span className="text-stone-400 font-normal">— {r.example.en}</span></p>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* liaison zones */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Liaison — the three zones</p>
+            <p className="text-sm font-black text-stone-900 mb-1">When the silent consonant wakes up — and when it must NOT</p>
+            <p className="text-xs text-stone-500 mb-3">This is the single biggest listening skill in TCF: knowing where the hidden consonant will reappear.</p>
+            <div className="space-y-2">
+                {LIAISON_ZONES.map(z => (
+                    <div key={z.zone} className={cn('rounded-2xl p-3.5 border space-y-1',
+                        z.zone === 'MANDATORY' ? 'bg-emerald-50 border-emerald-100' : z.zone === 'FORBIDDEN' ? 'bg-red-50 border-red-100' : 'bg-stone-50 border-stone-100')}>
+                        <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-black text-stone-900">{z.zone}</p>
+                            <Say text={z.example.w} />
+                        </div>
+                        <p className="text-xs text-stone-600">{z.detail}</p>
+                        <p className="text-xs font-bold text-stone-700">{z.example.w} <span className="font-mono text-violet-500">{z.example.spoken}</span> <span className="text-stone-400 font-normal">— {z.example.en}</span></p>
                     </div>
                 ))}
             </div>

@@ -125,6 +125,40 @@ export const NUMBER_QUIRKS = [
     { n: '99', fr: 'quatre-vingt-dix-neuf', logic: '4×20 + 10 + 9', say: 'quatre-vingt-dix-neuf' },
 ];
 
+// Spelling→sound combinations — Module 4: "see spelling → know the sound"
+export const FRENCH_VOWEL_COMBINATIONS: { combo: string; sound: string; sample: { w: string; spoken: string; en: string } }[] = [
+    { combo: 'ai / ei', sound: '"eh" — open e', sample: { w: 'maison', spoken: '[meh-ZOHN]', en: 'house' } },
+    { combo: 'au / eau', sound: '"oh"', sample: { w: 'beaucoup', spoken: '[bo-KOO]', en: 'a lot' } },
+    { combo: 'ou', sound: '"oo" — never "ow"', sample: { w: 'rouge', spoken: '[ROOZH]', en: 'red' } },
+    { combo: 'oi', sound: '"wah"', sample: { w: 'toi', spoken: '[TWAH]', en: 'you' } },
+    { combo: 'ui', sound: '"wee" (ü + i glide)', sample: { w: 'huit', spoken: '[weet]', en: 'eight' } },
+    { combo: 'eu / œu', sound: '"uh" with rounded lips', sample: { w: 'deux', spoken: '[DUH]', en: 'two' } },
+    { combo: 'oin', sound: '"wahng" — nasal', sample: { w: 'loin', spoken: '[LWAHN]', en: 'far' } },
+    { combo: 'ien', sound: '"ee-ahng" — nasal with y-glide', sample: { w: 'bien', spoken: '[bee-AHN]', en: 'well' } },
+    { combo: 'ill / ille', sound: '"ee-y" glide (but ville, mille, tranquille = "eel")', sample: { w: 'famille', spoken: '[fa-MEE-yə]', en: 'family' } },
+    { combo: 'ail / aille', sound: '"eye"', sample: { w: 'travail', spoken: '[tra-VIGH]', en: 'work' } },
+    { combo: 'ei / ê / è', sound: '"eh" variants', sample: { w: 'père', spoken: '[PEHR]', en: 'father' } },
+    { combo: 'ph', sound: 'sounds like f (Greek origin)', sample: { w: 'pharmacie', spoken: '[far-ma-SEE]', en: 'pharmacy' } },
+];
+
+// Consonant pairs & traps — Phase 6
+export const FRENCH_CONSONANT_SOUNDS: { sound: string; english: string; mouth: string; sample: { w: string; spoken: string; en: string } }[] = [
+    { sound: 'j / g(e,i)', english: 'like the s in "measure" [ʒ]', mouth: 'Same as English "vision" — buzz with rounded, slightly forward tongue.', sample: { w: 'jamais / genou', spoken: '[zha-MEH] / [zhuh-NOO]', en: 'never / knee' } },
+    { sound: 'ch', english: 'like English "sh" [ʃ] — never "ch" in "chair"', mouth: 'As in "ship". Un French ch is ALWAYS sh: chat, chocolat.', sample: { w: 'chat', spoken: '[SHA]', en: 'cat' } },
+    { sound: 'g', english: 'hard "g" before a/o/u; "zh" before e/i', mouth: 'garçon vs genou — the e/i softens it, exactly like English "go" vs "gem".', sample: { w: 'gare / girafe', spoken: '[GAHR] / [zhee-RAHF]', en: 'station / giraffe' } },
+    { sound: 'qu / q', english: 'always a hard [k]', mouth: 'Never "kw" — quinze is "kahnz".', sample: { w: 'quinze', spoken: '[KANZ]', en: 'fifteen' } },
+    { sound: 'h', english: 'SILENT — every single time', mouth: 'héros, hôtel, voiture — the letter exists only on paper.', sample: { w: 'hôtel', spoken: '[oh-TEL]', en: 'hotel' } },
+    { sound: 's vs ss', english: 's between vowels = [z]; ss always [s]', mouth: 'rose has a z; poisson has a sharp s — poisson (fish) vs poison (poison) is exactly this rule.', sample: { w: 'poisson / poison', spoken: '[pwa-SOHN] / [pwa-ZOHN]', en: 'fish / poison' } },
+    { sound: 'th / x', english: 'th = plain [t] (never English th); x = [s] in six/dix, [ks] elsewhere', mouth: 'théâtre = [tay-AH-trə].', sample: { w: 'thé', spoken: '[TAY]', en: 'tea' } },
+];
+
+// Liaison — the three-zone system (mandatory / optional / forbidden)
+export const LIAISON_ZONES = [
+    { zone: 'MANDATORY', detail: 'after short function words: les, des, vos, nos, tes, ces, mon/ton/son, on, nous, vous, ils, elles, est, plus (before vowel)', example: { w: 'vous‿avez', spoken: '[voo-ZA-vay]', en: 'you have — the s becomes a z, always' } },
+    { zone: 'OPTIONAL', detail: 'after most adjectives, adverbs, prepositions — educated/formal speakers do it; it makes you sound polished', example: { w: 'il est‿assez‿intelligent', spoken: '[ee-let-ta-say-zan-tay-LEE-zhahn]', en: 'he is quite intelligent — elegant French chains them' } },
+    { zone: 'FORBIDDEN', detail: 'after et (and) — always say [ay AMI] for "et ami", never "et-zami". Also before an h aspiré (le‿héros), and a singular noun must never liaison with its verb', example: { w: 'et‿ami ❌', spoken: '[ay ah-MEE]', en: 'and friend — the t stays dead' } },
+];
+
 // ── The French Cheat Sheet — one page of the whole language ─────────────────
 export const FRENCH_CHEAT_SHEET: { title: string; items: { label: string; detail: string; say?: string }[] }[] = [
     { title: 'Articles', items: [
@@ -157,6 +191,47 @@ export const FRENCH_CHEAT_SHEET: { title: string; items: { label: string; detail
         { label: 'future simple', detail: 'infinitive + ai, as, a, ons, ez, ont: je parlerai' },
         { label: 'conditional', detail: 'infinitive + imparfait endings: je voudrais, j\'aimerais' },
     ]},
+    { title: 'Pronouns — the full system', items: [
+        { label: 'subject', detail: 'je, tu, il, elle, on, nous, vous, ils, elles' },
+        { label: 'direct object', detail: 'me, te, le/la, nous, vous, les — Je le vois (I see him)' },
+        { label: 'indirect object', detail: 'me, te, LUI, nous, vous, LEUR — Je lui parle (I speak to him)' },
+        { label: 'reflexive', detail: 'me, te, se, nous, vous, se — je me lève (I get up)' },
+        { label: 'stressed', detail: 'moi, toi, lui, elle, nous, vous, eux, elles — Moi aussi !' },
+        { label: 'y', detail: 'there / about it — J\'y vais (I\'m going there)' },
+        { label: 'en', detail: 'of it / some — J\'en veux (I want some)' },
+        { label: 'relative', detail: 'qui (who/subject), que (that/object), dont (whose/of which), où (where)' },
+        { label: 'demonstrative', detail: 'celui, celle, ceux, celles — the one(s)' },
+        { label: 'possessive', detail: 'le mien, la mienne, les miens/miennes — mine' },
+    ]},
+    { title: 'Possession', items: [
+        { label: 'mon / ma / mes', detail: 'my — gender agrees with the THING, not the owner: mon frère, ma sœur, mes parents' },
+        { label: 'ton / ta / tes', detail: 'your (tu)' },
+        { label: 'son / sa / ses', detail: 'his / her / its — son frère can be his OR her brother' },
+        { label: 'notre / nos', detail: 'our' },
+        { label: 'votre / vos', detail: 'your (vous)' },
+        { label: 'leur / leurs', detail: 'their — AND "his/her" after a verb: c\'est leur voiture' },
+        { label: 'de + person', detail: 'the book of Marie = le livre de Marie — no \'s in French' },
+    ]},
+    { title: 'Modals', items: [
+        { label: 'pouvoir', detail: 'can / to be able — je peux, tu peux, il peut, nous pouvons' },
+        { label: 'vouloir', detail: 'to want — je veux; polite: je voudrais (I would like)' },
+        { label: 'devoir', detail: 'must / to have to — je dois partir; also "probably": il doit être tard' },
+        { label: 'falloir', detail: 'il faut = it is necessary / one must — impersonal, always il' },
+        { label: 'savoir vs connaître', detail: 'savoir = know facts/how (je sais nager); connaître = know a person/place' },
+    ]},
+    { title: 'The tense ladder', items: [
+        { label: 'présent', detail: 'je parle — I speak / I am speaking' },
+        { label: 'passé composé', detail: 'j\'ai parlé — I spoke' },
+        { label: 'imparfait', detail: 'je parlais — I was speaking / used to' },
+        { label: 'plus-que-parfait', detail: 'j\'avais parlé — I had spoken' },
+        { label: 'futur simple', detail: 'je parlerai — I will speak' },
+        { label: 'futur antérieur', detail: 'j\'aurai parlé — I will have spoken' },
+        { label: 'conditionnel', detail: 'je parlerais — I would speak' },
+        { label: 'conditionnel passé', detail: 'j\'aurais parlé — I would have spoken' },
+        { label: 'subjonctif', detail: 'que je parle — after doubt/emotion/will: il faut que je parte' },
+        { label: 'impératif', detail: 'parle ! parlez ! — commands (no subject, no je)' },
+        { label: 'gérondif', detail: 'en parlant — while speaking' },
+    ]},
     { title: 'Questions', items: [
         { label: 'est-ce que', detail: 'statement + est-ce que — Est-ce que tu parles français ?' },
         { label: 'inversion', detail: 'Parlez-vous français ? — formal/exam register' },
@@ -176,10 +251,25 @@ export const FRENCH_CHEAT_SHEET: { title: string; items: { label: string; detail
     { title: 'Connectors', items: [
         { label: 'et / ou / mais', detail: 'and / or / but' },
         { label: 'parce que / car', detail: 'because' },
-        { label: 'donc / alors', detail: 'so / then' },
-        { label: 'si', detail: 'if — AND "yes (contradicting)": "Tu ne viens pas ? — Si !"' },
         { label: 'd\'abord / ensuite / enfin', detail: 'first / then / finally — exam answer structure' },
         { label: 'il y a', detail: 'there is / there are — Il y a un problème.' },
+        { label: 'cependant / pourtant', detail: 'however / yet — B2 contrast' },
+        { label: 'en revanche', detail: 'on the other hand' },
+        { label: 'bien que / même si', detail: 'although / even if — bien que + SUBJUNCTIVE' },
+        { label: 'donc / ainsi / par conséquent', detail: 'therefore / thus / consequently' },
+        { label: 'afin que / pour que', detail: 'so that (+ subjunctive) — purpose' },
+        { label: 'alors que / tandis que', detail: 'whereas — comparing two facts' },
+        { label: 'étant donné que / puisque', detail: 'given that / since — formal cause' },
+    ]},
+    { title: 'Idioms & structures (not word-for-word)', items: [
+        { label: 'avoir besoin de', detail: 'to need — literally "to have need of"', say: 'J\'ai besoin d\'aide' },
+        { label: 'avoir envie de', detail: 'to feel like / to want', say: 'J\'ai envie de dormir' },
+        { label: 'être d\'accord', detail: 'to agree — literally "to be of agreement"', say: 'Je suis d\'accord' },
+        { label: 'il y a', detail: 'there is — literally "it has there"', say: 'Il y a un problème' },
+        { label: 'se rendre compte', detail: 'to realise — "to render account to oneself"', say: 'Je me rends compte' },
+        { label: 'tomber amoureux', detail: 'to fall in love — "to fall in-loved"', say: 'Ils sont tombés amoureux' },
+        { label: 'avoir raison / tort', detail: 'to be right / wrong — "to have reason"', say: 'Tu as raison' },
+        { label: 'faire attention', detail: 'to pay attention — "to make attention"', say: 'Faites attention' },
     ]},
     { title: 'Numbers', items: [
         { label: '0–10', detail: 'zéro, un, deux, trois, quatre, cinq, six, sept, huit, neuf, dix' },
