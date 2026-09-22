@@ -1006,11 +1006,11 @@ const HSKPrepView = () => {
                 <span className="text-2xl">🇨🇳</span>
             </div>
 
-            {/* tabs */}
-            <div className="flex gap-1 bg-stone-100 p-1 rounded-2xl mb-6 overflow-x-auto">
+            {/* tabs — horizontally scrollable; tabs keep natural width, active one auto-centers */}
+            <div className="flex gap-1 bg-stone-100 p-1 rounded-2xl mb-6 overflow-x-auto overscroll-x-contain">
                 {TABS.map(t => (
-                    <button key={t.id} onClick={() => setTab(t.id)}
-                        className={cn('flex-1 min-w-fit px-3 py-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 whitespace-nowrap',
+                    <button key={t.id} onClick={(e) => { setTab(t.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }}
+                        className={cn('shrink-0 px-3.5 py-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 whitespace-nowrap',
                             tab === t.id ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600')}>
                         <t.icon size={12} /> {t.label}
                     </button>
