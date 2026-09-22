@@ -132,3 +132,47 @@ export const saveMock = (r: TcfMockResult) => {
         localStorage.setItem(MOCKS_KEY, JSON.stringify(all.slice(0, 20)));
     } catch { /* quota */ }
 };
+
+// ── level checkpoints — never auto-promote: pass the test to unlock the next level
+const CHECKPOINTS_KEY = 'linguistai-tcf-checkpoints';
+
+export const getCheckpoints = (): Record<string, boolean> => {
+    try {
+        const v = JSON.parse(localStorage.getItem(CHECKPOINTS_KEY) || '{}');
+        return v && typeof v === 'object' ? v : {};
+    } catch { return {}; }
+};
+
+export const passCheckpoint = (level: string) => {
+    try {
+        const all = getCheckpoints();
+        all[level] = true;
+        localStorage.setItem(CHECKPOINTS_KEY, JSON.stringify(all));
+    } catch { /* quota */ }
+};
+
+// ── study plan (set an exam date → AI plan + countdown) ──────────────────────
+export interface TcfStudyPlan {
+    examDate: string;
+    level: string;
+    summary: string;
+    dailyTargets: string[];
+    weeks: { week: number; focus: string; tasks: string[] }[];
+}
+
+const PLAN_KEY = 'linguistai-tcf-plan';
+
+export const getPlan = (): TcfStudyPlan | null => {
+    try {
+        const v = JSON.parse(localStorage.getItem(PLAN_KEY) || 'null');
+        return v && v.examDate ? v : null;
+    } catch { return null; }
+};
+
+export const savePlan = (p: TcfStudyPlan) => {
+    try { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); } catch { /* quota */ }
+};
+
+export const clearPlan = () => {
+    try { localStorage.removeItem(PLAN_KEY); } catch { /* quota */ }
+};

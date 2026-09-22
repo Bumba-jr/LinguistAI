@@ -64,6 +64,10 @@ export const TCFListeningTrainer = ({ level, onLevelChange, onDone }: {
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [showTranscript, setShowTranscript] = useState(false);
     const [finished, setFinished] = useState(false);
+    // Listening progression: slow learner French → exam speed → challenge speed
+    const [rate, setRate] = useState(0.88); // 0.7 learn · 0.88 exam · 1.05 challenge
+    const rateRef = useRef(rate);
+    rateRef.current = rate;
     const stopRef = useRef(false);
 
     useEffect(() => () => { stopRef.current = true; stopSpeaking(); }, []);
@@ -89,7 +93,7 @@ export const TCFListeningTrainer = ({ level, onLevelChange, onDone }: {
         const next = () => {
             if (stopRef.current || i >= ex.lines.length) { setPlaying(false); return; }
             const line = ex.lines[i++];
-            speakText(line.fr, 'French', () => setTimeout(next, 400));
+            speakText(line.fr, 'French', () => setTimeout(next, 400), rateRef.current);
         };
         next();
     };
@@ -134,12 +138,23 @@ export const TCFListeningTrainer = ({ level, onLevelChange, onDone }: {
                     <div className="bg-white rounded-3xl border border-stone-100 p-5">
                         <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">The recording</p>
                         <p className="text-sm font-bold text-stone-800 mb-3">{ex.scenario}</p>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                             <button onClick={playAll} disabled={playing}
                                 className={cn('flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-colors',
                                     playing ? 'bg-stone-200 text-stone-500' : 'bg-indigo-600 text-white hover:bg-indigo-700')}>
                                 <Volume2 size={13} /> {playing ? 'Playing…' : plays === 0 ? 'Play the recording' : `Play again (${plays})`}
                             </button>
+                            {!finished && (
+                                <div className="flex gap-1 bg-stone-100 rounded-xl p-0.5">
+                                    {([['Learn', 0.7], ['Exam', 0.88], ['Challenge', 1.05]] as [string, number][]).map(([label, r]) => (
+                                        <button key={label} onClick={() => setRate(r)}
+                                            className={cn('px-2.5 py-1.5 rounded-lg text-[10px] font-black transition-colors',
+                                                rate === r ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600')}>
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                             {plays > 0 && <span className="text-[10px] text-stone-400">Exam rule: you only hear it once — no replay before answering</span>}
                         </div>
                     </div>

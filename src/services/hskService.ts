@@ -543,6 +543,25 @@ export const CHARACTER_INTRO = {
     },
 };
 
+// ── Vocabulary: themed sets (the syllabus's vocab phases 6/18/23) ────────────
+// AI-generated per (level, topic) and cached in localStorage.
+export const VOCAB_TOPICS: { id: string; label: string; hint: string }[] = [
+    { id: 'essentials', label: 'HSK Core Words', hint: 'the absolute highest-frequency words for this HSK level — pronouns, key verbs, essential nouns and function words the exam repeats constantly' },
+    { id: 'introductions', label: 'Introductions', hint: 'introducing yourself: names, nationalities, jobs, where you live, asking people about themselves' },
+    { id: 'family', label: 'Family & People', hint: 'family members, relationships, describing people, talking about your family' },
+    { id: 'food', label: 'Food & Drink', hint: 'food, drinks, meals, ordering in a restaurant, flavours, cooking' },
+    { id: 'shopping', label: 'Shopping & Money', hint: 'buying things, prices, bargains, sizes, paying, shops and markets' },
+    { id: 'transport', label: 'Transport & Directions', hint: 'buses, trains, taxis, asking and giving directions, locations, getting around a city' },
+    { id: 'work', label: 'Work & Office', hint: 'jobs, workplaces, meetings, colleagues, career plans, professional life' },
+    { id: 'home', label: 'Home & Daily Life', hint: 'housing, furniture, rooms, daily routines, chores, everyday objects' },
+    { id: 'health', label: 'Health & Body', hint: 'body parts, being ill, seeing a doctor, medicine, healthy habits' },
+    { id: 'travel', label: 'Travel', hint: 'trips, hotels, tickets, sightseeing, holidays, travel plans' },
+    { id: 'tech', label: 'Technology & Internet', hint: 'phones, apps, the internet, social media, online life, modern gadgets' },
+    { id: 'school', label: 'School & Study', hint: 'studying, classes, exams, university, teachers and students, learning a language' },
+    { id: 'time-weather', label: 'Time & Weather', hint: 'dates, clock times, seasons, weather, scheduling, making appointments' },
+    { id: 'feelings', label: 'Feelings & Opinions', hint: 'emotions, liking and disliking, giving opinions, agreeing and disagreeing' },
+];
+
 // ── The Cheat Sheet — one compact reference for everything essential ─────────
 export const CHEAT_SHEET: { title: string; items: { label: string; detail: string; say?: string }[] }[] = [
     { title: 'Tones', items: [

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader2, Volume2, CheckCircle2, XCircle, RotateCcw, Eye, AlertTriangle, Play, HelpCircle } from 'lucide-react';
+import { Loader2, Volume2, CheckCircle2, XCircle, RotateCcw, Eye, AlertTriangle, Play, HelpCircle, BookOpen } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
 import { speakText, stopSpeaking } from '../../services/voiceService';
@@ -9,9 +9,11 @@ import {
     TONE_SETS, NEUTRAL_TONE_WORDS, TONE_SANDHI,
     MANDARIN_FACTS, PINYIN_INITIAL_GROUPS, PINYIN_FINAL_GROUPS, SPELLING_RULES,
     TONE_PAIR_WORDS, SOUND_CONTRASTS, BASIC_STROKES, STROKE_ORDER_RULES,
-    CHARACTER_INTRO, CHEAT_SHEET,
+    CHARACTER_INTRO, CHEAT_SHEET, VOCAB_TOPICS,
 } from '../../services/hskService';
-import { logWeakness } from '../../services/hskStorage';
+import { logWeakness, getCachedLesson, cacheLesson } from '../../services/hskStorage';
+import { generateVocabSet } from '../../services/aiService';
+import { useAppStore } from '../../store/useAppStore';
 
 // ── shared exercise bits ─────────────────────────────────────────────────────
 export const LevelBar = ({ level, onLevelChange }: { level: HskLevel; onLevelChange: (l: HskLevel) => void }) => (
@@ -641,6 +643,10 @@ export const HSKListeningTrainer = ({ level, onLevelChange, onDone }: {
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [showTranscript, setShowTranscript] = useState(false);
     const [finished, setFinished] = useState(false);
+    // Phase 20 progression: slow learner Chinese → exam speed → native-ish speed
+    const [rate, setRate] = useState(0.88); // 0.7 learn · 0.88 exam · 1.05 challenge
+    const rateRef = useRef(rate);
+    rateRef.current = rate;
     const stopRef = useRef(false);
 
     useEffect(() => () => { stopRef.current = true; stopSpeaking(); }, []);
@@ -666,7 +672,7 @@ export const HSKListeningTrainer = ({ level, onLevelChange, onDone }: {
         const next = () => {
             if (stopRef.current || i >= ex.lines.length) { setPlaying(false); return; }
             const line = ex.lines[i++];
-            speakText(line.hanzi, 'Chinese', () => setTimeout(next, 400));
+            speakText(line.hanzi, 'Chinese', () => setTimeout(next, 400), rateRef.current);
         };
         next();
     };
@@ -708,12 +714,23 @@ export const HSKListeningTrainer = ({ level, onLevelChange, onDone }: {
                     <div className="bg-white rounded-3xl border border-stone-100 p-5">
                         <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">The recording</p>
                         <p className="text-sm font-bold text-stone-800 mb-3">{ex.scenario}</p>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                             <button onClick={playAll} disabled={playing}
                                 className={cn('flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-colors',
                                     playing ? 'bg-stone-200 text-stone-500' : 'bg-indigo-600 text-white hover:bg-indigo-700')}>
                                 <Volume2 size={13} /> {playing ? 'Playing…' : plays === 0 ? 'Play the recording' : `Play again (${plays})`}
                             </button>
+                            {!finished && (
+                                <div className="flex gap-1 bg-stone-100 rounded-xl p-0.5">
+                                    {([['Learn', 0.7], ['Exam', 0.88], ['Challenge', 1.05]] as [string, number][]).map(([label, r]) => (
+                                        <button key={label} onClick={() => setRate(r)}
+                                            className={cn('px-2.5 py-1.5 rounded-lg text-[10px] font-black transition-colors',
+                                                rate === r ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600')}>
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                             {plays > 0 && !finished && <span className="text-[10px] text-stone-400">Exam rule: you only hear it once — no replay before answering</span>}
                         </div>
                     </div>
@@ -889,6 +906,191 @@ export const HSKReadingTrainer = ({ level, onLevelChange, onDone }: {
                         <button onClick={start} className="w-full py-3.5 bg-stone-900 text-white text-sm font-bold rounded-2xl hover:bg-stone-700 transition-colors flex items-center justify-center gap-2">
                             <RotateCcw size={14} /> New exercise
                         </button>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ── Vocabulary trainer — themed word sets per HSK level (syllabus phases 6/18/23) ──
+interface VocabWord { term: string; reading: string; en: string; }
+
+export const HSKVocabTrainer = ({ level, onLevelChange }: {
+    level: HskLevel; onLevelChange: (l: HskLevel) => void;
+}) => {
+    const { addFlashcard, user } = useAppStore() as any;
+    const [topicId, setTopicId] = useState(VOCAB_TOPICS[0].id);
+    const [words, setWords] = useState<VocabWord[] | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [saved, setSaved] = useState<Set<string>>(new Set());
+    const [quiz, setQuiz] = useState<{ q: VocabWord; dir: 'en2zh' | 'zh2en'; options: VocabWord[] }[] | null>(null);
+    const [answers, setAnswers] = useState<Record<number, string>>({});
+    const [finished, setFinished] = useState(false);
+
+    const topic = VOCAB_TOPICS.find(t => t.id === topicId)!;
+    const cacheKey = `vocab:${level}:${topicId}`;
+
+    const generate = async (tid = topicId) => {
+        const t = VOCAB_TOPICS.find(x => x.id === tid)!;
+        const key = `vocab:${level}:${tid}`;
+        setLoading(true); setError(null); setWords(null); setQuiz(null); setAnswers({}); setFinished(false); setSaved(new Set());
+        // reuse the lesson cache for instant reopening
+        const cached = getCachedLesson<{ words: VocabWord[] }>(key);
+        if (cached?.words?.length) { setWords(cached.words); setLoading(false); return; }
+        try {
+            const r = await generateVocabSet('Chinese', `HSK ${level}`, t.label, t.hint);
+            if (!r.words?.length) throw new Error('empty');
+            setWords(r.words);
+            cacheLesson(key, r);
+        } catch {
+            setError('Generation failed — the AI may be busy. Try again.');
+        } finally { setLoading(false); }
+    };
+
+    const addToDeck = (w: VocabWord) => {
+        if (saved.has(w.term)) return;
+        const card = {
+            id: crypto.randomUUID(),
+            word: w.term,
+            translation: `${w.reading ? w.reading + ' — ' : ''}${w.en}`,
+            language: 'Chinese' as const,
+            nextReview: new Date().toISOString(),
+            lastReviewed: null,
+        };
+        addFlashcard(card);
+        if (user) import('../../services/dbService').then(m => m.upsertFlashcard(user.id, card)).catch(() => { });
+        setSaved(prev => new Set(prev).add(w.term));
+    };
+
+    const saveAll = () => { words?.forEach(w => addToDeck(w)); };
+
+    const startQuiz = () => {
+        if (!words || words.length < 4) return;
+        const shuffled = [...words].sort(() => Math.random() - 0.5).slice(0, 8);
+        const qs = shuffled.map((w, i) => {
+            const dir: 'en2zh' | 'zh2en' = i % 2 === 0 ? 'en2zh' : 'zh2en';
+            const distractors = words.filter(x => x.term !== w.term).sort(() => Math.random() - 0.5).slice(0, 3);
+            const options = [w, ...distractors].sort(() => Math.random() - 0.5);
+            return { q: w, dir, options };
+        });
+        setQuiz(qs); setAnswers({}); setFinished(false);
+    };
+
+    const answered = quiz ? Object.keys(answers).length : 0;
+    const correct = quiz ? quiz.filter(({ q, dir }, i) => {
+        const target = dir === 'en2zh' ? q.term : q.en;
+        return answers[i] === target;
+    }).length : 0;
+
+    return (
+        <div className="space-y-5">
+            <LevelBar level={level} onLevelChange={onLevelChange} />
+
+            {/* topic picker */}
+            <div className="bg-white rounded-3xl border border-stone-100 p-5">
+                <p className="text-sm font-black text-stone-900 mb-1">Themed vocabulary — HSK {level}</p>
+                <p className="text-xs text-stone-400 mb-3">Pick a situation, get the exam-relevant words for it, save them to your deck, then quiz yourself.</p>
+                <div className="flex gap-1.5 flex-wrap">
+                    {VOCAB_TOPICS.map(t => (
+                        <button key={t.id} onClick={() => { setTopicId(t.id); setWords(null); setQuiz(null); }}
+                            className={cn('px-3 py-1.5 rounded-xl text-xs font-black transition-colors',
+                                topicId === t.id ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+                <button onClick={() => generate()} disabled={loading}
+                    className="w-full mt-3 py-3 bg-emerald-500 text-white text-sm font-bold rounded-2xl hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                    {loading ? <><Loader2 size={15} className="animate-spin" /> Collecting words…</> : <><BookOpen size={14} /> Generate the {topic.label} set</>}
+                </button>
+                {error && <div className="mt-3 flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
+            </div>
+
+            {/* word list */}
+            {words && !quiz && (
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                        <p className="text-[11px] text-stone-400">{words.length} words · tap 音 to hear each one</p>
+                        <div className="flex gap-2">
+                            <button onClick={saveAll} disabled={saved.size === words.length}
+                                className={cn('px-3 py-2 rounded-xl text-[11px] font-black transition-colors',
+                                    saved.size === words.length ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-emerald-500 text-white hover:bg-emerald-600')}>
+                                {saved.size === words.length ? '✓ All in deck' : `Save all ${words.length}`}
+                            </button>
+                            <button onClick={startQuiz} className="px-3 py-2 rounded-xl text-[11px] font-black bg-stone-900 text-white hover:bg-stone-700">
+                                Quiz me
+                            </button>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {words.map((w, i) => (
+                            <div key={i} className="border border-stone-100 rounded-2xl p-3.5 bg-stone-50/50 flex items-center gap-3">
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-baseline gap-2 flex-wrap">
+                                        <InteractiveText text={w.term} language="Chinese" className="font-bold text-lg text-stone-900" />
+                                        {w.reading && <span className="text-xs font-mono text-violet-500">{w.reading}</span>}
+                                    </div>
+                                    <p className="text-sm text-stone-500">{w.en}</p>
+                                </div>
+                                <button onClick={() => speakText(w.term, 'Chinese')} className="text-stone-300 hover:text-emerald-500 shrink-0"><Volume2 size={14} /></button>
+                                <button onClick={() => addToDeck(w)}
+                                    className={cn('shrink-0 px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-colors',
+                                        saved.has(w.term) ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-500 hover:bg-emerald-100 hover:text-emerald-700')}>
+                                    {saved.has(w.term) ? '✓' : '+ deck'}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* quiz */}
+            {quiz && (
+                <div className="space-y-3">
+                    {quiz.map(({ q, dir, options }, i) => {
+                        const target = dir === 'en2zh' ? q.term : q.en;
+                        const picked = answers[i];
+                        return (
+                            <div key={i} className="bg-white rounded-3xl border border-stone-100 p-5">
+                                <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest mb-2">{i + 1} · {dir === 'en2zh' ? 'Which one is it?' : 'What does this mean?'}</p>
+                                {dir === 'en2zh' ? (
+                                    <p className="text-sm font-bold text-stone-800 mb-3">{q.en}</p>
+                                ) : (
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <p className="text-xl font-black text-stone-900">{q.term}</p>
+                                        {picked !== undefined && <span className="text-xs font-mono text-violet-500">{q.reading}</span>}
+                                        <button onClick={() => speakText(q.term, 'Chinese')} className="text-stone-300 hover:text-emerald-500"><Volume2 size={13} /></button>
+                                    </div>
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {options.map((opt, oi) => {
+                                        const optValue = dir === 'en2zh' ? opt.term : opt.en;
+                                        const revealed = picked !== undefined;
+                                        return (
+                                            <button key={oi} onClick={() => { if (!revealed) { setAnswers(prev => ({ ...prev, [i]: optValue })); if (optValue !== target) logWeakness({ skill: 'vocab', level: `HSK ${level} ${topic.label}`, question: dir === 'en2zh' ? q.en : `${q.term} (${q.reading})`, chosen: optValue, answer: target }); } }}
+                                                className={cn('text-left px-3.5 py-2.5 rounded-2xl border text-xs font-medium transition-all',
+                                                    !revealed ? 'bg-white border-stone-200 text-stone-700 hover:border-emerald-300'
+                                                        : optValue === target ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                                                            : optValue === picked ? 'bg-red-50 border-red-200 text-red-500' : 'bg-white border-stone-100 text-stone-400')}>
+                                                {dir === 'en2zh' ? <span className="font-bold">{opt.term} <span className="font-mono text-violet-400 text-[10px]">{opt.reading}</span></span> : opt.en}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {answered === quiz.length && !finished && (
+                        <div className="rounded-3xl p-5 text-center bg-stone-900 text-white space-y-2">
+                            <p className="text-2xl font-black">{correct}/{quiz.length}</p>
+                            <p className="text-xs text-white/60">{correct >= 6 ? 'Strong — save any you missed and move on.' : 'Save the whole set to your deck and drill it in Flashcards.'}</p>
+                            <div className="flex gap-2 justify-center pt-1">
+                                <button onClick={startQuiz} className="px-4 py-2.5 bg-white/10 rounded-xl text-xs font-black hover:bg-white/20">Retake</button>
+                                <button onClick={() => { setQuiz(null); }} className="px-4 py-2.5 bg-white rounded-xl text-xs font-black text-stone-900 hover:bg-stone-100">Back to words</button>
+                            </div>
+                        </div>
                     )}
                 </div>
             )}

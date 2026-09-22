@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, Pencil, ClipboardList,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, Pencil, ClipboardList, Layers,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
@@ -16,14 +16,18 @@ import {
     getHskScores, addHskScore, getCompletedLessons, markLessonComplete,
     getHskTarget, setHskTarget, HskScoreEntry, getWeakLog, getMocks,
     setLastLesson, getLastLesson, cacheLesson, getCachedLesson,
+    getCheckpoints, passCheckpoint, getPlan, savePlan, clearPlan,
 } from '../../services/hskStorage';
 import { recordAndTranscribe } from '../../services/speechService';
-import { LevelBar, ToneTrainer, PinyinGuide, PinyinChart, CheatSheet, CharactersGuide, SoundContrastTrainer, ZHEn, HSKListeningTrainer, HSKReadingTrainer, MCQ } from './HSKTrainers';
+import { LevelBar, ToneTrainer, PinyinGuide, PinyinChart, CheatSheet, CharactersGuide, SoundContrastTrainer, ZHEn, HSKListeningTrainer, HSKReadingTrainer, HSKVocabTrainer, MCQ } from './HSKTrainers';
 import { StrokeOrderTeacher, StrokeWriter } from './StrokeOrderTeacher';
 import { HSKMockExam } from './HSKMockExam';
+import ExamPlanCard from '../exam/ExamPlanCard';
+import CheckpointQuiz from '../exam/CheckpointQuiz';
+import InteractiveExaminer from '../exam/InteractiveExaminer';
 
 const LEVELS: HskLevel[] = ['1', '2', '3', '4', '5', '6'];
-type HskTab = 'overview' | 'curriculum' | 'pinyin' | 'characters' | 'cheatsheet' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
+type HskTab = 'overview' | 'curriculum' | 'pinyin' | 'characters' | 'cheatsheet' | 'vocab' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
 
 const SKILL_META = {
     listening: { label: 'Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: 'audio once · 100 pts' },
@@ -121,6 +125,16 @@ const Overview = ({ onGo }: { onGo: (t: HskTab) => void }) => {
                 </button>
             </div>
 
+            {/* exam plan & countdown */}
+            <ExamPlanCard
+                examName="HSK Chinese"
+                levelLabel={`HSK ${getHskTarget()}`}
+                language="Chinese"
+                plan={getPlan()}
+                onSavePlan={savePlan}
+                onClearPlan={clearPlan}
+            />
+
             {/* quick actions */}
             <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => onGo('curriculum')} className="bg-white rounded-3xl border border-stone-100 p-5 text-left hover:border-emerald-300 transition-colors">
@@ -160,7 +174,13 @@ const Curriculum = () => {
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [done, setDone] = useState<string[]>(getCompletedLessons());
     const [savedVocab, setSavedVocab] = useState<Set<string>>(new Set());
+    const [checkpoints, setCheckpoints] = useState<Record<string, boolean>>(getCheckpoints());
+    const [checkpointFor, setCheckpointFor] = useState<HskLevel | null>(null);
     const last = getLastLesson();
+
+    // Never auto-promote: level N+1 stays locked until the level N checkpoint is passed
+    const prevLevel = String(Number(level) - 1) as HskLevel;
+    const locked = Number(level) > 1 && !checkpoints[prevLevel];
 
     const openLesson = async (topic: { title: string; slug: string; focus: string }) => {
         const key = `${level}:${topic.slug}`;
@@ -244,8 +264,36 @@ const Curriculum = () => {
                 </div>
             )}
 
+            {/* checkpoint gate — pass the previous level's test to unlock */}
+            {locked && !lesson && (checkpointFor === prevLevel ? (
+                <CheckpointQuiz
+                    language="Chinese"
+                    levelLabel={`HSK ${prevLevel}`}
+                    topics={HSK_SYLLABUS[prevLevel].map(t => `${t.title} (${t.focus})`)}
+                    onPass={() => {
+                        passCheckpoint(prevLevel);
+                        setCheckpoints(getCheckpoints());
+                        setCheckpointFor(null);
+                    }}
+                    onCancel={() => setCheckpointFor(null)}
+                />
+            ) : (
+                <div className="bg-white rounded-3xl border border-stone-100 p-6 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto">
+                        <Lock size={22} className="text-amber-500" />
+                    </div>
+                    <p className="font-black text-stone-900 text-sm">HSK {level} is locked</p>
+                    <p className="text-xs text-stone-400 max-w-sm mx-auto">Levels never auto-promote: pass the HSK {prevLevel} checkpoint first — 6 questions on what that level taught. You can retake as many times as you need.</p>
+                    <button onClick={() => setCheckpointFor(prevLevel)}
+                        className="px-6 py-3 bg-amber-500 text-white text-xs font-black rounded-2xl hover:bg-amber-600 transition-colors">
+                        Take the HSK {prevLevel} checkpoint
+                    </button>
+                    <p className="text-[10px] text-stone-300">…or keep studying HSK {level} topics below once unlocked. HSK 1 is always open.</p>
+                </div>
+            ))}
+
             {/* topic list */}
-            {!lesson && (
+            {!lesson && !locked && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {topics.map(t => {
                         const key = `${level}:${t.slug}`;
@@ -693,15 +741,29 @@ const WritingTrainer = ({ level, onLevelChange }: { level: HskLevel; onLevelChan
 const SpeakingTrainer = ({ level, onLevelChange }: { level: HskLevel; onLevelChange: (l: HskLevel) => void }) => {
     const [taskId, setTaskId] = useState(HSK_SPEAKING_TASKS[0].id);
     const task = HSK_SPEAKING_TASKS.find(t => t.id === taskId)!;
+    const [mode, setMode] = useState<'self' | 'examiner'>('self');
     const [recState, setRecState] = useState<'idle' | 'recording' | 'processing' | 'done'>('idle');
     const [transcript, setTranscript] = useState('');
     const [feedback, setFeedback] = useState<HskSpeakingFeedback | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [promptPlaying, setPromptPlaying] = useState(false);
+    const [evaluatingLive, setEvaluatingLive] = useState(false);
     const recRef = useRef<{ promise: Promise<string>; stop: () => void } | null>(null);
 
     useEffect(() => () => { stopSpeaking(); }, []);
     useEffect(() => { setRecState('idle'); setTranscript(''); setFeedback(null); setError(null); }, [taskId]);
+
+    // live examiner: run the full HSKK evaluation on the combined transcript
+    const finishLiveExam = async (combined: string) => {
+        setEvaluatingLive(true); setError(null); setFeedback(null);
+        try {
+            const fb = await evaluateHskSpeaking(task.label, task.guide, 'Interactive examiner session — multiple questions answered live', combined, level);
+            setFeedback(fb);
+            addHskScore({ pct: fb.score100, skill: 'speaking', label: `HSKK live (HSK ${level}) ${task.label}`, band: fb.estimatedLevel, score: fb.score100 });
+        } catch {
+            setError('Evaluation failed — the AI may be busy. Try finishing again.');
+        } finally { setEvaluatingLive(false); }
+    };
 
     // for listen & repeat / listen & answer: the "examiner" speaks first
     const playPrompt = () => {
@@ -762,10 +824,31 @@ const SpeakingTrainer = ({ level, onLevelChange }: { level: HskLevel; onLevelCha
                     ))}
                 </div>
                 <p className="text-[11px] font-black text-rose-500 uppercase tracking-widest mb-1">{task.label}</p>
-                <p className="text-sm text-stone-800 font-semibold mb-1">{task.prompt}</p>
+                {mode === 'self' && <p className="text-sm text-stone-800 font-semibold mb-1">{task.prompt}</p>}
                 <p className="text-xs text-stone-400">{task.guide}</p>
+                <div className="flex gap-1 bg-stone-100 rounded-xl p-0.5 mt-3 w-fit">
+                    <button onClick={() => setMode('self')}
+                        className={cn('px-3.5 py-1.5 rounded-lg text-[10px] font-black transition-colors', mode === 'self' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400')}>
+                        Self-record
+                    </button>
+                    <button onClick={() => setMode('examiner')}
+                        className={cn('px-3.5 py-1.5 rounded-lg text-[10px] font-black transition-colors', mode === 'examiner' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400')}>
+                        Live examiner
+                    </button>
+                </div>
             </div>
 
+            {mode === 'examiner' && (
+                <InteractiveExaminer
+                    language="Chinese"
+                    levelLabel={`HSK ${level}`}
+                    taskLabel={task.label}
+                    taskGuide={task.guide}
+                    onDone={finishLiveExam}
+                />
+            )}
+
+            {mode === 'self' && (
             <div className="bg-white rounded-3xl border border-stone-100 p-6 text-center space-y-4">
                 {(task.id === 'repeat' || task.id === 'answer') && recState === 'idle' && (
                     <button onClick={playPrompt} disabled={promptPlaying}
@@ -786,10 +869,17 @@ const SpeakingTrainer = ({ level, onLevelChange }: { level: HskLevel; onLevelCha
                     {recState === 'done' && 'Answer recorded'}
                 </p>
             </div>
+            )}
 
             {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
 
-            {transcript && (
+            {evaluatingLive && (
+                <div className="flex items-center justify-center gap-3 py-6 text-stone-400">
+                    <Loader2 size={18} className="animate-spin" /> Your examiner is grading the full session…
+                </div>
+            )}
+
+            {transcript && mode === 'self' && (
                 <div className="bg-white rounded-3xl border border-stone-100 p-5">
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Your transcript (from speech-to-text)</p>
                     <p className="text-sm text-stone-700 leading-relaxed">{transcript || <span className="italic text-stone-300">(nothing was transcribed)</span>}</p>
@@ -982,6 +1072,7 @@ const HSKPrepView = () => {
     const TABS: { id: HskTab; label: string; icon: any }[] = [
         { id: 'overview', label: 'Overview', icon: Flag },
         { id: 'curriculum', label: 'Learn', icon: BookOpen },
+        { id: 'vocab', label: 'Vocabulary', icon: Layers },
         { id: 'pinyin', label: 'Pinyin & Tones', icon: Languages },
         { id: 'characters', label: 'Characters', icon: Pencil },
         { id: 'cheatsheet', label: 'Cheat Sheet', icon: ClipboardList },
@@ -1019,6 +1110,7 @@ const HSKPrepView = () => {
 
             {tab === 'overview' && <Overview onGo={setTab} />}
             {tab === 'curriculum' && <Curriculum />}
+            {tab === 'vocab' && <HSKVocabTrainer level={level} onLevelChange={setLevel} />}
             {tab === 'pinyin' && (
                 <div className="space-y-5">
                     <PinyinChart />

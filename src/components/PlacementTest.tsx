@@ -30,6 +30,14 @@ export default function PlacementTest({ onFinish, onSkip }: {
   const [roundCorrect, setRoundCorrect] = useState(0);
   const [finished, setFinished] = useState(false);
 
+  // language-appropriate topic focus — Chinese/Japanese work nothing like European languages
+  const topicsFor = (lang: string) => {
+    if (lang === 'Chinese' || lang === 'Japanese') {
+      return `Core ${lang} placement test topics: everyday vocabulary (greetings, food, family, travel, numbers, time), essential grammar (word order SVO, particles and measure words${lang === 'Chinese' ? ', 了/过/着 aspect, 吗 questions, measure words 个/本/张' : ', particles は/が/を/に, verb forms, counters'}), pronunciation in ${lang === 'Chinese' ? 'pinyin and tones' : 'romaji/kana'}, and practical phrases for real conversations.`;
+    }
+    return `Core ${lang} placement test topics: everyday vocabulary (greetings, food, family, travel, numbers, time), essential grammar (articles and gender, present and past tense verb conjugation, plurals, prepositions, pronouns), and practical phrases for real conversations.`;
+  };
+
   const loadRound = async (r: number) => {
     setLoading(true);
     setLoadError(false);
@@ -39,7 +47,7 @@ export default function PlacementTest({ onFinish, onSkip }: {
     setRoundCorrect(0);
     try {
       const qs = await generateQuestions(
-        `Core ${language} placement test topics: everyday vocabulary (greetings, food, family, travel, numbers, time), essential grammar (articles and gender, present and past tense verb conjugation, plurals, prepositions, pronouns), and practical phrases for real conversations.`,
+        topicsFor(language),
         QUESTIONS_PER_ROUND, 'multiple_choice', ROUNDS[r].difficulty, language
       );
       setQuestions(qs.slice(0, QUESTIONS_PER_ROUND));

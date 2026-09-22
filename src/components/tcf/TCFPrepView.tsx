@@ -16,10 +16,14 @@ import {
     getTcfScores, addTcfScore, getCompletedLessons, markLessonComplete,
     getNclcTarget, setNclcTarget, TcfScoreEntry, getWeakLog, getMocks,
     setLastLesson, getLastLesson, cacheLesson, getCachedLesson,
+    getCheckpoints, passCheckpoint, getPlan, savePlan, clearPlan,
 } from '../../services/tcfStorage';
 import { recordAndTranscribe } from '../../services/speechService';
 import { LevelBar, TCFListeningTrainer, TCFReadingTrainer } from './TCFTrainers';
 import { TCFMockExam } from './TCFMockExam';
+import ExamPlanCard from '../exam/ExamPlanCard';
+import CheckpointQuiz from '../exam/CheckpointQuiz';
+import InteractiveExaminer from '../exam/InteractiveExaminer';
 
 const LEVELS: TcfLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 type TcfTab = 'overview' | 'curriculum' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
@@ -119,6 +123,16 @@ const Overview = ({ onGo }: { onGo: (t: TcfTab) => void }) => {
                 </p>
             </div>
 
+            {/* exam plan & countdown */}
+            <ExamPlanCard
+                examName="TCF Canada"
+                levelLabel={`NCLC target ${getNclcTarget()}`}
+                language="French"
+                plan={getPlan()}
+                onSavePlan={savePlan}
+                onClearPlan={clearPlan}
+            />
+
             {/* quick actions */}
             <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => onGo('curriculum')} className="bg-white rounded-3xl border border-stone-100 p-5 text-left hover:border-emerald-300 transition-colors">
@@ -148,7 +162,13 @@ const Curriculum = ({ language }: { language: string }) => {
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [done, setDone] = useState<string[]>(getCompletedLessons());
     const [savedVocab, setSavedVocab] = useState<Set<string>>(new Set());
+    const [checkpoints, setCheckpoints] = useState<Record<string, boolean>>(getCheckpoints());
+    const [checkpointFor, setCheckpointFor] = useState<TcfLevel | null>(null);
     const last = getLastLesson();
+
+    // Never auto-promote: level N+1 stays locked until the level N checkpoint is passed
+    const prevLevel = LEVELS[Math.max(0, LEVELS.indexOf(level) - 1)];
+    const locked = level !== 'A1' && !checkpoints[prevLevel];
 
     const openLesson = async (topic: { title: string; slug: string; focus: string }) => {
         const key = `${level}:${topic.slug}`;
@@ -244,8 +264,36 @@ const Curriculum = ({ language }: { language: string }) => {
                 </div>
             )}
 
+            {/* checkpoint gate — pass the previous level's test to unlock */}
+            {locked && !lesson && (checkpointFor === prevLevel ? (
+                <CheckpointQuiz
+                    language="French"
+                    levelLabel={prevLevel}
+                    topics={TCF_SYLLABUS[prevLevel].map(t => `${t.title} (${t.focus})`)}
+                    onPass={() => {
+                        passCheckpoint(prevLevel);
+                        setCheckpoints(getCheckpoints());
+                        setCheckpointFor(null);
+                    }}
+                    onCancel={() => setCheckpointFor(null)}
+                />
+            ) : (
+                <div className="bg-white rounded-3xl border border-stone-100 p-6 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto">
+                        <Lock size={22} className="text-amber-500" />
+                    </div>
+                    <p className="font-black text-stone-900 text-sm">{level} is locked</p>
+                    <p className="text-xs text-stone-400 max-w-sm mx-auto">Levels never auto-promote: pass the {prevLevel} checkpoint first — 6 questions on what that level taught. You can retake as many times as you need.</p>
+                    <button onClick={() => setCheckpointFor(prevLevel)}
+                        className="px-6 py-3 bg-amber-500 text-white text-xs font-black rounded-2xl hover:bg-amber-600 transition-colors">
+                        Take the {prevLevel} checkpoint
+                    </button>
+                    <p className="text-[10px] text-stone-300">A1 is always open — start there if this is your first time.</p>
+                </div>
+            ))}
+
             {/* topic list */}
-            {!lesson && (
+            {!lesson && !locked && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {topics.map(t => {
                         const key = `${level}:${t.slug}`;
@@ -670,16 +718,33 @@ const WritingTrainer = ({ level, onLevelChange }: { level: TcfLevel; onLevelChan
 const SpeakingTrainer = ({ level, language, onLevelChange }: { level: TcfLevel; language: string; onLevelChange: (l: TcfLevel) => void }) => {
     const [taskId, setTaskId] = useState(TCF_SPEAKING_TASKS[0].id);
     const task = TCF_SPEAKING_TASKS.find(t => t.id === taskId)!;
+    const [mode, setMode] = useState<'self' | 'examiner'>('self');
     const [prep, setPrep] = useState(0);
     const [recState, setRecState] = useState<'idle' | 'recording' | 'processing' | 'done'>('idle');
     const [transcript, setTranscript] = useState('');
     const [feedback, setFeedback] = useState<TcfSpeakingFeedback | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [evaluatingLive, setEvaluatingLive] = useState(false);
     const recRef = useRef<{ promise: Promise<string>; stop: () => void } | null>(null);
     const prepTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => { setPrep(0); setRecState('idle'); setTranscript(''); setFeedback(null); setError(null); }, [taskId]);
     useEffect(() => () => { if (prepTimer.current) clearInterval(prepTimer.current); stopSpeaking(); }, []);
+
+    // live examiner: run the full TCF speaking evaluation on the combined transcript
+    const finishLiveExam = async (combined: string) => {
+        setEvaluatingLive(true); setError(null); setFeedback(null);
+        try {
+            const fb = await evaluateTcfSpeaking(task.label, task.guide, 'Interactive examiner session — multiple questions answered live', combined, level);
+            setFeedback(fb);
+            const words = combined.split(/\s+/).filter(Boolean).length;
+            const pct = Math.min(95, 30 + Math.round(words / 2));
+            const est = practiceToScore(pct);
+            addTcfScore({ pct, skill: 'speaking', label: `TCF live ${task.label}`, nclc: est.nclc, score: est.score });
+        } catch {
+            setError('Evaluation failed — the AI may be busy. Try finishing again.');
+        } finally { setEvaluatingLive(false); }
+    };
 
     const startPrep = () => {
         setPrep(task.id === 's1' ? 0 : 60);
@@ -736,10 +801,31 @@ const SpeakingTrainer = ({ level, language, onLevelChange }: { level: TcfLevel; 
                     ))}
                 </div>
                 <p className="text-[11px] font-black text-rose-500 uppercase tracking-widest mb-1">{task.label}</p>
-                <InteractiveText text={task.prompt} language="French" className="block text-sm font-semibold text-stone-800 mb-1" />
+                {mode === 'self' && <InteractiveText text={task.prompt} language="French" className="block text-sm font-semibold text-stone-800 mb-1" />}
                 <p className="text-xs text-stone-400">{task.guide}</p>
+                <div className="flex gap-1 bg-stone-100 rounded-xl p-0.5 mt-3 w-fit">
+                    <button onClick={() => setMode('self')}
+                        className={cn('px-3.5 py-1.5 rounded-lg text-[10px] font-black transition-colors', mode === 'self' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400')}>
+                        Self-record
+                    </button>
+                    <button onClick={() => setMode('examiner')}
+                        className={cn('px-3.5 py-1.5 rounded-lg text-[10px] font-black transition-colors', mode === 'examiner' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400')}>
+                        Live examiner
+                    </button>
+                </div>
             </div>
 
+            {mode === 'examiner' && (
+                <InteractiveExaminer
+                    language="French"
+                    levelLabel={level}
+                    taskLabel={task.label}
+                    taskGuide={task.guide}
+                    onDone={finishLiveExam}
+                />
+            )}
+
+            {mode === 'self' && (
             <div className="bg-white rounded-3xl border border-stone-100 p-6 text-center space-y-4">
                 {task.id !== 's1' && prep === 0 && recState === 'idle' && (
                     <button onClick={startPrep} className="px-5 py-2.5 bg-stone-100 text-stone-600 text-xs font-bold rounded-2xl hover:bg-stone-200 transition-colors">
@@ -764,10 +850,17 @@ const SpeakingTrainer = ({ level, language, onLevelChange }: { level: TcfLevel; 
                     {recState === 'done' && 'Answer recorded'}
                 </p>
             </div>
+            )}
 
             {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
 
-            {transcript && (
+            {evaluatingLive && (
+                <div className="flex items-center justify-center gap-3 py-6 text-stone-400">
+                    <Loader2 size={18} className="animate-spin" /> Your examiner is grading the full session…
+                </div>
+            )}
+
+            {transcript && mode === 'self' && (
                 <div className="bg-white rounded-3xl border border-stone-100 p-5">
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Your transcript (from speech-to-text)</p>
                     <p className="text-sm text-stone-700 leading-relaxed">{transcript || <span className="italic text-stone-300">(nothing was transcribed)</span>}</p>

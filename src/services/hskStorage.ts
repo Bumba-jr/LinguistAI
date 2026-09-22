@@ -56,7 +56,7 @@ export const setHskTarget = (t: HskLevel) => {
 // ── weakness log — questions missed in trainers ──────────────────────────────
 export interface HskWeakEntry {
     date: string;
-    skill: 'listening' | 'reading' | 'tones';
+    skill: 'listening' | 'reading' | 'tones' | 'vocab';
     level: string;
     question: string;
     chosen: string;
@@ -134,4 +134,48 @@ export const saveMock = (r: HskMockResult) => {
         all.unshift(r);
         localStorage.setItem(MOCKS_KEY, JSON.stringify(all.slice(0, 20)));
     } catch { /* quota */ }
+};
+
+// ── level checkpoints — never auto-promote: pass the test to unlock the next level
+const CHECKPOINTS_KEY = 'linguistai-hsk-checkpoints';
+
+export const getCheckpoints = (): Record<string, boolean> => {
+    try {
+        const v = JSON.parse(localStorage.getItem(CHECKPOINTS_KEY) || '{}');
+        return v && typeof v === 'object' ? v : {};
+    } catch { return {}; }
+};
+
+export const passCheckpoint = (level: string) => {
+    try {
+        const all = getCheckpoints();
+        all[level] = true;
+        localStorage.setItem(CHECKPOINTS_KEY, JSON.stringify(all));
+    } catch { /* quota */ }
+};
+
+// ── study plan (set an exam date → AI plan + countdown) ──────────────────────
+export interface HskStudyPlan {
+    examDate: string;
+    level: string;
+    summary: string;
+    dailyTargets: string[];
+    weeks: { week: number; focus: string; tasks: string[] }[];
+}
+
+const PLAN_KEY = 'linguistai-hsk-plan';
+
+export const getPlan = (): HskStudyPlan | null => {
+    try {
+        const v = JSON.parse(localStorage.getItem(PLAN_KEY) || 'null');
+        return v && v.examDate ? v : null;
+    } catch { return null; }
+};
+
+export const savePlan = (p: HskStudyPlan) => {
+    try { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); } catch { /* quota */ }
+};
+
+export const clearPlan = () => {
+    try { localStorage.removeItem(PLAN_KEY); } catch { /* quota */ }
 };

@@ -1174,6 +1174,77 @@ Rules: each reply is ONE short natural sentence in ${targetLanguage} only (no En
     return (Array.isArray(d.replies) ? d.replies : []).filter(Boolean).map(String).slice(0, 3);
 };
 
+// ── Exam portal: themed vocabulary set ────────────────────────────────────────
+export const generateVocabSet = async (
+    targetLanguage: Language,
+    levelLabel: string,
+    topicLabel: string,
+    topicHint: string
+): Promise<{ words: { term: string; reading: string; en: string }[] }> => {
+    const isChinese = targetLanguage === 'Chinese' || targetLanguage === 'Japanese';
+    const system = `You are an expert ${targetLanguage} teacher building a vocabulary set for the ${levelLabel} exam.
+Topic: ${topicLabel} — ${topicHint}.
+Return ONLY valid JSON: {"words":[{"term":"the word in ${targetLanguage}","reading":"${isChinese ? 'pinyin with tone marks' : 'pronunciation hint / romanisation if useful, else empty string'}","en":"English meaning"}]}
+Rules: 14-16 words, HIGH-FREQUENCY and exam-relevant for ${levelLabel}, ordered easy → harder. Every word must be genuinely useful for the topic. No duplicates, no near-duplicates.`;
+    const raw = await chat(system, `Build the ${levelLabel} vocabulary set: ${topicLabel}.`, 1500);
+    const d = parseJSON(raw);
+    return { words: (Array.isArray(d.words) ? d.words : []).filter((w: any) => w && w.term && w.en).slice(0, 16) };
+};
+
+// ── Exam portal: level checkpoint quiz (gate before promoting a level) ───────
+export const generateCheckpoint = async (
+    targetLanguage: Language,
+    levelLabel: string,
+    topics: string[]
+): Promise<{ questions: { question: string; options: string[]; answer: string }[] }> => {
+    const system = `You are an ${levelLabel} ${targetLanguage} examiner writing a short CHECKPOINT TEST. The student must prove they master ${levelLabel} before moving to the next level.
+The level covered these topics: ${topics.join('; ')}.
+Return ONLY valid JSON: {"questions":[{"question":"MCQ in ENGLISH testing comprehension/usage of the level's grammar & vocabulary","options":["4 options, one correct"],"answer":"the exact correct option"}]}
+Rules: exactly 6 questions, each testing a DIFFERENT topic from the list. Mix styles: choose the correct word/pattern, what does this sentence mean, pick the right response. Options plausible — no jokes.`;
+    const raw = await chat(system, `Write the ${levelLabel} checkpoint test for ${targetLanguage}.`, 1800);
+    const d = parseJSON(raw);
+    return { questions: (Array.isArray(d.questions) ? d.questions : []).filter((q: any) => q && q.question && q.options?.length === 4 && q.answer).slice(0, 6) };
+};
+
+// ── Exam portal: interactive examiner turn ───────────────────────────────────
+export interface ExaminerHistory { role: 'examiner' | 'student'; content: string; }
+export const examinerTurn = async (
+    targetLanguage: Language,
+    levelLabel: string,
+    taskLabel: string,
+    taskGuide: string,
+    history: ExaminerHistory[]
+): Promise<{ nextQuestion: string; note: string }> => {
+    const system = `You are a friendly but professional ${targetLanguage} EXAMINER conducting a live ${taskLabel} practice (${taskGuide}). Student level: ${levelLabel}.
+The conversation so far (transcribed speech — ignore spelling, judge grammar and vocabulary from the words):
+${history.length === 0 ? '(this is the opening — ask the first question)' : history.map(h => `${h.role === 'examiner' ? 'EXAMINER' : 'STUDENT'}: ${h.content}`).join('\n')}
+Return ONLY valid JSON: {"nextQuestion":"what you say next, in ${targetLanguage} — one question or prompt (open with the first question if the history is empty)","note":"ONE short sentence of English coaching about the student's LAST answer (or 'Let's begin.' if empty) — concrete, encouraging, specific"}
+Rules: stay in the examiner role. Ask ONE question at a time. Follow up on what the student actually said. Push slightly beyond their comfort level, but stay within ${levelLabel} scope.`;
+    const raw = await chat(system, 'Continue the examination.', 600);
+    const d = parseJSON(raw);
+    return { nextQuestion: String(d.nextQuestion || ''), note: String(d.note || '') };
+};
+
+// ── Exam portal: study plan from an exam date ────────────────────────────────
+export const generateStudyPlan = async (
+    examName: string,
+    levelLabel: string,
+    weeksCount: number,
+    minutesPerDay: number,
+    targetLanguage: Language
+): Promise<{ summary: string; dailyTargets: string[]; weeks: { week: number; focus: string; tasks: string[] }[] }> => {
+    const system = `You are a study-plan coach for the ${examName} (${targetLanguage}, target ${levelLabel}). The student has ${weeksCount} week(s) left and can study ${minutesPerDay} minutes a day.
+Return ONLY valid JSON: {"summary":"2 sentences: the strategy for the time left","dailyTargets":["3-4 daily habits with minutes, e.g. '15 min flashcard review'"],"weeks":[{"week":1,"focus":"the theme of the week","tasks":["3-4 concrete tasks mixing the four skills + vocabulary"]}]}
+Rules: ${weeksCount <= 2 ? 'tight triage plan — highest-yield exam tasks first' : 'build skills progressively: foundations early, exam technique and mock practice in the final week'}. The LAST week must include a full mock exam and weak-skill drilling. Tasks must fit ${minutesPerDay} min/day.`;
+    const raw = await chat(system, `Create the ${weeksCount}-week ${examName} plan for a ${levelLabel} candidate.`, 2000);
+    const d = parseJSON(raw);
+    return {
+        summary: String(d.summary || ''),
+        dailyTargets: Array.isArray(d.dailyTargets) ? d.dailyTargets.map(String).slice(0, 4) : [],
+        weeks: Array.isArray(d.weeks) ? d.weeks.map((w: any, i: number) => ({ week: Number(w.week) || i + 1, focus: String(w.focus || ''), tasks: Array.isArray(w.tasks) ? w.tasks.map(String).slice(0, 4) : [] })).slice(0, 12) : [],
+    };
+};
+
 // Translate a partner's message into English
 export const translateToEnglish = async (text: string, fromLanguage: Language): Promise<string> => {
     const system = `Translate the given ${fromLanguage} message into natural English. Return ONLY valid JSON: {"translation":"the English translation"}`;
