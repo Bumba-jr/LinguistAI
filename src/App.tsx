@@ -35,7 +35,7 @@ import { getAuthRedirectUrl } from './lib/auth-config';
 import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
-import { getStats, getSavedLectures, getFlashcards, getQuizHistory, getLectureProgress } from './services/dbService';
+import { getStats, getSavedLectures, getFlashcards, getQuizHistory, getLectureProgress, getOnboardingComplete, saveOnboardingComplete } from './services/dbService';
 import { offlineCache } from './lib/offlineCache';
 import { scheduleFlashcardReminder, scheduleDailyReminder } from './lib/notifications';
 import NotificationSettings from './components/NotificationSettings';
@@ -163,15 +163,37 @@ export default function App() {
   const [showAllLectures, setShowAllLectures] = useState(false);
   const [placementDismissed, setPlacementDismissed] = useState(false);
   // onboarding wizard + tutorial tour — PER-USER flags (a new signup on the
-  // same browser must get its own onboarding, not inherit the old user's)
+  // same browser must get its own onboarding, not inherit the old user's).
+  // The onboarding flag's source of truth is Supabase (user_preferences),
+  // so a returning user signing in on a NEW device skips the wizard;
+  // localStorage is only the fast path for this device.
   const [onboardingDone, setOnboardingDone] = useState<boolean>(true); // until the user's flag is read
   const [tourDone, setTourDone] = useState<boolean>(true);
   useEffect(() => {
     if (!user?.id) return;
+    let alive = true;
     try {
-      setOnboardingDone(localStorage.getItem(`linguistai-onboarded-${user.id}`) === '1');
       setTourDone(localStorage.getItem(`linguistai-tour-done-${user.id}`) === '1');
     } catch { /* storage unavailable */ }
+    const localDone = (() => {
+      try { return localStorage.getItem(`linguistai-onboarded-${user.id}`) === '1'; } catch { return false; }
+    })();
+    getOnboardingComplete(user.id)
+      .then((remoteDone) => {
+        if (!alive) return;
+        if (remoteDone) {
+          // Known user on any device — cache locally so future boots skip the check
+          try { localStorage.setItem(`linguistai-onboarded-${user.id}`, '1'); } catch { /* storage unavailable */ }
+          setOnboardingDone(true);
+        } else if (localDone) {
+          // Backfill: onboarded here before the flag went cloud-side
+          saveOnboardingComplete(user.id).catch(() => { });
+        } else {
+          setOnboardingDone(false);
+        }
+      })
+      .catch(() => { if (alive) setOnboardingDone(localDone); }); // offline / column not migrated yet → device behavior
+    return () => { alive = false; };
   }, [user?.id]);
   // user switch on this browser: wipe the previous account's learning data
   useEffect(() => {
@@ -372,6 +394,7 @@ export default function App() {
         setPlacementDismissed(true);
       }
       localStorage.setItem(`linguistai-onboarded-${user.id}`, '1');
+      saveOnboardingComplete(user.id).catch(() => { }); // cross-device: never ask this user again anywhere
       setOnboardingDone(true);
     }} />;
   }

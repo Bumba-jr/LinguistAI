@@ -612,6 +612,23 @@ export const getQuickReactions = async (userId: string): Promise<string[] | null
   return data?.quick_reactions ?? null;
 };
 
+// ── Onboarding completion flag (cross-device) ────────────────────────────────
+// The onboarding wizard must only show for genuinely new users. localStorage
+// alone can't do that — it is per-device — so the source of truth lives here
+// and follows the user to every device they sign in from.
+export const saveOnboardingComplete = async (userId: string) => {
+  await supabase.from('user_preferences')
+    .upsert({ user_id: userId, onboarding_completed: true, updated_at: new Date().toISOString() });
+};
+
+export const getOnboardingComplete = async (userId: string): Promise<boolean> => {
+  const { data } = await supabase.from('user_preferences')
+    .select('onboarding_completed')
+    .eq('user_id', userId)
+    .maybeSingle();
+  return data?.onboarding_completed === true;
+};
+
 // ── Room Vocabulary Board ─────────────────────────────────────────────────────
 export interface VocabEntry {
   id: string;
