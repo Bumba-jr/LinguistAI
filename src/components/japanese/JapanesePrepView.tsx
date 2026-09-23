@@ -696,7 +696,7 @@ const WritingTrainer = ({ level, onLevelChange }: { level: JlptLevel; onLevelCha
             </div>
 
             <textarea value={text} onChange={e => setText(e.target.value)} rows={12}
-                placeholder="Scrivi la tua risposta in italiano… (occhio alle doppie, agli accenti e al registro tu/Lei!)"
+                placeholder="日本語で書いてください…（粒子、登録：です/ます と 普通形に気をつけて）"
                 className="w-full px-5 py-4 text-sm rounded-3xl border border-stone-200 focus:outline-none focus:border-amber-400 bg-white resize-y" />
 
             {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
