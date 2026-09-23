@@ -34,10 +34,10 @@ const LEVELS: JlptLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 type JapaneseTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'vocab' | 'builder' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
 
 const SKILL_META = {
-    listening: { label: 'Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: '25-30 items · 20-40 min · audio once' },
-    reading: { label: 'Reading', icon: BookOpenCheck, color: 'text-teal-500', bg: 'bg-teal-50', exam: '25-40 items · 45-70 min' },
-    writing: { label: 'Writing', icon: PenLine, color: 'text-amber-500', bg: 'bg-amber-50', exam: '2 tasks · 45-150 min · /25' },
-    speaking: { label: 'Speaking', icon: Mic, color: 'text-rose-500', bg: 'bg-rose-50', exam: '2-4 tasks · 15-20 min + prep' },
+    listening: { label: '聴解 Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: 'JLPT section · 30-55 min · audio once · /60 scaled' },
+    reading: { label: '読解 Reading', icon: BookOpenCheck, color: 'text-teal-500', bg: 'bg-teal-50', exam: 'JLPT section · combined with Language Knowledge at N2/N1' },
+    writing: { label: 'Writing · Track A', icon: PenLine, color: 'text-amber-500', bg: 'bg-amber-50', exam: 'NOT tested by JLPT — real Japanese: kana, kanji, structured texts' },
+    speaking: { label: 'Speaking · Track A', icon: Mic, color: 'text-rose-500', bg: 'bg-rose-50', exam: 'NOT tested by JLPT — real Japanese: conversation, register, keigo' },
 } as const;
 
 // ── shared UI ────────────────────────────────────────────────────────────────
