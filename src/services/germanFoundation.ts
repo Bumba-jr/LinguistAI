@@ -54,7 +54,7 @@ export const VOWEL_LENGTH = {
     pairs: [
         { short: 'Bett', long: 'Beet', shortEn: 'bed', longEn: 'flower bed' },
         { short: 'Stadt', long: 'Staat', shortEn: 'city', longEn: 'state' },
-        { short: 'Sinn', long: 'Sühne-like ü', shortEn: 'sense', longEn: '(long u sound)' },
+        { short: 'füllen', long: 'fühlen', shortEn: 'to fill', longEn: 'to feel' },
     ],
 };
 
@@ -265,7 +265,7 @@ export const GERMAN_CHEAT_SHEET: { title: string; items: { label: string; detail
             { label: 'in', detail: 'in (at) / into: Ich bin in dem Haus / Ich gehe in das (ins) Haus', say: 'Ich gehe ins Haus' },
             { label: 'auf', detail: 'on (at) / onto: Das Buch liegt auf dem Tisch / Ich lege es auf den Tisch' },
             { label: 'an', detail: 'at/on (vertical, edge) / onto: an der Wand / an die Wand' },
-            { label: 'movement verbs tell you', detail: 'gehen/fahren/legen/stellen/hängen(?) → Akkusativ; sein/liegen/stehen/bleiben → Dativ' },
+            { label: 'movement verbs tell you', detail: 'gehen/fahren/legen/stellen → Akkusativ; sein/liegen/stehen/bleiben → Dativ (hängen is both: strong = at, weak = onto)' },
         ],
     },
     {

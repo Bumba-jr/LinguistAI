@@ -84,7 +84,7 @@ export const GOETHE_VOCAB_TOPICS: { id: string; label: string; hint: string }[] 
 export const GOETHE_SYLLABUS: Record<GoetheLevel, { title: string; slug: string; focus: string }[]> = {
     A1: [
         { title: 'Greetings, Introductions & sein/haben', slug: 'greetings', focus: 'Wie heißt du?, du vs Sie, ich bin/ich habe, numbers, Wie geht es Ihnen?' },
-        { title: 'Family & Possessives', slug: 'family', focus: 'family words, mein/dein/sein/ihr, describing people,sein vs haben' },
+        { title: 'Family & Possessives', slug: 'family', focus: 'family words, mein/dein/sein/ihr, describing people, sein vs haben' },
         { title: 'Food, Shopping & der/die/das', slug: 'shopping', focus: 'gender and articles, accusative of der-words (den), prices, ordering, Ich möchte…' },
         { title: 'Daily Routine & Separable Verbs', slug: 'routine', focus: 'aufstehen, einkaufen — the flying prefix, time expressions, um/von/bis' },
         { title: 'Free Time & Modal Verbs', slug: 'freetime', focus: 'können/müssen/wollen/möchten + sentence brackets, hobbies, gern' },

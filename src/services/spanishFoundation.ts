@@ -138,7 +138,7 @@ export const TU_USTED_VOS = [
 
 // Number quirks English speakers get wrong (mirror of NUMBER_QUIRKS).
 export const NUMBER_QUIRKS = [
-    { pattern: 'veintiuno, veintidós…', why: '21–29 are one word (veinti-), and only 22–29 carry accents; 31+ split into words: treinta y uno' },
+    { pattern: 'veintiuno, veintidós…', why: '21–29 are one word (veinti-). Accents: ONLY veintidós, veintitrés, veintiséis — veinticuatro and the rest take none. 31+ split into words: treinta y uno' },
     { pattern: 'cien → ciento', why: '100 alone = cien, but 101+ = ciento uno, doscientos (two hundreds plural!)' },
     { pattern: 'quinientos, setecientos, novecientos', why: '500/700/900 are irregular — never "cinco cientos"' },
     { pattern: 'un millón de dólares', why: 'millón is a noun: "de" before the counted thing, and millions are plural: dos millones de' },
@@ -391,7 +391,7 @@ export const SPANISH_CHEAT_SHEET: { title: string; items: { label: string; detai
             { label: 'consonant ending → +es', detail: 'papel → papeles, ciudad → ciudades, profesor → profesores', say: 'papeles' },
             { label: '-z → -ces', detail: 'lápiz → lápices, voz → voces, pez → peces', say: 'lápices' },
             { label: 'stressed vowel ending keeps its tilde +s', detail: 'sofá → sofás, menú → menús, gitano → but: mamá → mamás (accent stays)' },
-            { label: 'unstressed diphthong +s drops nothing', detail: 'coche → coches; but -és/-és nouns keep it: inglés → ingleses' },
+            { label: 'watch stress shifts in plurals', detail: 'sofá → sofás (tilde stays); inglés → ingleses (tilde DROPPED — stress moved); examen → exámenes (tilde ADDED); imagen → imágenes' },
             { label: 'invariable (same singular/plural)', detail: 'el/los martes, la/las crisis — and stress moves where spelling demands: el examen → los exámenes (new tilde)', say: 'los exámenes' },
         ],
     },
@@ -400,7 +400,7 @@ export const SPANISH_CHEAT_SHEET: { title: string; items: { label: string; detai
             { label: 'de + el = del', detail: 'el coche del profesor = the teacher\'s car (NEVER "de el")', say: 'el coche del profesor' },
             { label: 'a + el = al', detail: 'Voy al mercado = I go to the market (NEVER "a el")', say: 'Voy al mercado' },
             { label: 'feminine never contracts', detail: 'de la casa, a la playa — written in full' },
-            { label: 'but a el(?) watch pronouns', detail: 'this rule is ONLY for the masculine article el — the pronoun él never contracts: "a él" stays separate' },
+            { label: 'the pronoun él never contracts', detail: 'the rule is ONLY for the masculine article el — with the pronoun it stays separate: Voy a él (I go to it/him)', say: 'Voy a él' },
         ],
     },
     {
