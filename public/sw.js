@@ -1,5 +1,5 @@
 /* LinguistAI service worker — offline shell + runtime caching */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const STATIC_CACHE = `linguistai-static-${VERSION}`;
 const PAGE_CACHE = `linguistai-pages-${VERSION}`;
 
@@ -38,12 +38,16 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return; // skip Supabase/CDN
   if (url.pathname.startsWith('/api/')) return;    // APIs always hit network
 
-  // Static hashed assets: cache-first (they're immutable)
+  // Static hashed assets: cache-first (they're immutable). Never cache a
+  // failed response — after a redeploy, old chunk names 404 and poisoning
+  // the cache with them would break that asset until the next VERSION bump.
   if (isStaticAsset(url)) {
     event.respondWith(
       caches.match(request).then((hit) => hit || fetch(request).then((res) => {
-        const copy = res.clone();
-        caches.open(STATIC_CACHE).then((c) => c.put(request, copy));
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(STATIC_CACHE).then((c) => c.put(request, copy));
+        }
         return res;
       }))
     );

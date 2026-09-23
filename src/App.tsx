@@ -7,23 +7,48 @@ import FloatingNotes from './components/FloatingNotes';
 // loads its own chunk on first visit. FileUpload drags in the file-parsing
 // services and QuizView only appears once a quiz is running, so neither is
 // worth shipping in the entry bundle.
-const FileUpload = lazy(() => import('./components/FileUpload'));
-const QuizView = lazy(() => import('./components/QuizView'));
-const LectureView = lazy(() => import('./components/LectureView'));
-const AnalyticsView = lazy(() => import('./components/AnalyticsView'));
-const FlashcardsView = lazy(() => import('./components/FlashcardsView'));
-const ChatView = lazy(() => import('./components/ChatView'));
-const StudyRoomsView = lazy(() => import('./components/StudyRoomsView'));
-const LeaderboardView = lazy(() => import('./components/LeaderboardView'));
-const StoryModeView = lazy(() => import('./components/StoryModeView'));
-const GrammarDrillView = lazy(() => import('./components/GrammarDrillView'));
-const LanguageExchangeView = lazy(() => import('./components/LanguageExchangeView'));
-const PronunciationPracticeView = lazy(() => import('./components/PronunciationPracticeView'));
-const DictationView = lazy(() => import('./components/DictationView'));
-const ConjugationDrillView = lazy(() => import('./components/ConjugationDrillView'));
-const ReadingLibraryView = lazy(() => import('./components/ReadingLibraryView'));
-const TCFPrepView = lazy(() => import('./components/tcf/TCFPrepView'));
-const HSKPrepView = lazy(() => import('./components/hsk/HSKPrepView'));
+//
+// After a Vercel deploy, a tab still running the previous build requests
+// chunk files that no longer exist (404) — React.lazy would throw and blank
+// the app. lazyWithRetry reloads the page ONCE in that case: the fresh
+// index.html references the new chunk names, so the second load succeeds.
+const lazyWithRetry = (componentImport: () => Promise<any>) =>
+  lazy(async () => {
+    const retryKey = 'linguistai-chunk-retried';
+    let alreadyRetried = false;
+    try { alreadyRetried = sessionStorage.getItem(retryKey) === '1'; } catch { /* storage unavailable */ }
+    try {
+      const component = await componentImport();
+      try { sessionStorage.removeItem(retryKey); } catch { /* storage unavailable */ }
+      return component;
+    } catch (error) {
+      if (!alreadyRetried) {
+        try { sessionStorage.setItem(retryKey, '1'); } catch { /* storage unavailable */ }
+        window.location.reload();
+        return new Promise(() => { }); // hold suspense while the reload happens
+      }
+      try { sessionStorage.removeItem(retryKey); } catch { /* storage unavailable */ }
+      throw error;
+    }
+  });
+
+const FileUpload = lazyWithRetry(() => import('./components/FileUpload'));
+const QuizView = lazyWithRetry(() => import('./components/QuizView'));
+const LectureView = lazyWithRetry(() => import('./components/LectureView'));
+const AnalyticsView = lazyWithRetry(() => import('./components/AnalyticsView'));
+const FlashcardsView = lazyWithRetry(() => import('./components/FlashcardsView'));
+const ChatView = lazyWithRetry(() => import('./components/ChatView'));
+const StudyRoomsView = lazyWithRetry(() => import('./components/StudyRoomsView'));
+const LeaderboardView = lazyWithRetry(() => import('./components/LeaderboardView'));
+const StoryModeView = lazyWithRetry(() => import('./components/StoryModeView'));
+const GrammarDrillView = lazyWithRetry(() => import('./components/GrammarDrillView'));
+const LanguageExchangeView = lazyWithRetry(() => import('./components/LanguageExchangeView'));
+const PronunciationPracticeView = lazyWithRetry(() => import('./components/PronunciationPracticeView'));
+const DictationView = lazyWithRetry(() => import('./components/DictationView'));
+const ConjugationDrillView = lazyWithRetry(() => import('./components/ConjugationDrillView'));
+const ReadingLibraryView = lazyWithRetry(() => import('./components/ReadingLibraryView'));
+const TCFPrepView = lazyWithRetry(() => import('./components/tcf/TCFPrepView'));
+const HSKPrepView = lazyWithRetry(() => import('./components/hsk/HSKPrepView'));
 import {
   BookOpen, Upload, GraduationCap, User as UserIcon,
   BarChart2, Layers, MessageSquare, Users, Home,
