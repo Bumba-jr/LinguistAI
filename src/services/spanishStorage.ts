@@ -11,6 +11,27 @@ export interface DeleScoreEntry {
 const SCORES_KEY = 'linguistai-dele-scores';
 const LESSONS_KEY = 'linguistai-dele-lessons';
 const CHECKPOINTS_KEY = 'linguistai-dele-checkpoints';
+const TARGET_KEY = 'linguistai-dele-target';
+const LAST_LESSON_KEY = 'linguistai-dele-last-lesson';
+
+export const getDeleTarget = (): string => {
+    try { return localStorage.getItem(TARGET_KEY) || 'B1'; } catch { return 'B1'; }
+};
+
+export const setDeleTarget = (t: string) => {
+    try { localStorage.setItem(TARGET_KEY, t); } catch { /* quota */ }
+};
+
+export const setLastLesson = (level: string, slug: string, title: string) => {
+    try { localStorage.setItem(LAST_LESSON_KEY, JSON.stringify({ level, slug, title, date: new Date().toISOString() })); } catch { /* quota */ }
+};
+
+export const getLastLesson = (): { level: string; slug: string; title: string; date: string } | null => {
+    try {
+        const v = JSON.parse(localStorage.getItem(LAST_LESSON_KEY) || 'null');
+        return v && v.level ? v : null;
+    } catch { return null; }
+};
 
 export const getDeleScores = (): DeleScoreEntry[] => {
     try {

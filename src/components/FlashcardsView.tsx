@@ -819,7 +819,7 @@ const FlashcardsView = () => {
   const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
   const [addCardOpen, setAddCardOpen] = useState(false);
-  const [addCardForm, setAddCardForm] = useState({ word: '', translation: '', language: 'French' });
+  const [addCardForm, setAddCardForm] = useState({ word: '', translation: '', language: quizSettings?.targetLanguage || 'French' });
   const [addCardLoading, setAddCardLoading] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   // Import modal state — must live above every early return (Rules of Hooks)
@@ -834,6 +834,21 @@ const FlashcardsView = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareCode, setShareCode] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // Import placeholder speaks the ACTIVE language, not hardcoded French
+  const importExamplesPlaceholder = (() => {
+    const lang = quizSettings?.targetLanguage || 'French';
+    const samples: Record<string, string> = {
+      French: '• chien, maison, manger\n• Le sandwich est trop petit pour moi.',
+      Spanish: '• perro, casa, comer\n• El bocadillo es demasiado pequeño para mí.',
+      German: '• Hund, Haus, essen\n• Das belegte Brot ist zu klein für mich.',
+      Italian: '• cane, casa, mangiare\n• Il panino è troppo piccolo per me.',
+      Japanese: '• 犬、家、食べる\n• このサンドイッチは私には小さすぎます。',
+      Portuguese: '• cão, casa, comer\n• A sanduíche é pequena demais para mim.',
+      Chinese: '• 狗、家、吃\n• 这个三明治对我来说太小了。',
+    };
+    return `Paste ${lang} or English text here…\n\nExamples:\n${samples[lang] || samples.French}\n• A whole article or page of notes`;
+  })();
 
   // ── Streak + Daily goal (Supabase) ────────────────────────────────────
   const DAILY_GOALS = [10, 20, 50];
@@ -1227,7 +1242,7 @@ const FlashcardsView = () => {
           <Layers className="w-12 h-12 text-emerald-500" />
         </div>
         <h2 className="text-2xl font-bold text-stone-800 mb-2">Your deck is empty</h2>
-        <p className="text-stone-400 mb-6">Highlight words in lectures, or paste any French or English text to build your deck.</p>
+        <p className="text-stone-400 mb-6">Highlight words in lectures, or paste any {quizSettings?.targetLanguage || 'French'} or English text to build your deck.</p>
         <button onClick={() => setImportOpen(true)}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white text-xs font-bold rounded-2xl hover:bg-emerald-600 transition-colors shadow-sm">
           <Upload size={14} /> Import words
@@ -2424,7 +2439,7 @@ const FlashcardsView = () => {
                     value={importText}
                     onChange={(e) => { setImportText(e.target.value); setImportError(null); }}
                     rows={6}
-                    placeholder={`Paste French or English text here…\n\nExamples:\n• chien, maison, manger\n• Le sandwich est trop petit pour moi.\n• A whole article or page of notes`}
+                    placeholder={`${importExamplesPlaceholder}`}
                     className="w-full px-4 py-3 text-sm rounded-2xl border border-stone-200 focus:outline-none focus:border-emerald-400 resize-none bg-stone-50"
                   />
 

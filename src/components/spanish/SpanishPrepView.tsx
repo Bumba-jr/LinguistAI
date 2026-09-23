@@ -11,6 +11,7 @@ import {
     DeleLevel, DELE_SYLLABUS, DELE_WRITING_TASKS, DELE_SPEAKING_TASKS,
     generateSpanishLesson, evaluateSpanishWriting, evaluateSpanishSpeaking,
     SpanishLesson, SpanishWritingFeedback, SpanishSpeakingFeedback, DELE_PASS_NOTE,
+    pctToCefr, cefrIndex,
 } from '../../services/spanishService';
 import {
     getDeleScores, addDeleScore, getCompletedLessons, markLessonComplete,
@@ -18,6 +19,7 @@ import {
     cacheLesson, getCachedLesson,
     getCheckpoints, passCheckpoint,
     getPlan, savePlan, clearPlan,
+    getDeleTarget, setDeleTarget, setLastLesson, getLastLesson,
 } from '../../services/spanishStorage';
 import { recordAndTranscribe } from '../../services/speechService';
 import { LevelBar, SpanishListeningTrainer, SpanishReadingTrainer, SpanishVocabTrainer, SpanishSentenceBuilder } from './SpanishTrainers';
@@ -64,6 +66,7 @@ const LessonSection = ({ title, icon, children }: { title: string; icon: React.R
 // ── Overview tab ─────────────────────────────────────────────────────────────
 const Overview = ({ onGo }: { onGo: (t: SpanishTab) => void }) => {
     const scores = useMemo(() => getDeleScores(), []);
+    const target = getDeleTarget();
     const latest = (skill: string) => scores.find(s => s.skill === skill);
 
     return (
@@ -96,10 +99,48 @@ const Overview = ({ onGo }: { onGo: (t: SpanishTab) => void }) => {
                 <div className="mt-4 bg-amber-50 border border-amber-100 rounded-2xl p-3 text-xs text-amber-800">{DELE_PASS_NOTE}</div>
             </div>
 
+            {/* DELE target level — you register for ONE level, so track against it */}
+            <div className="bg-white rounded-3xl border border-stone-100 p-6">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div>
+                        <h2 className="font-black text-stone-900 flex items-center gap-2"><Target size={16} className="text-emerald-500" /> Your DELE target level</h2>
+                        <p className="text-xs text-stone-400 mt-0.5">Unlike TCF, DELE grants ONE diploma per level — you register for a specific one.</p>
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                        {['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map(t => (
+                            <button key={t} onClick={() => setDeleTarget(t)}
+                                className={cn('px-3 py-1.5 rounded-xl text-xs font-black transition-colors',
+                                    target === t ? 'bg-emerald-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-bold text-stone-400">
+                    {(Object.keys(SKILL_META) as (keyof typeof SKILL_META)[]).map(sk => {
+                        const last = latest(sk);
+                        const est = last ? pctToCefr(last.pct) : null;
+                        const meets = est ? cefrIndex(est) >= cefrIndex(target) : false;
+                        return (
+                            <div key={sk} className={cn('rounded-2xl p-3', meets ? 'bg-emerald-50' : 'bg-stone-50')}>
+                                <p className="uppercase tracking-wider mb-1">{SKILL_META[sk].label}</p>
+                                <p className={cn('text-lg font-black', meets ? 'text-emerald-600' : 'text-stone-300')}>
+                                    {est ? est : '—'}
+                                </p>
+                                <p className="mt-0.5">{last ? `est. ${last.pct}%` : 'no data'}</p>
+                            </div>
+                        );
+                    })}
+                </div>
+                <p className="text-[10px] text-stone-300 mt-3 flex items-center gap-1">
+                    <AlertTriangle size={10} /> All numbers on this page are practice estimates — not official DELE results.
+                </p>
+            </div>
+
             {/* exam plan & countdown */}
             <ExamPlanCard
                 examName="DELE"
-                levelLabel="CEFR target level"
+                levelLabel={`DELE ${getDeleTarget()} target`}
                 language="Spanish"
                 plan={getPlan()}
                 onSavePlan={savePlan}
@@ -156,6 +197,7 @@ const Curriculum = ({ language }: { language: string }) => {
     const [savedVocab, setSavedVocab] = useState<Set<string>>(new Set());
     const [checkpoints, setCheckpoints] = useState<Record<string, boolean>>(getCheckpoints());
     const [checkpointFor, setCheckpointFor] = useState<DeleLevel | null>(null);
+    const last = getLastLesson();
 
     // Never auto-promote: level N+1 stays locked until the level N checkpoint is passed
     const prevLevel = LEVELS[Math.max(0, LEVELS.indexOf(level) - 1)];
@@ -166,6 +208,7 @@ const Curriculum = ({ language }: { language: string }) => {
         setOpenTopic(key);
         setLesson(null); setAnswers({}); setError(null);
         setSavedVocab(new Set());
+        setLastLesson(level, topic.slug, topic.title);
         const cached = getCachedLesson<SpanishLesson>(key);
         if (cached) { setLesson(cached); setLessonKey(key); return; }
         setLoading(true);
@@ -208,6 +251,15 @@ const Curriculum = ({ language }: { language: string }) => {
             <div className="bg-white rounded-3xl border border-stone-100 p-5">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Your path · A1 → C2</p>
+                    {last && (
+                        <button onClick={() => {
+                            setLevel(last.level as DeleLevel);
+                            const topic = DELE_SYLLABUS[last.level as DeleLevel]?.find(t => t.slug === last.slug);
+                            if (topic) openLesson(topic);
+                        }} className="flex items-center gap-1 text-[11px] font-black text-emerald-600 hover:text-emerald-700">
+                            <Play size={11} /> Continue: {last.title}
+                        </button>
+                    )}
                 </div>
                 <div className="grid grid-cols-6 gap-1.5">
                     {LEVELS.map(l => {

@@ -46,6 +46,13 @@ export const DELE_SPEAKING_TASKS = [
         seconds: 150,
         prompt: 'Situación: Tú y el examinador organizáis una fiesta de fin de curso. Proponed juntos: el lugar, el día, la comida, la música y el presupuesto. Tienes que proponer, aceptar y rechazar opciones educadamente (¿Y si…?, Prefiero… porque…, Me parece que…).',
     },
+    {
+        id: 's3',
+        label: 'Task 3 — Opinion',
+        guide: 'Present and defend your opinion with reasons, an example and a counterpoint. 3–4 minutes.',
+        seconds: 210,
+        prompt: 'Opinión: "Las redes sociales hacen que aprender idiomas sea más fácil que nunca." ¿Estás de acuerdo? Usa el esquema: opinión → razón → ejemplo personal → contraargumento → respuesta → conclusión.',
+    },
 ];
 
 // DELE pass rule: two groups of 50 points; minimum 30 in EACH group.
@@ -53,6 +60,13 @@ export const DELE_PASS_NOTE = 'Pass = 30/50 in Group A (reading + listening) AND
 
 // Map a practice % to an approximate group score /50 (labelled as estimate).
 export const practiceToGroupScore = (pct: number) => Math.round((pct / 100) * 50);
+
+// Rough practice %→CEFR level estimate (labels as estimate — DELE has no
+// published conversion; this brackets typical course expectations).
+export const pctToCefr = (pct: number): string =>
+    pct >= 92 ? 'C2' : pct >= 82 ? 'C1' : pct >= 68 ? 'B2' : pct >= 52 ? 'B1' : pct >= 38 ? 'A2' : pct >= 20 ? 'A1' : '<A1';
+
+export const cefrIndex = (l: string) => ['<A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'].indexOf(l);
 
 // ── Vocabulary: DELE-themed domains (AI-generated per level+topic, cached) ───
 export const DELE_VOCAB_TOPICS: { id: string; label: string; hint: string }[] = [
