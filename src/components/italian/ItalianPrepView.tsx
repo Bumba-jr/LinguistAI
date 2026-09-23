@@ -162,6 +162,26 @@ const Overview = ({ onGo }: { onGo: (t: ItalianTab) => void }) => {
                 onClearPlan={clearPlan}
             />
 
+            {/* the CLIQ certification landscape — switch exam without switching course */}
+            <div className="bg-white rounded-3xl border border-stone-100 p-6">
+                <h2 className="font-black text-stone-900 mb-1">The four official Italian certifications (CLIQ)</h2>
+                <p className="text-xs text-stone-400 mb-3">Recognised by the Italian Ministry of Foreign Affairs. This course trains the Italian; the exam layer is CILS, and everything transfers.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                    {CLIQ_BODIES.map(b => (
+                        <div key={b.body} className="bg-stone-50 rounded-2xl p-3.5">
+                            <p className="text-sm font-black text-stone-900">{b.body} <span className="text-[10px] font-bold text-stone-400">— {b.org}</span></p>
+                            <p className="text-[11px] text-stone-500 mt-0.5">{b.note}</p>
+                        </div>
+                    ))}
+                </div>
+                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">CILS level map</p>
+                <div className="flex gap-1.5 flex-wrap">
+                    {CILS_LEVEL_MAP.map(m => (
+                        <span key={m.cefr} className="text-[11px] font-bold bg-stone-100 text-stone-600 px-2.5 py-1 rounded-xl">{m.cefr} → {m.cils}</span>
+                    ))}
+                </div>
+            </div>
+
             {/* exam strategy — how the test tries to trick you */}
             <div className="bg-white rounded-3xl border border-stone-100 p-6">
                 <h2 className="font-black text-stone-900 mb-1">Exam strategy — how CILS tries to trick you</h2>
