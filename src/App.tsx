@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useRef, Suspense, lazy } from 'react';
-import gsap from 'gsap';
 import { useAppStore } from './store/useAppStore';
 import Editor from './components/Editor';
-import FileUpload from './components/FileUpload';
 import QuizSettings from './components/QuizSettings';
-import QuizView from './components/QuizView';
 import FloatingNotes from './components/FloatingNotes';
 // Heavy views are code-split so the initial bundle stays small — each tab
-// loads its own chunk on first visit.
+// loads its own chunk on first visit. FileUpload drags in the file-parsing
+// services and QuizView only appears once a quiz is running, so neither is
+// worth shipping in the entry bundle.
+const FileUpload = lazy(() => import('./components/FileUpload'));
+const QuizView = lazy(() => import('./components/QuizView'));
 const LectureView = lazy(() => import('./components/LectureView'));
 const AnalyticsView = lazy(() => import('./components/AnalyticsView'));
 const FlashcardsView = lazy(() => import('./components/FlashcardsView'));
@@ -67,18 +68,21 @@ const usePlacementGate = (userId?: string) => {
   return show;
 };
 
+// Shared spinner shown while a lazily-imported chunk loads.
+const LoadingPane = ({ className = 'py-24' }: { className?: string }) => (
+  <div className={`w-full flex items-center justify-center gap-3 text-stone-300 ${className}`}>
+    <Loader2 size={24} className="animate-spin" />
+    <span className="text-sm font-medium">Loading…</span>
+  </div>
+);
+
 // Suspense wrapper for the lazily-loaded tab views.
 // The enter animation lives INSIDE the Suspense boundary: when a lazy chunk
 // resolves after the tab's mount animation would have finished, this inner
 // animation still runs — without it the tab can render stuck at opacity 0
 // (blank page) whenever the chunk loads slowly, e.g. on mobile.
 const LazyPage = ({ children }: { children: React.ReactNode }) => (
-  <Suspense fallback={
-    <div className="max-w-2xl mx-auto w-full py-24 flex items-center justify-center gap-3 text-stone-300">
-      <Loader2 size={24} className="animate-spin" />
-      <span className="text-sm font-medium">Loading…</span>
-    </div>
-  }>
+  <Suspense fallback={<LoadingPane className="max-w-2xl mx-auto py-24" />}>
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
       {children}
     </motion.div>
@@ -90,9 +94,12 @@ const FloatingMessageButton = ({ count, onClick }: { count: number; onClick: () 
   const wrapRef = useRef<HTMLDivElement>(null);
   const shakeRef = useRef<any>(null);
 
-  const shake = () => {
+  const shake = async () => {
     const el = wrapRef.current;
     if (!el) return;
+    // gsap is only used for this shake — keep it out of the entry bundle
+    const gsap = (await import('gsap')).default;
+    if (!wrapRef.current) return;
     if (shakeRef.current) shakeRef.current.kill();
     gsap.set(el, { x: 0, rotation: 0 });
     shakeRef.current = gsap.to(el, {
@@ -513,7 +520,11 @@ export default function App() {
       );
     }
 
-    if (hasQuestions) return <QuizView />;
+    if (hasQuestions) return (
+      <Suspense fallback={<LoadingPane />}>
+        <QuizView />
+      </Suspense>
+    );
 
     return (
       <div className="space-y-10">
@@ -666,7 +677,9 @@ export default function App() {
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {activeTab === 'editor' ? <Editor /> : <FileUpload />}
+              <Suspense fallback={<LoadingPane />}>
+                {activeTab === 'editor' ? <Editor /> : <FileUpload />}
+              </Suspense>
             </div>
           </div>
 
