@@ -51,6 +51,7 @@ const TCFPrepView = lazyWithRetry(() => import('./components/tcf/TCFPrepView'));
 const SpanishPrepView = lazyWithRetry(() => import('./components/spanish/SpanishPrepView'));
 const GermanPrepView = lazyWithRetry(() => import('./components/german/GermanPrepView'));
 const ItalianPrepView = lazyWithRetry(() => import('./components/italian/ItalianPrepView'));
+const JapanesePrepView = lazyWithRetry(() => import('./components/japanese/JapanesePrepView'));
 const HSKPrepView = lazyWithRetry(() => import('./components/hsk/HSKPrepView'));
 import {
   BookOpen, Upload, GraduationCap, User as UserIcon,
@@ -344,7 +345,7 @@ export default function App() {
 
   // Exam portals are language-locked — leave as soon as the active language doesn't match
   useEffect(() => {
-    if (activeTab === 'tcf' && !['French', 'Spanish', 'German', 'Italian'].includes(quizSettings?.targetLanguage)) {
+    if (activeTab === 'tcf' && !['French', 'Spanish', 'German', 'Italian', 'Japanese'].includes(quizSettings?.targetLanguage)) {
       setActiveTab('editor');
     }
     if (activeTab === 'hsk' && quizSettings?.targetLanguage !== 'Chinese') {
@@ -462,6 +463,7 @@ export default function App() {
     ...(quizSettings?.targetLanguage === 'Spanish' ? [{ id: 'tcf', label: 'DELE Español', icon: Flag }] : []),
     ...(quizSettings?.targetLanguage === 'German' ? [{ id: 'tcf', label: 'Goethe-Zertifikat', icon: Flag }] : []),
     ...(quizSettings?.targetLanguage === 'Italian' ? [{ id: 'tcf', label: 'CILS Italiano', icon: Flag }] : []),
+    ...(quizSettings?.targetLanguage === 'Japanese' ? [{ id: 'tcf', label: 'JLPT 日本語', icon: Flag }] : []),
     ...(quizSettings?.targetLanguage === 'Chinese' ? [{ id: 'hsk', label: 'HSK Chinese', icon: Languages }] : []),
     { id: 'exchange', label: 'Exchange', icon: Users2 },
     { id: 'analytics', label: 'Analytics', icon: BarChart2 },
@@ -482,7 +484,7 @@ export default function App() {
     if (activeTab === 'dictation') return <LazyPage><DictationView /></LazyPage>;
     if (activeTab === 'conjugation') return <LazyPage><ConjugationDrillView /></LazyPage>;
     if (activeTab === 'reading') return <LazyPage><ReadingLibraryView /></LazyPage>;
-    if (activeTab === 'tcf') return <LazyPage>{quizSettings?.targetLanguage === 'Spanish' ? <SpanishPrepView /> : quizSettings?.targetLanguage === 'German' ? <GermanPrepView /> : quizSettings?.targetLanguage === 'Italian' ? <ItalianPrepView /> : <TCFPrepView />}</LazyPage>;
+    if (activeTab === 'tcf') return <LazyPage>{quizSettings?.targetLanguage === 'Spanish' ? <SpanishPrepView /> : quizSettings?.targetLanguage === 'German' ? <GermanPrepView /> : quizSettings?.targetLanguage === 'Italian' ? <ItalianPrepView /> : quizSettings?.targetLanguage === 'Japanese' ? <JapanesePrepView /> : <TCFPrepView />}</LazyPage>;
     if (activeTab === 'hsk') return <LazyPage><HSKPrepView /></LazyPage>;
 
     if (activeTab === 'lectures') {
@@ -907,6 +909,11 @@ export default function App() {
             { id: 'flashcards', label: 'Cards', icon: Layers },
             { id: 'chat', label: 'Tutor', icon: MessageSquare },
             { id: 'tcf', label: 'CILS', icon: Flag },
+          ] : quizSettings?.targetLanguage === 'Japanese' ? [
+            { id: 'editor', label: 'Home', icon: Home },
+            { id: 'flashcards', label: 'Cards', icon: Layers },
+            { id: 'chat', label: 'Tutor', icon: MessageSquare },
+            { id: 'tcf', label: 'JLPT', icon: Flag },
           ] : quizSettings?.targetLanguage === 'Chinese' ? [
             { id: 'editor', label: 'Home', icon: Home },
             { id: 'flashcards', label: 'Cards', icon: Layers },
