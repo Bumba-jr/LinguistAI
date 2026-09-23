@@ -65,7 +65,7 @@ export const GermanListeningTrainer = ({ level, onLevelChange, onDone }: {
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [showTranscript, setShowTranscript] = useState(false);
     const [finished, setFinished] = useState(false);
-    // Listening progression: slow learner Spanish → exam speed → challenge speed
+    // Listening progression: slow learner German → exam speed → challenge speed
     const [rate, setRate] = useState(0.88);
     const rateRef = useRef(rate);
     rateRef.current = rate;
@@ -119,7 +119,7 @@ export const GermanListeningTrainer = ({ level, onLevelChange, onDone }: {
                     <p className="font-black text-stone-900">How Goethe listening works</p>
                     <ul className="text-xs text-stone-500 space-y-1.5">
                         <li>• Real exam: several short recordings (announcements, calls, conversations), each played <b>once</b>.</li>
-                        <li>• Here: the recording is read aloud in Spanish — try to answer after one play.</li>
+                        <li>• Here: the recording is read aloud in German — try to answer after one play.</li>
                         <li>• The transcript only unlocks after you answer (train your ear, not your eyes).</li>
                         <li>• Train your ear for real speed early — and note how the verb waits at the END of spoken subordinate clauses.</li>
                     </ul>
@@ -214,7 +214,7 @@ export const GermanListeningTrainer = ({ level, onLevelChange, onDone }: {
     );
 };
 
-// ── Reading trainer — timed DELE-style document + MCQs ───────────────────────
+// ── Reading trainer — timed Goethe-style document + MCQs ───────────────────────
 export const GermanReadingTrainer = ({ level, onLevelChange, onDone }: {
     level: GoetheLevel; onLevelChange: (l: GoetheLevel) => void;
     onDone: (pct: number, label: string) => void;
@@ -434,7 +434,7 @@ export const GermanVocabTrainer = ({ level, onLevelChange }: {
             {words && !quiz && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                        <p className="text-[11px] text-stone-400">{words.length} words · {tooltips ? 'tap any Spanish word for its word card' : 'tooltips off'} · tap 🔊 to hear it</p>
+                        <p className="text-[11px] text-stone-400">{words.length} words · {tooltips ? 'tap any German word for its word card' : 'tooltips off'} · tap 🔊 to hear it</p>
                         <div className="flex gap-2">
                             <button onClick={saveAll} disabled={saved.size === words.length}
                                 className={cn('px-3 py-2 rounded-xl text-[11px] font-black transition-colors',
@@ -566,7 +566,7 @@ export const GermanSentenceBuilder = ({ level, onLevelChange }: {
                 <div className="bg-white rounded-3xl border border-stone-100 p-6 space-y-3">
                     <p className="font-black text-stone-900">The sentence-building engine</p>
                     <p className="text-xs text-stone-500 space-y-1.5">
-                        One base sentence, five transformations — the most powerful way to learn Spanish: instead of memorising phrases, you learn how the scaffolding changes (verb endings, pronoun position, ser/estar, por/para).
+                        One base sentence, five transformations — the most powerful way to learn German: instead of memorising phrases, you learn how the scaffolding changes (word order, cases, separable prefixes, sentence brackets).
                     </p>
                     <ul className="text-xs text-stone-500 space-y-1">
                         <li>• 3 transformations: negative, question, past, future, conditional…</li>

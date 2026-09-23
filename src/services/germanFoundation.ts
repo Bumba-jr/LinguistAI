@@ -304,6 +304,26 @@ export const GERMAN_CHEAT_SHEET: { title: string; items: { label: string; detail
         ],
     },
     {
+        title: 'Infinitive constructions — zu and its friends', items: [
+            { label: 'zu + infinitive', detail: 'Es ist wichtig, früh zu schlafen. — zu goes INSIDE separable verbs: aufzuhören, einzukaufen' },
+            { label: 'um … zu', detail: 'in order to: Ich lerne Deutsch, um in Berlin zu studieren. (different subject? → damit-clause)', say: 'Ich lerne Deutsch, um in Berlin zu studieren' },
+            { label: 'ohne … zu', detail: 'without: Er ging, ohne ein Wort zu sagen.' },
+            { label: 'statt … zu', detail: 'instead of: Statt zu arbeiten, spielt er.' },
+            { label: 'verb pairs that take zu', detail: 'versprechen, vergessen, versuchen, planen, anfangen, aufhören + zu…; but modal-ish verbs (möchte, können…) take the bare infinitive' },
+        ],
+    },
+    {
+        title: 'Redemittel — Goethe exam phrase kit', items: [
+            { label: 'starting a presentation', detail: 'Ich möchte über das Thema … sprechen. / Zuerst möchte ich sagen, dass…', say: 'Ich möchte über das Thema sprechen' },
+            { label: 'structuring', detail: 'einerseits … andererseits / zunächst, dann, zum Schluss / Ein Beispiel dafür ist…' },
+            { label: 'giving opinions', detail: 'Ich bin der Meinung, dass… / Meiner Ansicht nach… / Ich finde, man sollte…' },
+            { label: 'agreeing / disagreeing', detail: 'Da stimme ich dir/Ihnen zu. / Da bin ich (leider) anderer Meinung, weil…' },
+            { label: 'conceding', detail: 'Es stimmt, dass…, aber… / Das ist ein guter Punkt, trotzdem…' },
+            { label: 'speculating', detail: 'vielleicht, wahrscheinlich, es könnte sein, dass…' },
+            { label: 'closing', detail: 'Zusammenfassend kann man sagen, dass… / Ich freue mich auf eure/Ihre Fragen.' },
+        ],
+    },
+    {
         title: 'The BIG distinctions (exam favourites)', items: [
             { label: 'wissen vs kennen', detail: 'know a fact vs know a person/place' },
             { label: 'nicht vs kein', detail: 'negating verbs vs negating nouns' },

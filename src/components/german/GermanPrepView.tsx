@@ -31,7 +31,7 @@ import CheckpointQuiz from '../exam/CheckpointQuiz';
 import InteractiveExaminer from '../exam/InteractiveExaminer';
 
 const LEVELS: GoetheLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-type SpanishTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'vocab' | 'builder' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
+type GermanTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'vocab' | 'builder' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
 
 const SKILL_META = {
     listening: { label: 'Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: '25-30 items · 20-40 min · audio once' },
@@ -64,7 +64,7 @@ const LessonSection = ({ title, icon, children }: { title: string; icon: React.R
 );
 
 // ── Overview tab ─────────────────────────────────────────────────────────────
-const Overview = ({ onGo }: { onGo: (t: SpanishTab) => void }) => {
+const Overview = ({ onGo }: { onGo: (t: GermanTab) => void }) => {
     const scores = useMemo(() => getGoetheScores(), []);
     const target = getGoetheTarget();
     const latest = (skill: string) => scores.find(s => s.skill === skill);
@@ -80,7 +80,7 @@ const Overview = ({ onGo }: { onGo: (t: SpanishTab) => void }) => {
                         const m = SKILL_META[sk];
                         const last = latest(sk);
                         return (
-                            <button key={sk} onClick={() => onGo(sk as SpanishTab)}
+                            <button key={sk} onClick={() => onGo(sk as GermanTab)}
                                 className="text-left bg-stone-50 hover:bg-stone-100 rounded-2xl p-4 transition-colors">
                                 <div className="flex items-center gap-2 mb-1">
                                     <m.icon size={15} className={m.color} />
@@ -153,7 +153,7 @@ const Overview = ({ onGo }: { onGo: (t: SpanishTab) => void }) => {
 
             {/* exam plan & countdown */}
             <ExamPlanCard
-                examName="DELE"
+                examName="Goethe-Zertifikat"
                 levelLabel={`Goethe ${getGoetheTarget()} target`}
                 language="German"
                 plan={getPlan()}
@@ -164,7 +164,7 @@ const Overview = ({ onGo }: { onGo: (t: SpanishTab) => void }) => {
             {/* exam strategy — how the test tries to trick you */}
             <div className="bg-white rounded-3xl border border-stone-100 p-6">
                 <h2 className="font-black text-stone-900 mb-1">Exam strategy — how Goethe tries to trick you</h2>
-                <p className="text-xs text-stone-400 mb-3">Knowing the traps is worth as many points as knowing the Spanish.</p>
+                <p className="text-xs text-stone-400 mb-3">Knowing the traps is worth as many points as knowing the German.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {GOETHE_STRATEGY.map(s => (
                         <div key={s.skill} className="bg-stone-50 rounded-2xl p-4">
@@ -375,7 +375,7 @@ const Curriculum = ({ language }: { language: string }) => {
                     {/* vocabulary */}
                     <LessonSection title={`Vocabulary (${lesson.vocabulary.length} items)`} icon={<BookOpen size={13} />}>
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                            <p className="text-[11px] text-stone-400">Every item: Spanish, gender, example, related words — tap any word for more.</p>
+                            <p className="text-[11px] text-stone-400">Every item: German, gender, plural, example, related words — tap any word for more.</p>
                             <button onClick={saveAllVocab} disabled={savedVocab.size === lesson.vocabulary.length}
                                 className={cn('flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors',
                                     savedVocab.size === lesson.vocabulary.length
@@ -518,7 +518,7 @@ const Curriculum = ({ language }: { language: string }) => {
                                         <p className="text-sm font-semibold text-stone-800 mb-1.5">{t.en}</p>
                                         <button onClick={() => setAnswers(prev => ({ ...prev, [`t${i}`]: 'revealed' }))}
                                             className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
-                                            {picked ? 'Hide' : 'Show the Spanish'}
+                                            {picked ? 'Hide' : 'Show the German'}
                                         </button>
                                         {picked && <div className="mt-1.5"><DeEn de={t.de} en="" /></div>}
                                     </div>
@@ -688,7 +688,7 @@ const WritingTrainer = ({ level, onLevelChange }: { level: GoetheLevel; onLevelC
             </div>
 
             <textarea value={text} onChange={e => setText(e.target.value)} rows={12}
-                placeholder="Escribe tu respuesta en Deutsch… (¡cuida las tildes y el registro tú/usted!)"
+                placeholder="Schreiben Sie Ihre Antwort auf Deutsch… (Großschreibung der Nomen, Kommas vor dass/weil, du oder Sie?)"
                 className="w-full px-5 py-4 text-sm rounded-3xl border border-stone-200 focus:outline-none focus:border-amber-400 bg-white resize-y" />
 
             {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
@@ -1047,7 +1047,7 @@ const Progress = ({ scores }: { scores: GoetheScoreEntry[] }) => {
 const GermanPrepView = () => {
     const { quizSettings, setActiveTab } = useAppStore() as any;
     const language = quizSettings?.targetLanguage || 'German';
-    const [tab, setTab] = useState<SpanishTab>('overview');
+    const [tab, setTab] = useState<GermanTab>('overview');
     const [level, setLevel] = useState<GoetheLevel>('A2');
     const [scores, setScores] = useState<GoetheScoreEntry[]>(getGoetheScores());
 
@@ -1076,7 +1076,7 @@ const GermanPrepView = () => {
         );
     }
 
-    const TABS: { id: SpanishTab; label: string; icon: any }[] = [
+    const TABS: { id: GermanTab; label: string; icon: any }[] = [
         { id: 'overview', label: 'Overview', icon: Flag },
         { id: 'curriculum', label: 'Learn', icon: BookOpen },
         { id: 'foundations', label: 'Foundations', icon: Languages },

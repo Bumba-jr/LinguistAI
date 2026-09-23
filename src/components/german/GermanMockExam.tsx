@@ -264,7 +264,7 @@ export const GermanMockExam = ({ level, onLevelChange }: { level: GoetheLevel; o
                         <p className="text-[10px] font-bold text-stone-300 mt-2">{writingText.trim() ? writingText.trim().split(/\s+/).length : 0} words</p>
                     </div>
                     <textarea value={writingText} onChange={e => setWritingText(e.target.value)} rows={10}
-                        placeholder="Escribe tu respuesta en Deutsch… (respeta las tildes y los ¿¡!)"
+                        placeholder="Schreiben Sie Ihre Antwort auf Deutsch… (Großschreibung der Nomen nicht vergessen!)"
                         className="w-full px-5 py-4 text-sm rounded-3xl border border-stone-200 focus:outline-none focus:border-amber-400 bg-white resize-y" />
                     <button onClick={finishWriting} disabled={writingText.trim().split(/\s+/).filter(Boolean).length < 20}
                         className="w-full py-3.5 bg-stone-900 text-white text-sm font-bold rounded-2xl hover:bg-stone-700 transition-colors disabled:opacity-40">
