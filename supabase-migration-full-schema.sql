@@ -274,6 +274,26 @@ CREATE TABLE IF NOT EXISTS client_errors (
 );
 
 -- ── 5. Row Level Security ────────────────────────────────────
+-- Every step is guarded: if ONE table fails (unexpected ownership or shape),
+-- it raises a WARNING naming the table and the rest of the migration still
+-- applies. Warnings appear in the SQL Editor's Messages panel.
+
+-- Repair pass: some legacy tables may predate the app and miss user_id
+DO $$
+DECLARE
+  tbl text;
+  user_owned text[] := ARRAY['notes','user_notes','quiz_results','saved_lectures',
+    'flashcards','chat_sessions','lecture_progress','leaderboard','user_preferences',
+    'user_stats','exchange_profiles'];
+BEGIN
+  FOREACH tbl IN ARRAY user_owned LOOP
+    BEGIN
+      EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS user_id uuid', tbl);
+    EXCEPTION WHEN OTHERS THEN
+      RAISE WARNING 'Could not ensure user_id on %: %', tbl, SQLERRM;
+    END;
+  END LOOP;
+END $$;
 
 -- User-scoped tables: full CRUD on own rows only
 DO $$
@@ -284,19 +304,20 @@ DECLARE
     'user_stats','exchange_profiles'];
 BEGIN
   FOREACH tbl IN ARRAY user_owned LOOP
-    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
-    EXECUTE format('DROP POLICY IF EXISTS "own rows" ON %I', tbl);
-    EXECUTE format($f$CREATE POLICY "own rows" ON %I FOR ALL
-      USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)$f$, tbl);
+    BEGIN
+      EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "own rows" ON %I', tbl);
+      EXECUTE format($f$CREATE POLICY "own rows" ON %I FOR ALL TO authenticated
+        USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)$f$, tbl);
+    EXCEPTION WHEN OTHERS THEN
+      RAISE WARNING 'RLS skipped for %: %', tbl, SQLERRM;
+    END;
   END LOOP;
 END $$;
 
--- lecture_progress + user_stats have composite keys that include user_id —
--- the generic policy above still applies (auth.uid() = user_id).
-
 -- Community room tables: signed-in users read everything, write their own rows.
--- (deleteRoom/deleteVocabWord act by id from the app; creators/room members
--- are authenticated users — the app is the enforcement layer here.)
+-- (deleteRoom/deleteVocabWord act by id from the app; the app is the
+-- enforcement layer here.)
 DO $$
 DECLARE
   tbl text;
@@ -304,68 +325,98 @@ DECLARE
     'message_reactions','room_vocabulary','room_challenges','room_challenge_completions'];
 BEGIN
   FOREACH tbl IN ARRAY community LOOP
-    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
-    EXECUTE format('DROP POLICY IF EXISTS "members read" ON %I', tbl);
-    EXECUTE format('CREATE POLICY "members read" ON %I FOR SELECT TO authenticated USING (true)', tbl);
-    EXECUTE format('DROP POLICY IF EXISTS "members write" ON %I', tbl);
-    EXECUTE format('CREATE POLICY "members write" ON %I FOR INSERT TO authenticated WITH CHECK (true)', tbl);
-    EXECUTE format('DROP POLICY IF EXISTS "members update" ON %I', tbl);
-    EXECUTE format('CREATE POLICY "members update" ON %I FOR UPDATE TO authenticated USING (true)', tbl);
-    EXECUTE format('DROP POLICY IF EXISTS "members delete" ON %I', tbl);
-    EXECUTE format('CREATE POLICY "members delete" ON %I FOR DELETE TO authenticated USING (true)', tbl);
+    BEGIN
+      EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "members read" ON %I', tbl);
+      EXECUTE format('CREATE POLICY "members read" ON %I FOR SELECT TO authenticated USING (true)', tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "members write" ON %I', tbl);
+      EXECUTE format('CREATE POLICY "members write" ON %I FOR INSERT TO authenticated WITH CHECK (true)', tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "members update" ON %I', tbl);
+      EXECUTE format('CREATE POLICY "members update" ON %I FOR UPDATE TO authenticated USING (true)', tbl);
+      EXECUTE format('DROP POLICY IF EXISTS "members delete" ON %I', tbl);
+      EXECUTE format('CREATE POLICY "members delete" ON %I FOR DELETE TO authenticated USING (true)', tbl);
+    EXCEPTION WHEN OTHERS THEN
+      RAISE WARNING 'RLS skipped for %: %', tbl, SQLERRM;
+    END;
   END LOOP;
 END $$;
 
 -- Exchange: profiles visible to all signed-in users; requests visible to
 -- sender + recipient only.
-ALTER TABLE exchange_requests ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "participants read" ON exchange_requests;
-CREATE POLICY "participants read" ON exchange_requests FOR SELECT TO authenticated
-  USING (auth.uid() = from_user_id OR auth.uid() = to_user_id);
-DROP POLICY IF EXISTS "sender insert" ON exchange_requests;
-CREATE POLICY "sender insert" ON exchange_requests FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = from_user_id);
-DROP POLICY IF EXISTS "recipient update" ON exchange_requests;
-CREATE POLICY "recipient update" ON exchange_requests FOR UPDATE TO authenticated
-  USING (auth.uid() = to_user_id OR auth.uid() = from_user_id);
+DO $$
+BEGIN
+  ALTER TABLE exchange_requests ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "participants read" ON exchange_requests;
+  CREATE POLICY "participants read" ON exchange_requests FOR SELECT TO authenticated
+    USING (auth.uid() = from_user_id OR auth.uid() = to_user_id);
+  DROP POLICY IF EXISTS "sender insert" ON exchange_requests;
+  CREATE POLICY "sender insert" ON exchange_requests FOR INSERT TO authenticated
+    WITH CHECK (auth.uid() = from_user_id);
+  DROP POLICY IF EXISTS "recipient update" ON exchange_requests;
+  CREATE POLICY "recipient update" ON exchange_requests FOR UPDATE TO authenticated
+    USING (auth.uid() = to_user_id OR auth.uid() = from_user_id);
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'RLS skipped for exchange_requests: %', SQLERRM;
+END $$;
 
 -- Direct messages: participants of the conversation read; sender writes;
 -- sender deletes.
-ALTER TABLE direct_messages ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "participants read" ON direct_messages;
-CREATE POLICY "participants read" ON direct_messages FOR SELECT TO authenticated
-  USING (auth.uid() = sender_id OR conversation_id LIKE auth.uid()::text || '__%'
-         OR conversation_id LIKE '%__' || auth.uid()::text);
-DROP POLICY IF EXISTS "sender insert" ON direct_messages;
-CREATE POLICY "sender insert" ON direct_messages FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = sender_id);
-DROP POLICY IF EXISTS "sender delete" ON direct_messages;
-CREATE POLICY "sender delete" ON direct_messages FOR DELETE TO authenticated
-  USING (auth.uid() = sender_id);
+DO $$
+BEGIN
+  ALTER TABLE direct_messages ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "participants read" ON direct_messages;
+  CREATE POLICY "participants read" ON direct_messages FOR SELECT TO authenticated
+    USING (auth.uid() = sender_id OR conversation_id LIKE auth.uid()::text || '__%'
+           OR conversation_id LIKE '%__' || auth.uid()::text);
+  DROP POLICY IF EXISTS "sender insert" ON direct_messages;
+  CREATE POLICY "sender insert" ON direct_messages FOR INSERT TO authenticated
+    WITH CHECK (auth.uid() = sender_id);
+  DROP POLICY IF EXISTS "sender delete" ON direct_messages;
+  CREATE POLICY "sender delete" ON direct_messages FOR DELETE TO authenticated
+    USING (auth.uid() = sender_id);
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'RLS skipped for direct_messages: %', SQLERRM;
+END $$;
 
 -- Hidden messages: own rows only.
-ALTER TABLE hidden_messages ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "own rows" ON hidden_messages;
-CREATE POLICY "own rows" ON hidden_messages FOR ALL TO authenticated
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  ALTER TABLE hidden_messages ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "own rows" ON hidden_messages;
+  CREATE POLICY "own rows" ON hidden_messages FOR ALL TO authenticated
+    USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'RLS skipped for hidden_messages: %', SQLERRM;
+END $$;
 
 -- WebRTC signals: sender inserts, recipient reads.
-ALTER TABLE webrtc_signals ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "sender insert" ON webrtc_signals;
-CREATE POLICY "sender insert" ON webrtc_signals FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = from_user_id);
-DROP POLICY IF EXISTS "recipient read" ON webrtc_signals;
-CREATE POLICY "recipient read" ON webrtc_signals FOR SELECT TO authenticated
-  USING (auth.uid() = to_user_id OR auth.uid() = from_user_id);
-DROP POLICY IF EXISTS "sender cleanup" ON webrtc_signals;
-CREATE POLICY "sender cleanup" ON webrtc_signals FOR DELETE TO authenticated
-  USING (auth.uid() = from_user_id);
+DO $$
+BEGIN
+  ALTER TABLE webrtc_signals ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "sender insert" ON webrtc_signals;
+  CREATE POLICY "sender insert" ON webrtc_signals FOR INSERT TO authenticated
+    WITH CHECK (auth.uid() = from_user_id);
+  DROP POLICY IF EXISTS "recipient read" ON webrtc_signals;
+  CREATE POLICY "recipient read" ON webrtc_signals FOR SELECT TO authenticated
+    USING (auth.uid() = to_user_id OR auth.uid() = from_user_id);
+  DROP POLICY IF EXISTS "sender cleanup" ON webrtc_signals;
+  CREATE POLICY "sender cleanup" ON webrtc_signals FOR DELETE TO authenticated
+    USING (auth.uid() = from_user_id);
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'RLS skipped for webrtc_signals: %', SQLERRM;
+END $$;
 
 -- Client errors: anyone can insert, nobody reads via anon key.
-ALTER TABLE client_errors ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "anyone insert" ON client_errors;
-CREATE POLICY "anyone insert" ON client_errors FOR INSERT TO anon, authenticated WITH CHECK (true);
+DO $$
+BEGIN
+  ALTER TABLE client_errors ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "anyone insert" ON client_errors;
+  CREATE POLICY "anyone insert" ON client_errors FOR INSERT TO anon, authenticated WITH CHECK (true);
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'RLS skipped for client_errors: %', SQLERRM;
+END $$;
 
--- Done. After running, verify with:
+-- Done. After running, check the Messages panel for any WARNINGs naming
+-- tables that need attention, and verify with:
 --   SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY 1;
 -- All 23 tables below should appear.
