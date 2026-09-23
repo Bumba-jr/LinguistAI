@@ -41,11 +41,11 @@ export const ItalianMockExam = ({ level, onLevelChange }: { level: CilsLevel; on
     const [timerOn, setTimerOn] = useState(false);
     const [playing, setPlaying] = useState(false);
     const [report, setReport] = useState<null | {
-        listening: { pct: number; pts: number };
-        reading: { pct: number; pts: number };
-        writing: { pct: number; pts: number; est: string };
-        speaking: { pct: number; pts: number; est: string };
-        total: number; passed: boolean; weakest: string;
+        listening: { pct: number; ok: boolean };
+        reading: { pct: number; ok: boolean };
+        writing: { pct: number; ok: boolean; est: string };
+        speaking: { pct: number; ok: boolean; est: string };
+        passed: boolean; weakest: string;
     }>(null);
     const recRef = useRef<{ promise: Promise<string>; stop: () => void } | null>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
@@ -118,16 +118,17 @@ export const ItalianMockExam = ({ level, onLevelChange }: { level: CilsLevel; on
                 sEst = fb.estimatedLevel;
             }
         } catch { /* estimates stay 0 for the failed skill */ }
+        // CILS: skills are judged INDEPENDENTLY — every skill needs its own threshold
         const total = to25(lPct) + to25(rPct) + to25(wPct) + to25(sPct);
-        const passed = total >= 60;
+        const passed = [rPct, lPct, wPct, sPct].every(pct => pct >= 60);
         const weakest = ([['reading', rPct], ['listening', lPct], ['writing', wPct], ['speaking', sPct]] as [string, number][])
             .sort((a, b) => a[1] - b[1])[0][0];
         const rep = {
-            listening: { pct: lPct, pts: to25(lPct) },
-            reading: { pct: rPct, pts: to25(rPct) },
-            writing: { pct: wPct, pts: to25(wPct), est: wEst },
-            speaking: { pct: sPct, pts: to25(sPct), est: sEst },
-            total, passed, weakest,
+            listening: { pct: lPct, ok: lPct >= 60 },
+            reading: { pct: rPct, ok: rPct >= 60 },
+            writing: { pct: wPct, ok: wPct >= 60, est: wEst },
+            speaking: { pct: sPct, ok: sPct >= 60, est: sEst },
+            passed, weakest,
         };
         setReport(rep);
         saveMock({ date: new Date().toISOString(), reading: rPct, listening: lPct, writing: wPct, speaking: sPct, passed, weakest });
@@ -309,11 +310,11 @@ export const ItalianMockExam = ({ level, onLevelChange }: { level: CilsLevel; on
                         <p className="text-xs opacity-70">Each skill is judged independently — CILS lets you retake only the skills you failed</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                        {([['Reading', report.reading], ['Listening', report.listening], ['Writing', report.writing], ['Speaking', report.speaking]] as [string, { pct: number; pts: number; est?: string }][]).map(([label, r]) => (
-                            <div key={label} className="bg-white rounded-3xl border border-stone-100 p-4 text-center">
+                        {([['Reading', report.reading], ['Listening', report.listening], ['Writing', report.writing], ['Speaking', report.speaking]] as [string, { pct: number; ok: boolean; est?: string }][]).map(([label, r]) => (
+                            <div key={label} className={cn('rounded-3xl border p-4 text-center', r.ok ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100')}>
                                 <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{label}</p>
-                                <p className="text-2xl font-black text-stone-900 my-1">{r.pts}<span className="text-sm text-stone-300">/25</span></p>
-                                <p className="text-[10px] text-stone-400">{r.pct}%{r.est ? ` · est. ${r.est}` : ''}</p>
+                                <p className={cn('text-2xl font-black my-1', r.ok ? 'text-emerald-600' : 'text-red-500')}>{r.pct}%</p>
+                                <p className="text-[10px] font-black uppercase tracking-wider">{r.ok ? '✓ superata' : '✗ da recuperare'}{r.est ? ` · est. ${r.est}` : ''}</p>
                             </div>
                         ))}
                     </div>

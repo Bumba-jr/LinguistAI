@@ -11,7 +11,7 @@ import {
     CilsLevel, CILS_SYLLABUS,
     generateItalianLesson, evaluateItalianWriting, evaluateItalianSpeaking,
     ItalianLesson, ItalianWritingFeedback, ItalianSpeakingFeedback, CILS_PASS_NOTE,
-    pctToCefr, cefrIndex, cilsWritingTasksFor, cilsSpeakingTasksFor, CILS_LEVEL_FORMATS,
+    pctToCefr, cefrIndex, cilsWritingTasksFor, cilsSpeakingTasksFor, CILS_LEVEL_FORMATS, CLIQ_BODIES, CILS_LEVEL_MAP,
 } from '../../services/italianService';
 import {
     getCILSScores, addCILSScore, getCompletedLessons, markLessonComplete,
@@ -140,6 +140,7 @@ const Overview = ({ onGo }: { onGo: (t: ItalianTab) => void }) => {
                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">CILS {target} — what your exam looks like</p>
                     <div className="space-y-1.5 text-xs">
                         {([['Reading', CILS_LEVEL_FORMATS[target].reading], ['Listening', CILS_LEVEL_FORMATS[target].listening],
+                           ['Grammar', CILS_LEVEL_FORMATS[target].extra],
                            ['Writing', CILS_LEVEL_FORMATS[target].writing], ['Speaking', CILS_LEVEL_FORMATS[target].speaking]] as [string, string][]).map(([label, fmt]) => (
                             <div key={label} className="flex gap-2">
                                 <span className="font-black text-white/90 w-20 shrink-0">{label}</span>
