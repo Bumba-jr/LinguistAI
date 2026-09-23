@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { reportError } from '../lib/errorReporter';
 
 interface Props { children: ReactNode }
 interface State { error: Error | null }
@@ -16,6 +17,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('LinguistAI crashed:', error, info.componentStack);
+    reportError(error, { componentStack: info.componentStack ?? undefined, source: 'ErrorBoundary' });
   }
 
   override render(): ReactNode {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, Suspense, lazy } from 'react';
+import React, { useEffect, useState, useRef, useMemo, Suspense, lazy } from 'react';
 import { useAppStore } from './store/useAppStore';
 import Editor from './components/Editor';
 import QuizSettings from './components/QuizSettings';
@@ -179,7 +179,7 @@ const FloatingMessageButton = ({ count, onClick }: { count: number; onClick: () 
 };
 
 export default function App() {
-  const { activeTab, setActiveTab, questions, lectures, user, setUser, savedLectures, setSavedLectures, setLectures, removeSavedLecture, setFlashcards, setQuizHistory, setLectureProgress, setQuestions, quizHistory, quizSettings } = useAppStore() as any;
+  const { activeTab, setActiveTab, questions, lectures, user, setUser, savedLectures, setSavedLectures, setLectures, removeSavedLecture, setFlashcards, flashcards, setQuizHistory, setLectureProgress, setQuestions, quizHistory, quizSettings } = useAppStore() as any;
   const [authLoading, setAuthLoading] = useState(true);
   const [stats, setStats] = useState<{ totalQuizzes: number; avgAccuracy: string; totalQuestions: number } | null>(null);
   const [userMeta, setUserMeta] = useState<{ firstName: string } | null>(null);
@@ -233,6 +233,12 @@ export default function App() {
 
   // hooks must run on every render — call before any early returns below
   const placementShow = usePlacementGate(user?.id);
+
+  // cards due for review drive the dashboard's review-queue nudge
+  const dueFlashcardCount = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return (flashcards ?? []).filter((f: any) => f?.nextReview && new Date(f.nextReview) <= today).length;
+  }, [flashcards]);
 
   const isSupabaseConfigured =
     (import.meta.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL) &&
@@ -635,6 +641,30 @@ export default function App() {
               Resume <ArrowRight size={13} />
             </button>
           </motion.div>
+        )}
+
+        {/* 2. Due-for-review nudge — the daily return loop: due cards are the
+            most concrete, time-relevant reason to start a session right now. */}
+        {dueFlashcardCount > 0 && (
+          <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+            onClick={() => setActiveTab('flashcards')}
+            className="w-full p-4 rounded-2xl flex items-center justify-between gap-4 text-left hover:brightness-[0.99] transition-all"
+            style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(16,185,129,0.05) 100%)', border: '1px solid rgba(245,158,11,0.2)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.14)' }}>
+                <Layers size={16} style={{ color: '#f59e0b' }} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-stone-500 uppercase tracking-wide">Review queue</p>
+                <p className="text-sm font-semibold text-stone-800">
+                  {dueFlashcardCount} {dueFlashcardCount === 1 ? 'card is' : 'cards are'} due for review
+                </p>
+              </div>
+            </div>
+            <span className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all" style={{ background: '#f59e0b' }}>
+              Review <ArrowRight size={13} />
+            </span>
+          </motion.button>
         )}
 
         <div className="grid lg:grid-cols-[1fr_minmax(320px,380px)] gap-6 xl:gap-12">
