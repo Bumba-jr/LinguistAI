@@ -94,6 +94,7 @@ export const DELE_SYLLABUS: Record<DeleLevel, { title: string; slug: string; foc
         { title: 'Indefinido vs Imperfecto', slug: 'pasados', focus: 'choosing the right past tense — the classic DELE challenge' },
         { title: 'Conditional & Politeness', slug: 'condicional', focus: 'would/should, ¿podría…?, hypotheticals with si' },
         { title: 'Object Pronouns & Se lo doy', slug: 'pronombres', focus: 'lo/la/le/les, double pronouns, position rules' },
+        { title: 'Relative Pronouns', slug: 'relativos', focus: 'que, quien, el que, cuyo — connecting ideas into B2-ready sentences' },
         { title: 'Present Subjunctive Introduction', slug: 'subjuntivo-intro', focus: 'doubt, desire, emotion, influence — the triggers' },
         { title: 'Opinions, Cause & Consequence', slug: 'opiniones', focus: 'creo que, connectors, structuring an opinion' },
         { title: 'Reported Speech', slug: 'estilo-indirecto', focus: 'saying what someone else said (dijo que…)' },

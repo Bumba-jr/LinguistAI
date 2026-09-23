@@ -7,6 +7,7 @@ import {
     SPANISH_WRITING_FACTS, SPANISH_ALPHABET, SPANISH_VOWELS, VOWEL_STRENGTH,
     SPANISH_VOWEL_COMBINATIONS, SPANISH_CONSONANT_SOUNDS, STRESS_RULES,
     ACCENT_MEANING_TRAPS, TU_USTED_VOS, NUMBER_QUIRKS,
+    SYLLABLE_DIVISION, REGIONAL_VARIETIES, REGIONAL_GOAL,
     SPANISH_CHEAT_SHEET,
 } from '../../services/spanishFoundation';
 
@@ -165,6 +166,21 @@ export const SpanishFoundations = () => (
             </div>
         </div>
 
+        {/* syllables — the foundation under the stress rules */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Syllables first</p>
+            <p className="text-sm font-black text-stone-900 mb-1">Every accent rule is really a syllable rule</p>
+            <p className="text-xs text-stone-500 mb-4">{SYLLABLE_DIVISION.why}</p>
+            <div className="space-y-1.5">
+                {SYLLABLE_DIVISION.rules.map(r => (
+                    <div key={r.rule} className="bg-stone-50 rounded-xl px-3 py-2.5">
+                        <p className="text-xs font-black text-stone-800">{r.rule}</p>
+                        <p className="text-xs font-mono text-violet-500 mt-0.5">{r.examples}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+
         {/* numbers */}
         <div className="bg-white rounded-3xl border border-stone-100 p-6">
             <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Number quirks</p>
@@ -177,6 +193,25 @@ export const SpanishFoundations = () => (
                     </div>
                 ))}
             </div>
+        </div>
+
+        {/* regional varieties — recognise, don't memorise */}
+        <div className="bg-white rounded-3xl border border-stone-100 p-6">
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Regional Spanish</p>
+            <p className="text-sm font-black text-stone-900 mb-1">One language, many accents — train your ear for all of them</p>
+            <div className="space-y-1.5 mb-3">
+                {REGIONAL_VARIETIES.map(v => (
+                    <div key={v.region} className="bg-stone-50 rounded-xl px-3 py-2.5">
+                        <p className="text-xs font-black text-stone-800 mb-0.5">{v.region}</p>
+                        <ul className="space-y-0.5">
+                            {v.features.map((f, i) => (
+                                <li key={i} className="text-xs text-stone-500 flex gap-1.5"><span className="text-stone-300">•</span>{f}</li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+            </div>
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-xs text-emerald-800">{REGIONAL_GOAL}</div>
         </div>
     </div>
 );

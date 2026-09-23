@@ -152,6 +152,46 @@ export const SPANISH_NUMBER_FACTS = [
     'Thousands use a period for decimals in Spain/LatAm official writing: 1.000.000 habitantes, 3,5 euros.',
 ];
 
+// ── Syllable division — Part 9 of the master syllabus ────────────────────────
+// Stress rules and tilde placement are DEFINED on syllables, so this comes first.
+export const SYLLABLE_DIVISION = {
+    why: 'Every stress rule on this page is really a rule about SYLLABLES — "stress the last syllable" means the last syllable, not the last letter. Split words into syllables first, then the accent system becomes mechanical instead of guesswork.',
+    rules: [
+        { rule: 'One consonant between vowels → the consonant goes with the SECOND vowel', examples: 'ca-sa, me-sa, lo-co' },
+        { rule: 'Digraphs ch, ll, rr are ONE sound and never split', examples: 'pe-rro (not per-ro), mu-cha-cho' },
+        { rule: 'Consonant + L/R stay together (bl, cr, gr, tr, pr, fl…)', examples: 'ha-blar, a-brir, ma-dre, a-zúl' },
+        { rule: 'Two strong vowels (a e o) split into separate syllables', examples: 'le-er, ca-er, a-zo-te, ma-estro' },
+        { rule: 'Strong + weak vowel (or two weak) merge into one diphthong syllable', examples: 'bue-no, ciu-dad, a-gua, vier-nes' },
+        { rule: 'A tilde on a weak vowel BREAKS the diphthong', examples: 'ma-íz (maíz, not *mai-z), dí-a, bá-ul' },
+    ],
+};
+
+// ── Regional varieties — Part 52: recognise, don't memorise ──────────────────
+export const REGIONAL_VARIETIES = [
+    {
+        region: '🇪🇸 Spain (Castilian)',
+        features: ['distinción: c/z before e/i pronounced "th" (cielo = THYE-lo)', 'vosotros/as used for informal plural you', 'strong, raspy j'],
+    },
+    {
+        region: '🇲🇽 Mexico (+ most of central north)',
+        features: ['seseo: c/z always "s" (cielo = SYE-lo)', 'ustedes for every plural you', ' diminutives everywhere: ahorita, tacita'],
+    },
+    {
+        region: '🇦🇷 Argentina & 🇺🇾 Uruguay (Rioplatense)',
+        features: ['voseo: vos tenés, vos sabés (own verb forms!)', 'sheísmo: ll/y pronounced "zh/sh" (llave = SHAVE)', 'Italian-influenced intonation'],
+    },
+    {
+        region: '🏝️ Caribbean (Cuba, PR, Dominican R.)',
+        features: ['final s aspirated or dropped: "loh perroh"', 'fast, clipped rhythm', 'soft j — the weakest in the Spanish-speaking world'],
+    },
+    {
+        region: '🇨🇴 Colombia & 🇨🇷 Costa Rica',
+        features: ['usted used even with family and friends', 'exceptionally clear, "neutral" pronunciation (Bogotá, Medellín accent prized by learners)'],
+    },
+];
+
+export const REGIONAL_GOAL = 'The goal is NOT to memorise every dialect: speak one consistent standard (neutral Latin American or Castilian) while UNDERSTANDING the rest. DELE accepts all regional standards — consistency is what is graded.';
+
 // The DELE strategy card (mirror of TCF_STRATEGY) — Instituto Cervantes format.
 export const DELE_STRATEGY: { skill: string; color: string; points: string[] }[] = [
     {
@@ -343,6 +383,109 @@ export const SPANISH_CHEAT_SHEET: { title: string; items: { label: string; detai
             { label: 'ir vs venir', detail: 'ir = to go (away from speaker) / venir = to come (toward speaker)' },
             { label: 'llevar vs traer', detail: 'llevar = take there / traer = bring here' },
             { label: 'ir vs salir', detail: 'ir = go to a place / salir = leave, go out' },
+        ],
+    },
+    {
+        title: 'Plurals — three spelling rules, not just +s', items: [
+            { label: 'vowel ending → +s', detail: 'casa → casas, libro → libros', say: 'casas' },
+            { label: 'consonant ending → +es', detail: 'papel → papeles, ciudad → ciudades, profesor → profesores', say: 'papeles' },
+            { label: '-z → -ces', detail: 'lápiz → lápices, voz → voces, pez → peces', say: 'lápices' },
+            { label: 'stressed vowel ending keeps its tilde +s', detail: 'sofá → sofás, menú → menús, gitano → but: mamá → mamás (accent stays)' },
+            { label: 'unstressed diphthong +s drops nothing', detail: 'coche → coches; but -és/-és nouns keep it: inglés → ingleses' },
+            { label: 'invariable (same singular/plural)', detail: 'el/los martes, la/las crisis — and stress moves where spelling demands: el examen → los exámenes (new tilde)', say: 'los exámenes' },
+        ],
+    },
+    {
+        title: 'The only two contractions in Spanish', items: [
+            { label: 'de + el = del', detail: 'el coche del profesor = the teacher\'s car (NEVER "de el")', say: 'el coche del profesor' },
+            { label: 'a + el = al', detail: 'Voy al mercado = I go to the market (NEVER "a el")', say: 'Voy al mercado' },
+            { label: 'feminine never contracts', detail: 'de la casa, a la playa — written in full' },
+            { label: 'but a el(?) watch pronouns', detail: 'this rule is ONLY for the masculine article el — the pronoun él never contracts: "a él" stays separate' },
+        ],
+    },
+    {
+        title: 'Essential prepositions', items: [
+            { label: 'a', detail: 'to / at — Voy a Madrid; motion + personal a (Veo a María)' },
+            { label: 'de', detail: 'of / from — Soy de México; possession: el libro de Ana' },
+            { label: 'en', detail: 'in / on / by — en casa, en el coche (NOT "en" for "into": entrar EN)' },
+            { label: 'con / sin', detail: 'with / without — conmigo, contigo (special forms!)' },
+            { label: 'sobre / entre', detail: 'on / about — sobre la mesa, una película sobre la guerra; entre = between' },
+            { label: 'desde / hasta', detail: 'from / until — desde las nueve hasta las cinco' },
+            { label: 'tras / durante', detail: 'after / during — tras la cena, durante el verano' },
+            { label: 'por vs para', detail: 'the two "fors" — full section above' },
+        ],
+    },
+    {
+        title: 'Adjectives — agreement, position, meaning shifts', items: [
+            { label: 'agreement', detail: '-o/-a/-os/-as: pequeño, pequeña, pequeños, pequeñas; -e and -ista take only number: grande/grandes, idealista/idealistas' },
+            { label: 'default position = AFTER the noun', detail: 'una casa grande (English does the reverse!) — before the noun is emphatic/literary' },
+            { label: 'gran = great', detail: 'grande shortens to gran BEFORE a noun and changes meaning: una casa grande (big) / una gran casa (great)', say: 'una gran casa' },
+            { label: 'position changes meaning', detail: 'un hombre grande (a big man) / un gran hombre (a great man); mi amigo viejo (old in age) / mi viejo amigo (long-time friend)' },
+            { label: 'apocopated forms', detail: 'buen(o), mal(o), primer(o), tercer(o), algun(o), cualquier(a) — shorten BEFORE a singular noun: un buen día, el primer día' },
+        ],
+    },
+    {
+        title: 'Demonstratives — three distances', items: [
+            { label: 'este/esta/estos/estas', detail: 'THIS (near me) — este libro (in my hand)', say: 'este libro' },
+            { label: 'ese/esa/esos/esas', detail: 'THAT (near you) — ese libro (in your hand)' },
+            { label: 'aquel/aquella/aquellos/aquellas', detail: 'THAT over there (far from both) — aquel libro (across the room)' },
+            { label: 'neuter forms', detail: 'esto, eso, aquello — for ideas/unknown things: ¿Qué es esto? (no gender noun behind it)' },
+            { label: 'no tildes anymore', detail: 'old este/ese tildes are gone per RAE — only qué/cómo/… question words carry them' },
+        ],
+    },
+    {
+        title: 'Possessives — two families', items: [
+            { label: 'short form (before noun)', detail: 'mi, tu, su, nuestro/a, vuestro/a, su — agrees in NUMBER not gender: mis casas (not "mías casas")', say: 'mis casas' },
+            { label: 'su = his/her/their/your(formal)', detail: 'the ambiguity is solved with de: el coche de él / de ella / de ellos', say: 'su coche' },
+            { label: 'long form (after noun/verb)', detail: 'mío/a, tuyo/a, suyo/a, nuestro/a… for emphasis or predicates: la casa mía, ¿Es tuyo?' },
+            { label: 'body parts skip the possessive', detail: 'Me lavo las manos (not "mis manos") — article + reflexive marks possession' },
+        ],
+    },
+    {
+        title: 'Relative pronouns — connect like B2', items: [
+            { label: 'que', detail: 'the workhorse: el libro que leí = the book that I read (people and things)', say: 'el libro que leí' },
+            { label: 'quien', detail: 'after prepositions or for people: la mujer a quien vi; mi hermano, quien vive en Lima,…' },
+            { label: 'el que / la que', detail: 'the clarity form: la casa en la que vivo = the house I live in (agrees + repeats the article)' },
+            { label: 'cuyo/a/os/as', detail: 'whose — agrees with what FOLLOWS: el autor cuya novela leímos', say: 'el autor cuya novela leímos' },
+            { label: 'donde', detail: 'where: la ciudad donde nací — also: desde donde, hacia donde' },
+        ],
+    },
+    {
+        title: 'Progressive — estar + gerund', items: [
+            { label: '-AR → -ando', detail: 'hablar → hablando: Estoy hablando = I am speaking', say: 'Estoy hablando' },
+            { label: '-ER/-IR → -iendo', detail: 'comer → comiendo, vivir → viviendo' },
+            { label: 'irregular gerunds', detail: 'leer → leyendo, oír → oyendo, dormir → durmiendo (o→u), pedir → pidiendo (e→i)' },
+            { label: 'pronouns attach', detail: 'Estoy duchán(d)oME → Me estoy duchando or Estoy duchándome — both correct' },
+            { label: 'NOT for the future', detail: 'Spanish never uses progressive for future (English "I\'m seeing him tomorrow") → Lo veo mañana / Voy a verlo' },
+        ],
+    },
+    {
+        title: 'TENER — the "have" idioms English uses "be" for', items: [
+            { label: 'tener X años', detail: 'Tengo veinte años = I am 20 (lit. "I hold 20 years" — never "soy veinte")', say: 'Tengo veinte años' },
+            { label: 'sensations', detail: 'tener hambre / sed / frío / calor / sueño / miedo = to be hungry / thirsty / cold / hot / sleepy / afraid', say: 'Tengo hambre' },
+            { label: 'states', detail: 'tener razón (be right), no tener razón, tener prisa (be in a hurry), tener éxito, tener suerte', say: 'Tienes razón' },
+            { label: 'tener que + infinitive', detail: 'obligation: Tengo que estudiar = I have to study', say: 'Tengo que estudiar' },
+            { label: 'tener ganas de', detail: 'to feel like: Tengo ganas de viajar = I feel like travelling', say: 'Tengo ganas de viajar' },
+        ],
+    },
+    {
+        title: 'GUSTAR & company — the backwards verbs', items: [
+            { label: 'me gusta(n)', detail: 'literally "it pleases me": Me gusta el café (singular) / Me gustan los libros (plural — verb agrees with the THING)', say: 'Me gustan los libros' },
+            { label: 'the person goes in the pronoun', detail: 'me, te, le, nos, os, les — le gusta = he/she likes; never "yo gusto"' },
+            { label: 'with verbs it is always singular', detail: 'Me gusta viajar, leer y cocinar (one activity set = gusta)' },
+            { label: 'the family', detail: 'encantar (love), doler (hurt: Me duele la cabeza), importar (matter: No me importa), faltar (miss/need), molestar (bother)' },
+            { label: 'emphasis with a', detail: 'A María le gusta el té = María likes tea (clarifies who "le" is)' },
+        ],
+    },
+    {
+        title: 'Time words — the everyday timeline', items: [
+            { label: 'hoy / ayer / anoche', detail: 'today / yesterday / last night', say: 'ayer' },
+            { label: 'mañana / la semana que viene', detail: 'tomorrow / next week (¡mañana = morning AND tomorrow! — por la mañana clears it up)' },
+            { label: 'ahora / luego / enseguida', detail: 'now / later / right away' },
+            { label: 'antes / después', detail: 'before / after — antes de + infinitive (antes de comer)' },
+            { label: 'siempre / nunca / a veces', detail: 'always / never / sometimes — nunca can also START the sentence (verb before subject!)' },
+            { label: 'ya / todavía', detail: 'already / still: Ya comí. — Todavía no he comido. (ya no = no longer)' },
+            { label: 'desde hace', detail: 'duration until now: Vivo aquí desde hace dos años = I have lived here for 2 years (present tense in Spanish!)' },
         ],
     },
 ];
