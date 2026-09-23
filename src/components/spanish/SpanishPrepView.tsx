@@ -8,10 +8,10 @@ import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
 import { speakText, stopSpeaking } from '../../services/voiceService';
 import {
-    DeleLevel, DELE_SYLLABUS, DELE_WRITING_TASKS, DELE_SPEAKING_TASKS,
+    DeleLevel, DELE_SYLLABUS,
     generateSpanishLesson, evaluateSpanishWriting, evaluateSpanishSpeaking,
     SpanishLesson, SpanishWritingFeedback, SpanishSpeakingFeedback, DELE_PASS_NOTE,
-    pctToCefr, cefrIndex,
+    pctToCefr, cefrIndex, deleWritingTasksFor, deleSpeakingTasksFor, DELE_LEVEL_FORMATS,
 } from '../../services/spanishService';
 import {
     getDeleScores, addDeleScore, getCompletedLessons, markLessonComplete,
@@ -135,6 +135,20 @@ const Overview = ({ onGo }: { onGo: (t: SpanishTab) => void }) => {
                 <p className="text-[10px] text-stone-300 mt-3 flex items-center gap-1">
                     <AlertTriangle size={10} /> All numbers on this page are practice estimates — not official DELE results.
                 </p>
+                {/* what the chosen target level actually looks like, test by test */}
+                <div className="mt-4 bg-stone-900 rounded-2xl p-4 text-white">
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">DELE {target} — what your exam looks like</p>
+                    <div className="space-y-1.5 text-xs">
+                        {([['Reading', DELE_LEVEL_FORMATS[target].reading], ['Listening', DELE_LEVEL_FORMATS[target].listening],
+                           ['Writing', DELE_LEVEL_FORMATS[target].writing], ['Speaking', DELE_LEVEL_FORMATS[target].speaking]] as [string, string][]).map(([label, fmt]) => (
+                            <div key={label} className="flex gap-2">
+                                <span className="font-black text-white/90 w-20 shrink-0">{label}</span>
+                                <span className="text-white/60 flex-1">{fmt}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <p className="text-[10px] text-white/40 mt-2">The trainers and mock exam below automatically use {target}-accurate tasks and lengths.</p>
+                </div>
             </div>
 
             {/* exam plan & countdown */}
@@ -606,14 +620,18 @@ const Curriculum = ({ language }: { language: string }) => {
 
 // ── Writing trainer ──────────────────────────────────────────────────────────
 const WritingTrainer = ({ level, onLevelChange }: { level: DeleLevel; onLevelChange: (l: DeleLevel) => void }) => {
-    const [taskId, setTaskId] = useState(DELE_WRITING_TASKS[0].id);
-    const task = DELE_WRITING_TASKS.find(t => t.id === taskId)!;
+    // Task set is LEVEL-ACCURATE: A1 writes 15–40-word forms, B2 writes 150–180-word essays with sources…
+    const tasks = useMemo(() => deleWritingTasksFor(level), [level]);
+    const [taskId, setTaskId] = useState(tasks[0].id);
+    const task = tasks.find(t => t.id === taskId) ?? tasks[0];
     const [text, setText] = useState('');
     const [timeLeft, setTimeLeft] = useState(task.minutes * 60);
     const [timerOn, setTimerOn] = useState(false);
     const [evaluating, setEvaluating] = useState(false);
     const [feedback, setFeedback] = useState<SpanishWritingFeedback | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => { setTaskId(tasks[0].id); }, [level]);
 
     useEffect(() => { setTimeLeft(task.minutes * 60); setTimerOn(false); setFeedback(null); }, [taskId]);
 
@@ -647,7 +665,7 @@ const WritingTrainer = ({ level, onLevelChange }: { level: DeleLevel; onLevelCha
             <div className="bg-white rounded-3xl border border-stone-100 p-6">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <div className="flex gap-1.5 flex-wrap">
-                        {DELE_WRITING_TASKS.map(t => (
+                        {tasks.map(t => (
                             <button key={t.id} onClick={() => setTaskId(t.id)}
                                 className={cn('px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors',
                                     taskId === t.id ? 'bg-amber-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
@@ -725,8 +743,10 @@ const WritingTrainer = ({ level, onLevelChange }: { level: DeleLevel; onLevelCha
 
 // ── Speaking trainer ─────────────────────────────────────────────────────────
 const SpeakingTrainer = ({ level, language, onLevelChange }: { level: DeleLevel; language: string; onLevelChange: (l: DeleLevel) => void }) => {
-    const [taskId, setTaskId] = useState(DELE_SPEAKING_TASKS[0].id);
-    const task = DELE_SPEAKING_TASKS.find(t => t.id === taskId)!;
+    // Task set is LEVEL-ACCURATE: A1 has 4 short tasks, B2 adds the graphic monologue, C2 is negotiation…
+    const tasks = useMemo(() => deleSpeakingTasksFor(level), [level]);
+    const [taskId, setTaskId] = useState(tasks[0].id);
+    const task = tasks.find(t => t.id === taskId) ?? tasks[0];
     const [mode, setMode] = useState<'self' | 'examiner'>('self');
     const [prep, setPrep] = useState(0);
     const [recState, setRecState] = useState<'idle' | 'recording' | 'processing' | 'done'>('idle');
@@ -738,6 +758,7 @@ const SpeakingTrainer = ({ level, language, onLevelChange }: { level: DeleLevel;
     const prepTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => { setPrep(0); setRecState('idle'); setTranscript(''); setFeedback(null); setError(null); }, [taskId]);
+    useEffect(() => { setTaskId(tasks[0].id); }, [level]);
     useEffect(() => () => { if (prepTimer.current) clearInterval(prepTimer.current); stopSpeaking(); }, []);
 
     const scoreSpeaking = async (label: string, combined: string) => {
@@ -799,7 +820,7 @@ const SpeakingTrainer = ({ level, language, onLevelChange }: { level: DeleLevel;
             <LevelBar level={level} onLevelChange={onLevelChange} />
             <div className="bg-white rounded-3xl border border-stone-100 p-6">
                 <div className="flex gap-1.5 flex-wrap mb-3">
-                    {DELE_SPEAKING_TASKS.map(t => (
+                    {tasks.map(t => (
                         <button key={t.id} onClick={() => setTaskId(t.id)}
                             className={cn('px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors',
                                 taskId === t.id ? 'bg-rose-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>

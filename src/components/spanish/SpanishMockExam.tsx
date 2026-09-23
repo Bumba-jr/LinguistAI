@@ -6,7 +6,7 @@ import { speakText, stopSpeaking } from '../../services/voiceService';
 import {
     generateSpanishListening, generateSpanishReading,
     SpanishListening, SpanishReading, DeleLevel,
-    DELE_WRITING_TASKS, DELE_SPEAKING_TASKS,
+    deleWritingTasksFor, deleSpeakingTasksFor,
     evaluateSpanishWriting, evaluateSpanishSpeaking, DELE_PASS_NOTE,
 } from '../../services/spanishService';
 import { saveMock } from '../../services/spanishStorage';
@@ -50,8 +50,9 @@ export const SpanishMockExam = ({ level, onLevelChange }: { level: DeleLevel; on
     const recRef = useRef<{ promise: Promise<string>; stop: () => void } | null>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
 
-    const writingTask = DELE_WRITING_TASKS[0];
-    const speakingTask = DELE_SPEAKING_TASKS[0];
+    // Level-accurate tasks: an A1 simulation writes 15–40 words, a B2 one needs 150–180
+    const writingTask = deleWritingTasksFor(level)[0];
+    const speakingTask = deleSpeakingTasksFor(level)[0];
 
     useEffect(() => {
         if (!timerOn) return;

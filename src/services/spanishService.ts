@@ -55,8 +55,111 @@ export const DELE_SPEAKING_TASKS = [
     },
 ];
 
+// ── Per-level task sets — the exam is NOT the same at every level ────────────
+type WritingTask = typeof DELE_WRITING_TASKS[number];
+type SpeakingTask = typeof DELE_SPEAKING_TASKS[number];
+
+export const DELE_WRITING_TASKS_BY_LEVEL: Record<DeleLevel, WritingTask[]> = {
+    A1: [
+        { id: 'w1', label: 'Task 1 — Complete the message', guide: 'Fill a short personal message: 15–25 words. Use the word bank of details the task gives you.', minWords: 15, maxWords: 25, minutes: 10, prompt: 'Escribe una tarjeta a tu profesor/a de español: le dices tu nombre, tu nacionalidad y tu edad, y le haces una pregunta sobre el curso. Escribe entre 15 y 25 palabras.' },
+        { id: 'w2', label: 'Task 2 — Short personal note', guide: 'Write a short personal message: 30–40 words.', minWords: 30, maxWords: 40, minutes: 15, prompt: 'Escribes un mensaje a tu amigo/a español/a: le describes tu casa o tu apartamento — dónde está, con quién vives y qué te gusta más. Escribe entre 30 y 40 palabras.' },
+    ],
+    A2: [
+        { id: 'w1', label: 'Task 1 — Informal message / blog', guide: 'Write an informal message or blog post: 70–80 words.', minWords: 70, maxWords: 80, minutes: 25, prompt: 'Escribe un mensaje para el blog de tu escuela: tu rutina diaria entre semana y qué haces normalmente el fin de semana. Escribe entre 70 y 80 palabras.' },
+        { id: 'w2', label: 'Task 2 — Description', guide: 'Write a short descriptive text: 50–60 words.', minWords: 50, maxWords: 60, minutes: 20, prompt: 'Describe tus últimas vacaciones: a dónde fuiste, con quién, qué hiciste y cómo estuviste. Escribe entre 50 y 60 palabras.' },
+    ],
+    B1: DELE_WRITING_TASKS,
+    B2: [
+        { id: 'w1', label: 'Task 1 — Formal letter / report', guide: 'Write a formal text of 150–180 words to an institution. Usted register. ~40 minutes.', minWords: 150, maxWords: 180, minutes: 40, prompt: 'Escribe una carta al ayuntamiento de tu barrio sobre un problema (la basura, el ruido, el transporte público): explica la situación con detalles, describe cómo te afecta y pide soluciones concretas. Entre 150 y 180 palabras.' },
+        { id: 'w2', label: 'Task 2 — Essay with source material', guide: 'Write an essay of 150–180 words based on the source text given. ~40 minutes.', minWords: 150, maxWords: 180, minutes: 40, prompt: 'Texto fuente: "Los jóvenes españoles pasan una media de cinco horas al día con pantallas." Escribe un ensayo: ventajas e inconvenientes de este uso de la tecnología y tu opinión razonada. Entre 150 y 180 palabras.' },
+    ],
+    C1: [
+        { id: 'w1', label: 'Task 1 — Formal report', guide: 'Write a formal text of 220–250 words: analysis, data, proposals. High register. ~75 minutes.', minWords: 220, maxWords: 250, minutes: 75, prompt: 'Escribe un informe formal para una ONG medioambiental sobre el consumo de plásticos de un solo uso en tu ciudad: analiza las causas, presenta datos e iniciativas y propón tres medidas. Entre 220 y 250 palabras.' },
+        { id: 'w2', label: 'Task 2 — Integrated summary', guide: 'In the real exam you read a text AND listen to an audio; here, respond to the prompt integrating two viewpoints. 150–180 words. ~75 minutes.', minWords: 150, maxWords: 180, minutes: 75, prompt: 'Texto: defiende la semana laboral de cuatro días por productividad y bienestar. Audio (imagina un economista escéptico): advierte sobre costes y desigualdad. Resume ambos puntos de vista con objetividad y luego valora cuál te convence más. Entre 150 y 180 palabras.' },
+    ],
+    C2: [
+        { id: 'w1', label: 'Task 1 — Opinion article', guide: 'Write a newspaper opinion piece of 200–250 words: high register, irony and rhetorical devices allowed. ~40 minutes.', minWords: 200, maxWords: 250, minutes: 40, prompt: 'Escribe un artículo de opinión para un periódico nacional sobre un tema de actualidad que te apasione (la educación, la IA, el urbanismo…): postura clara, argumentación sofisticada, tono literario. Entre 200 y 250 palabras.' },
+        { id: 'w2', label: 'Task 2 — Synthesis and response', guide: 'Synthesise two contrasting texts and evaluate their arguments. 150–200 words. ~40 minutes.', minWords: 150, maxWords: 200, minutes: 40, prompt: 'Imagina dos textos contrapuestos sobre el turismo masivo: uno defiende su valor económico, otro denuncia sus efectos sociales. Sintetiza los argumentos de ambos con precisión y valora críticamente sus posiciones. Entre 150 y 200 palabras.' },
+    ],
+};
+
+export const deleWritingTasksFor = (level: DeleLevel): WritingTask[] =>
+    DELE_WRITING_TASKS_BY_LEVEL[level] ?? DELE_WRITING_TASKS;
+
+export const DELE_SPEAKING_TASKS_BY_LEVEL: Record<DeleLevel, SpeakingTask[]> = {
+    A1: [
+        { id: 's1', label: 'Task 1 — Present yourself', guide: 'Speak about yourself for ~1 minute: name, nationality, family, what you like.', seconds: 60, prompt: 'Preséntate: nombre, nacionalidad, dónde vives, tu familia y dos cosas que te gustan. Habla un minuto.' },
+        { id: 's2', label: 'Task 2 — Questions & roleplay', guide: 'Answer the examiner\'s questions about your daily life, then a short roleplay. ~2 minutes.', seconds: 120, prompt: 'El examinador te pregunta: ¿qué haces por la mañana?, ¿qué comes hoy?, ¿tienes hermanos? Después, roleplay: estás en un café, pide un desayuno y la cuenta.' },
+    ],
+    A2: [
+        { id: 's1', label: 'Task 1 — Monologue', guide: 'Speak alone for ~1 minute 30 about routine and plans.', seconds: 90, prompt: 'Habla de tu rutina de ayer (pasado) y de tus planes para el próximo fin de semana (futuro). Usa conectores: primero, después, por la tarde.' },
+        { id: 's2', label: 'Task 2 — Dialogue', guide: 'Dialogue with the examiner: book a hotel room or buy tickets. ~2 minutes.', seconds: 120, prompt: 'Estás en una agencia de viajes: reserva un hotel para tus vacaciones (fechas, tipo de habitación, precio, servicios). Pregunta y reacciona a las respuestas.' },
+    ],
+    B1: DELE_SPEAKING_TASKS.slice(0, 2),
+    B2: DELE_SPEAKING_TASKS,
+    C1: [
+        { id: 's1', label: 'Task 1 — Advanced monologue', guide: 'Analyse causes and consequences, not just describe. ~4 minutes.', seconds: 240, prompt: 'Monólogo: el cambio climático en tu país. Analiza causas, consecuencias y posibles soluciones; matiza tu postura (en mi opinión…, sin embargo…, es cierto que… aunque…).' },
+        { id: 's2', label: 'Task 2 — Integrated debate', guide: 'Debate solutions with the examiner; concede and rebut. ~3 minutes.', seconds: 180, prompt: 'Debate con el examinador: ¿deberían prohibirse los coches en los centros de las ciudades? Tienes que rebatir sus argumentos y hacer concesiones parciales (es verdad que…, pero…).' },
+    ],
+    C2: [
+        { id: 's1', label: 'Task 1 — Interview with nuance', guide: 'Defend an unpopular position with elegance, register control and humour. ~4 minutes.', seconds: 240, prompt: 'Defiende una postura impopular con la que NO estás de acuerdo (el examinador elige el tema): demuestra control del registro, matiz y capacidad de improvisación.' },
+        { id: 's2', label: 'Task 2 — Complex negotiation', guide: 'Negotiate a multi-party agreement with the examiner. ~3 minutes.', seconds: 180, prompt: 'Negociación: tú y el examinador representáis a dos partes en una empresa en crisis. Llegad a un acuerdo sobre recortes: sueldo, plantilla, horarios. Usa condicionales y subjuntivo con precisión.' },
+    ],
+};
+
+export const deleSpeakingTasksFor = (level: DeleLevel): SpeakingTask[] =>
+    DELE_SPEAKING_TASKS_BY_LEVEL[level] ?? DELE_SPEAKING_TASKS;
+
 // DELE pass rule: two groups of 50 points; minimum 30 in EACH group.
 export const DELE_PASS_NOTE = 'Pass = 30/50 in Group A (reading + listening) AND 30/50 in Group B (writing + speaking). Failing one group fails the diploma — balance your study.';
+
+// Official per-level format (Instituto Cervantes, Sep 2026). The exam changes
+// shape with every level — A1 writing is 15–40-word forms, B2 demands sources,
+// C1 integrates audio+text, C2 restructures into 3 pruebas entirely.
+export interface DeleLevelFormat {
+    reading: string;
+    listening: string;
+    writing: string;
+    speaking: string;
+}
+export const DELE_LEVEL_FORMATS: Record<DeleLevel, DeleLevelFormat> = {
+    A1: {
+        reading: '4 tasks · 25 items · 45 min',
+        listening: '4 tasks · 25 items · 20 min',
+        writing: '2 tasks · 25 min — short forms of 15–40 words',
+        speaking: '4 tasks · ~15 min — introduce yourself, answer questions, dialogue, roleplay',
+    },
+    A2: {
+        reading: '5 tasks · 30 items · 60 min',
+        listening: '5 tasks · 30 items · 35 min',
+        writing: '2 tasks · 45 min — informal message 70–80 words + description 50–60',
+        speaking: '3 tasks · 15 min — monologue, dialogue, description',
+    },
+    B1: {
+        reading: '5 tasks · 40 items · 70 min',
+        listening: '5 tasks · 30 items · 40 min',
+        writing: '2 tasks · 60 min — email/blog + composition, 100–120 words each',
+        speaking: '3 tasks · 15 min + 20 prep — monologue, prediction dialogue, opinion',
+    },
+    B2: {
+        reading: '4 tasks · 36 items · 70 min',
+        listening: '5 tasks · 30 items · 40 min',
+        writing: '2 tasks · 80 min — formal letter/report + essay WITH sources, 150–180 words',
+        speaking: '3 tasks · 20 min + 20 prep — graphic monologue, dialogue, opinion',
+    },
+    C1: {
+        reading: '5 tasks · 40 items · 80 min',
+        listening: '5 tasks · 30 items · 40 min',
+        writing: '2 tasks · 150 min — formal text 220–250 words + audio/text integration 150–180',
+        speaking: '3 tasks · 20 min + 20 prep — includes an integrated audio/text task',
+    },
+    C2: {
+        reading: 'Prueba 1 — use of language + reading · 105 min',
+        listening: 'Prueba 2 — listening + integrated comprehension · 45 min',
+        writing: 'Prueba 3 · 80 min — report + composition, high register',
+        speaking: 'Prueba 3 · 20 min — interview, monologue, complex dialogue',
+    },
+};
 
 // Map a practice % to an approximate group score /50 (labelled as estimate).
 export const practiceToGroupScore = (pct: number) => Math.round((pct / 100) * 50);
