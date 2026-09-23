@@ -139,7 +139,7 @@ const Overview = ({ onGo }: { onGo: (t: JapaneseTab) => void }) => {
                 <div className="mt-4 bg-stone-900 rounded-2xl p-4 text-white">
                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">JLPT {target} — what your exam looks like</p>
                     <div className="space-y-1.5 text-xs">
-                        {([['Vocabulary', JLPT_LEVEL_FORMATS[target].knowledge],
+                        {([['Knowledge', JLPT_LEVEL_FORMATS[target].knowledge],
                            ['Reading', JLPT_LEVEL_FORMATS[target].reading],
                            ['Listening', JLPT_LEVEL_FORMATS[target].listening]] as [string, string][]).filter(([, fmt]) => !fmt.startsWith('(')).map(([label, fmt]) => (
                             <div key={label} className="flex gap-2">

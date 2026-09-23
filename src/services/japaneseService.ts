@@ -154,8 +154,8 @@ export const JLPT_SPEAKING_TASKS_BY_LEVEL: Record<JlptLevel, JlptSpeakingTask[]>
         { id: 's2', label: 'Task 2 — Nuanced debate', guide: 'Debate with implied meaning and indirect refusals. ~2 minutes.', seconds: 120, prompt: '試験官の意見に反論してください：日本語の遠回しな表現（ちょっと難しいですね…）も使いながら、丁寧に反对の立場を話してください。' },
     ],
     C2: [
-        { id: 's1', label: 'Task 1 — Natural mastery speech', guide: 'Speak with full register control and idiom. ~3 minutes.', seconds: 180, prompt: '複雑なテーマについて、自然なスピードと登録の使い分けで話してください：慣用句、onomatopoeia（オノマトペ）、丁寧語と普通語の切り替えを入れてください。' },
-        { id: 's2', label: 'Task 2 — Register switching', guide: 'Switch registers on demand mid-conversation. ~2 minutes.', seconds: 120, prompt: '同じテーマについて、まず友達に話すように（タメ口）、次に社長に話すように（敬語）、話してください。試験官が途中で登録を変えるよう頼みます。' },
+        { id: 's1', label: 'Task 1 — Natural mastery speech', guide: 'Speak with full register control and idiom. ~3 minutes.', seconds: 180, prompt: '複雑なテーマについて、自然なスピードと言葉遣いの使い分けで話してください：慣用句、onomatopoeia（オノマトペ）、丁寧語と普通語の切り替えを入れてください。' },
+        { id: 's2', label: 'Task 2 — Register switching', guide: 'Switch registers on demand mid-conversation. ~2 minutes.', seconds: 120, prompt: '同じテーマについて、まず友達に話すように（タメ口）、次に社長に話すように（敬語）、話してください。試験官が途中で話し方を変えるよう頼みます。' },
     ],
 };
 
