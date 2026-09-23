@@ -48,6 +48,7 @@ const DictationView = lazyWithRetry(() => import('./components/DictationView'));
 const ConjugationDrillView = lazyWithRetry(() => import('./components/ConjugationDrillView'));
 const ReadingLibraryView = lazyWithRetry(() => import('./components/ReadingLibraryView'));
 const TCFPrepView = lazyWithRetry(() => import('./components/tcf/TCFPrepView'));
+const SpanishPrepView = lazyWithRetry(() => import('./components/spanish/SpanishPrepView'));
 const HSKPrepView = lazyWithRetry(() => import('./components/hsk/HSKPrepView'));
 import {
   BookOpen, Upload, GraduationCap, User as UserIcon,
@@ -341,7 +342,7 @@ export default function App() {
 
   // Exam portals are language-locked — leave as soon as the active language doesn't match
   useEffect(() => {
-    if (activeTab === 'tcf' && quizSettings?.targetLanguage !== 'French') {
+    if (activeTab === 'tcf' && !['French', 'Spanish'].includes(quizSettings?.targetLanguage)) {
       setActiveTab('editor');
     }
     if (activeTab === 'hsk' && quizSettings?.targetLanguage !== 'Chinese') {
@@ -454,8 +455,9 @@ export default function App() {
     { id: 'dictation', label: 'Dictation', icon: Ear },
     { id: 'conjugation', label: 'Conjugation', icon: BookOpenCheck },
     { id: 'reading', label: 'Reading', icon: Newspaper },
-    // Exam portals are language-locked — TCF Canada for French, HSK for Chinese
+    // Exam portals are language-locked — TCF Canada (French) / DELE (Spanish) / HSK (Chinese)
     ...(quizSettings?.targetLanguage === 'French' ? [{ id: 'tcf', label: 'TCF Canada', icon: Flag }] : []),
+    ...(quizSettings?.targetLanguage === 'Spanish' ? [{ id: 'tcf', label: 'DELE Español', icon: Flag }] : []),
     ...(quizSettings?.targetLanguage === 'Chinese' ? [{ id: 'hsk', label: 'HSK Chinese', icon: Languages }] : []),
     { id: 'exchange', label: 'Exchange', icon: Users2 },
     { id: 'analytics', label: 'Analytics', icon: BarChart2 },
@@ -476,7 +478,7 @@ export default function App() {
     if (activeTab === 'dictation') return <LazyPage><DictationView /></LazyPage>;
     if (activeTab === 'conjugation') return <LazyPage><ConjugationDrillView /></LazyPage>;
     if (activeTab === 'reading') return <LazyPage><ReadingLibraryView /></LazyPage>;
-    if (activeTab === 'tcf') return <LazyPage><TCFPrepView /></LazyPage>;
+    if (activeTab === 'tcf') return <LazyPage>{quizSettings?.targetLanguage === 'Spanish' ? <SpanishPrepView /> : <TCFPrepView />}</LazyPage>;
     if (activeTab === 'hsk') return <LazyPage><HSKPrepView /></LazyPage>;
 
     if (activeTab === 'lectures') {
@@ -886,6 +888,11 @@ export default function App() {
             { id: 'flashcards', label: 'Cards', icon: Layers },
             { id: 'chat', label: 'Tutor', icon: MessageSquare },
             { id: 'tcf', label: 'TCF', icon: Flag },
+          ] : quizSettings?.targetLanguage === 'Spanish' ? [
+            { id: 'editor', label: 'Home', icon: Home },
+            { id: 'flashcards', label: 'Cards', icon: Layers },
+            { id: 'chat', label: 'Tutor', icon: MessageSquare },
+            { id: 'tcf', label: 'DELE', icon: Flag },
           ] : quizSettings?.targetLanguage === 'Chinese' ? [
             { id: 'editor', label: 'Home', icon: Home },
             { id: 'flashcards', label: 'Cards', icon: Layers },
