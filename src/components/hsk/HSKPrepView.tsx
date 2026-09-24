@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import LessonFeedbackButton from '../exam/LessonFeedbackButton';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
     Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, Pencil, ClipboardList, Layers,
@@ -8,7 +9,7 @@ import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
 import { speakText, stopSpeaking } from '../../services/voiceService';
 import {
-    HskLevel, HSK_SYLLABUS, HSK_WRITING_TASKS, HSK_SPEAKING_TASKS, HSK_LEVEL_INFO,
+    HskLevel, HskVersion, HSK_SYLLABUS, HSK_WRITING_TASKS, HSK_SPEAKING_TASKS, HSK_LEVEL_INFO,
     generateHskLesson, evaluateHskWriting, evaluateHskSpeaking,
     practiceToScore, HskLesson, HskWritingFeedback, HskSpeakingFeedback,
 } from '../../services/hskService';
@@ -58,7 +59,7 @@ const Overview = ({ onGo }: { onGo: (t: HskTab) => void }) => {
             {/* exam format */}
             <div className="bg-white rounded-3xl border border-stone-100 p-6">
                 <h2 className="font-black text-stone-900 mb-1">The exam at a glance</h2>
-                <p className="text-xs text-stone-400 mb-4">HSK levels 1–6 (the classic format most test centres administer). A new HSK 3.0 with 9 levels is rolling out from 2026 — the skills below carry over.</p>
+                <p className="text-xs text-stone-400 mb-4">The lessons and practice estimates here follow HSK 2.0 levels 1–6. Choose the separate HSK 3.0 preview above to see the published nine-level framework and the course gaps.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(Object.keys(SKILL_META) as (keyof typeof SKILL_META)[]).map(sk => {
                         const m = SKILL_META[sk];
@@ -330,7 +331,10 @@ const Curriculum = () => {
 
                     <div className="bg-white rounded-3xl border border-stone-100 p-6">
                         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">HSK {level} · Chinese curriculum</p>
-                        <h1 className="text-2xl font-black text-stone-900 mb-2">{lesson.title}</h1>
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                            <h1 className="text-2xl font-black text-stone-900 mb-2">{lesson.title}</h1>
+                            <LessonFeedbackButton portal="HSK Chinese" level={level} lessonKey={lessonKey} lessonTitle={lesson.title} />
+                        </div>
                         <div className="flex items-start gap-2 bg-emerald-50 rounded-2xl p-3">
                             <Target size={14} className="text-emerald-600 mt-0.5 shrink-0" />
                             <p className="text-sm text-emerald-800"><span className="font-black">Objective: </span>{lesson.objective}</p>
@@ -1041,6 +1045,7 @@ const HSKPrepView = () => {
     const { quizSettings, setActiveTab } = useAppStore() as any;
     const [tab, setTab] = useState<HskTab>('overview');
     const [level, setLevel] = useState<HskLevel>('1');
+    const [examVersion, setExamVersion] = useState<HskVersion>('2.0');
     const [scores, setScores] = useState<HskScoreEntry[]>(getHskScores());
 
     useEffect(() => { setScores(getHskScores()); }, [tab]);
@@ -1092,10 +1097,40 @@ const HSKPrepView = () => {
                     <h1 className="text-2xl font-black text-stone-900 flex items-center gap-2">
                         <GraduationCap size={24} className="text-emerald-600" /> HSK Chinese
                     </h1>
-                    <p className="text-stone-400 text-sm mt-0.5">Mandarin prep portal — pinyin, tones, characters & the exam toward HSK {getHskTarget()}</p>
+                    <p className="text-stone-400 text-sm mt-0.5">Mandarin prep portal — HSK 2.0 lessons, levels 1–6</p>
                 </div>
                 <span className="text-2xl">🇨🇳</span>
             </div>
+
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-100 bg-white px-4 py-3">
+                <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Exam syllabus</p>
+                    <p className="mt-0.5 text-xs font-semibold text-stone-700">Choose the framework your practice follows</p>
+                </div>
+                <div className="flex gap-1.5">
+                    {(['2.0', '3.0'] as HskVersion[]).map(version => (
+                        <button key={version} onClick={() => setExamVersion(version)}
+                            className={cn('rounded-xl px-3 py-2 text-xs font-black transition-colors', examVersion === version ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
+                            HSK {version}{version === '3.0' ? ' preview' : ''}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {examVersion === '3.0' ? (
+                <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Syllabus preview · lessons not yet available</p>
+                    <h2 className="mt-2 text-xl font-black text-stone-900">HSK 3.0 uses three stages and nine levels</h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">
+                        The current lesson library and mock scoring in LinguistAI follow HSK 2.0 levels 1–6. CTI’s HSK 3.0 framework adds levels 7–9 and assesses listening, speaking, reading, writing, and translation at advanced levels. We have not authored those lessons or mapped the new scoring yet, so this preview keeps HSK 3.0 practice separate instead of presenting old material as current.
+                    </p>
+                    <a href="https://www.chinesetest.cn/HSK" target="_blank" rel="noreferrer"
+                        className="mt-4 inline-flex rounded-xl bg-amber-700 px-4 py-2.5 text-xs font-black text-white hover:bg-amber-800">
+                        View CTI’s HSK 3.0 syllabus
+                    </a>
+                </div>
+            ) : (
+            <>
 
             {/* tabs — horizontally scrollable; tabs keep natural width, active one auto-centers */}
             <div className="flex gap-1 bg-stone-100 p-1 rounded-2xl mb-6 overflow-x-auto overscroll-x-contain">
@@ -1147,6 +1182,8 @@ const HSKPrepView = () => {
             {tab === 'writing' && <WritingTrainer level={level} onLevelChange={setLevel} />}
             {tab === 'speaking' && <SpeakingTrainer level={level} onLevelChange={setLevel} />}
             {tab === 'progress' && <Progress scores={scores} />}
+            </>
+            )}
         </div>
     );
 };

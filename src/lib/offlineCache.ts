@@ -50,11 +50,21 @@ const remove = async (store: string, id: string) => {
 };
 
 export const offlineCache = {
-    saveLecture: (lecture: any) => put('lectures', lecture),
-    getLectures: () => getAll<any>('lectures'),
-    removeLecture: (id: string) => remove('lectures', id),
-    saveFlashcard: (card: any) => put('flashcards', card),
-    getFlashcards: () => getAll<any>('flashcards'),
+    saveLecture: (userId: string, lecture: any) => put('lectures', {
+        ...lecture, id: `${userId}:${lecture.id}`, originalId: lecture.id, offlineUserId: userId,
+    }),
+    // Pre-account-scoping rows lack a reliable owner. Keep them out of each
+    // user's view; a successful cloud sync repopulates the scoped cache.
+    getLectures: async (userId: string) => (await getAll<any>('lectures'))
+        .filter(item => item.offlineUserId === userId)
+        .map(({ originalId, offlineUserId, ...item }) => ({ ...item, id: originalId })),
+    removeLecture: (userId: string, id: string) => remove('lectures', `${userId}:${id}`),
+    saveFlashcard: (userId: string, card: any) => put('flashcards', {
+        ...card, id: `${userId}:${card.id}`, originalId: card.id, offlineUserId: userId,
+    }),
+    getFlashcards: async (userId: string) => (await getAll<any>('flashcards'))
+        .filter(item => item.offlineUserId === userId)
+        .map(({ originalId, offlineUserId, ...item }) => ({ ...item, id: originalId })),
     saveNote: (note: any) => put('notes', { ...note, id: note.id || 'default' }),
     getNotes: () => getAll<any>('notes'),
 };

@@ -1,3 +1,4 @@
+import { portalStorage } from './portalProgress';
 // HSK progress — persisted in localStorage (practice estimates only;
 // never presented as official scores). Mirrors tcfStorage.
 import type { HskLevel } from './hskService';
@@ -17,7 +18,7 @@ const TARGET_KEY = 'linguistai-hsk-target';
 
 export const getHskScores = (): HskScoreEntry[] => {
     try {
-        const v = JSON.parse(localStorage.getItem(SCORES_KEY) || '[]');
+        const v = JSON.parse(portalStorage.getItem(SCORES_KEY) || '[]');
         return Array.isArray(v) ? v : [];
     } catch { return []; }
 };
@@ -26,13 +27,13 @@ export const addHskScore = (entry: Omit<HskScoreEntry, 'date'>) => {
     try {
         const all = getHskScores();
         all.unshift({ ...entry, date: new Date().toISOString() });
-        localStorage.setItem(SCORES_KEY, JSON.stringify(all.slice(0, 100)));
+        portalStorage.setItem(SCORES_KEY, JSON.stringify(all.slice(0, 100)));
     } catch { /* quota */ }
 };
 
 export const getCompletedLessons = (): string[] => {
     try {
-        const v = JSON.parse(localStorage.getItem(LESSONS_KEY) || '[]');
+        const v = JSON.parse(portalStorage.getItem(LESSONS_KEY) || '[]');
         return Array.isArray(v) ? v : [];
     } catch { return []; }
 };
@@ -41,16 +42,16 @@ export const markLessonComplete = (key: string) => {
     try {
         const done = new Set(getCompletedLessons());
         done.add(key);
-        localStorage.setItem(LESSONS_KEY, JSON.stringify([...done]));
+        portalStorage.setItem(LESSONS_KEY, JSON.stringify([...done]));
     } catch { /* quota */ }
 };
 
 export const getHskTarget = (): HskLevel => {
-    try { return (localStorage.getItem(TARGET_KEY) || '3') as HskLevel; } catch { return '3'; }
+    try { return (portalStorage.getItem(TARGET_KEY) || '3') as HskLevel; } catch { return '3'; }
 };
 
 export const setHskTarget = (t: HskLevel) => {
-    try { localStorage.setItem(TARGET_KEY, t); } catch { /* quota */ }
+    try { portalStorage.setItem(TARGET_KEY, t); } catch { /* quota */ }
 };
 
 // ── weakness log — questions missed in trainers ──────────────────────────────
@@ -67,7 +68,7 @@ const WEAK_KEY = 'linguistai-hsk-weak';
 
 export const getWeakLog = (): HskWeakEntry[] => {
     try {
-        const v = JSON.parse(localStorage.getItem(WEAK_KEY) || '[]');
+        const v = JSON.parse(portalStorage.getItem(WEAK_KEY) || '[]');
         return Array.isArray(v) ? v : [];
     } catch { return []; }
 };
@@ -76,7 +77,7 @@ export const logWeakness = (entry: Omit<HskWeakEntry, 'date'>) => {
     try {
         const all = getWeakLog();
         all.unshift({ ...entry, date: new Date().toISOString() });
-        localStorage.setItem(WEAK_KEY, JSON.stringify(all.slice(0, 80)));
+        portalStorage.setItem(WEAK_KEY, JSON.stringify(all.slice(0, 80)));
     } catch { /* quota */ }
 };
 
@@ -84,12 +85,12 @@ export const logWeakness = (entry: Omit<HskWeakEntry, 'date'>) => {
 const LAST_LESSON_KEY = 'linguistai-hsk-last-lesson';
 
 export const setLastLesson = (level: string, slug: string, title: string) => {
-    try { localStorage.setItem(LAST_LESSON_KEY, JSON.stringify({ level, slug, title, date: new Date().toISOString() })); } catch { /* quota */ }
+    try { portalStorage.setItem(LAST_LESSON_KEY, JSON.stringify({ level, slug, title, date: new Date().toISOString() })); } catch { /* quota */ }
 };
 
 export const getLastLesson = (): { level: string; slug: string; title: string; date: string } | null => {
     try {
-        const v = JSON.parse(localStorage.getItem(LAST_LESSON_KEY) || 'null');
+        const v = JSON.parse(portalStorage.getItem(LAST_LESSON_KEY) || 'null');
         return v && v.level ? v : null;
     } catch { return null; }
 };
@@ -98,12 +99,12 @@ export const getLastLesson = (): { level: string; slug: string; title: string; d
 const lessonCacheKey = (key: string) => `linguistai-hsk-lesson-${key}`;
 
 export const cacheLesson = (key: string, lesson: unknown) => {
-    try { localStorage.setItem(lessonCacheKey(key), JSON.stringify(lesson)); } catch { /* quota */ }
+    try { portalStorage.setItem(lessonCacheKey(key), JSON.stringify(lesson)); } catch { /* quota */ }
 };
 
 export const getCachedLesson = <T>(key: string): T | null => {
     try {
-        const v = localStorage.getItem(lessonCacheKey(key));
+        const v = portalStorage.getItem(lessonCacheKey(key));
         return v ? (JSON.parse(v) as T) : null;
     } catch { return null; }
 };
@@ -123,7 +124,7 @@ const MOCKS_KEY = 'linguistai-hsk-mocks';
 
 export const getMocks = (): HskMockResult[] => {
     try {
-        const v = JSON.parse(localStorage.getItem(MOCKS_KEY) || '[]');
+        const v = JSON.parse(portalStorage.getItem(MOCKS_KEY) || '[]');
         return Array.isArray(v) ? v : [];
     } catch { return []; }
 };
@@ -132,7 +133,7 @@ export const saveMock = (r: HskMockResult) => {
     try {
         const all = getMocks();
         all.unshift(r);
-        localStorage.setItem(MOCKS_KEY, JSON.stringify(all.slice(0, 20)));
+        portalStorage.setItem(MOCKS_KEY, JSON.stringify(all.slice(0, 20)));
     } catch { /* quota */ }
 };
 
@@ -141,7 +142,7 @@ const CHECKPOINTS_KEY = 'linguistai-hsk-checkpoints';
 
 export const getCheckpoints = (): Record<string, boolean> => {
     try {
-        const v = JSON.parse(localStorage.getItem(CHECKPOINTS_KEY) || '{}');
+        const v = JSON.parse(portalStorage.getItem(CHECKPOINTS_KEY) || '{}');
         return v && typeof v === 'object' ? v : {};
     } catch { return {}; }
 };
@@ -150,7 +151,7 @@ export const passCheckpoint = (level: string) => {
     try {
         const all = getCheckpoints();
         all[level] = true;
-        localStorage.setItem(CHECKPOINTS_KEY, JSON.stringify(all));
+        portalStorage.setItem(CHECKPOINTS_KEY, JSON.stringify(all));
     } catch { /* quota */ }
 };
 
@@ -167,15 +168,15 @@ const PLAN_KEY = 'linguistai-hsk-plan';
 
 export const getPlan = (): HskStudyPlan | null => {
     try {
-        const v = JSON.parse(localStorage.getItem(PLAN_KEY) || 'null');
+        const v = JSON.parse(portalStorage.getItem(PLAN_KEY) || 'null');
         return v && v.examDate ? v : null;
     } catch { return null; }
 };
 
 export const savePlan = (p: HskStudyPlan) => {
-    try { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); } catch { /* quota */ }
+    try { portalStorage.setItem(PLAN_KEY, JSON.stringify(p)); } catch { /* quota */ }
 };
 
 export const clearPlan = () => {
-    try { localStorage.removeItem(PLAN_KEY); } catch { /* quota */ }
+    try { portalStorage.removeItem(PLAN_KEY); } catch { /* quota */ }
 };

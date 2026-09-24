@@ -125,11 +125,14 @@ export const CAPLE_SYLLABUS: Record<CapleLevel, { title: string; slug: string; f
         { title: 'DAPLE Writing Workshop', slug: 'daple-escrita', focus: 'formal reports, academic texts, 90-minute composition strategy' },
         { title: 'Implicit Meaning & Nuance', slug: 'nuance', focus: 'irony, understatement, register shifts, cultural references' },
         { title: 'Complex Debate', slug: 'debate', focus: 'spontaneous sophisticated discourse, conceding and rebutting' },
+        { title: 'Lectures, Interviews & Note-Taking', slug: 'escuta-academica', focus: 'Follow long spoken arguments, identify examples and conclusions, and infer stance in fast natural speech' },
     ],
     C2: [
         { title: 'Stylistic Precision', slug: 'estilo', focus: 'choosing the exact construction a native would choose' },
         { title: 'Literary & Journalistic Portuguese', slug: 'literario', focus: 'Saramago, Eça de Queiroz, contemporary press — culturally dense texts' },
         { title: 'Lusophone Variation', slug: 'lusofonia', focus: 'Portugal, Brazil, Angola, Mozambique — comprehension across the Portuguese-speaking world' },
+        { title: 'Pragmatics & Idiomatic Interaction', slug: 'pragmatica', focus: 'Interpret indirect requests, humour, politeness and idioms across Portuguese-speaking contexts' },
+        { title: 'Rhetorical Reading & Commentary', slug: 'retorica', focus: 'Evaluate argument, allusion, evidence and point of view in dense journalism and cultural writing' },
     ],
 };
 

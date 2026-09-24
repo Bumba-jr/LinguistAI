@@ -8,9 +8,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
     envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -44,7 +41,15 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/groq/, ''),
           headers: {
-            'Authorization': `Bearer ${env.VITE_GROQ_API_KEY}`,
+            'Authorization': `Bearer ${env.GROQ_API_KEY}`,
+          },
+        },
+        '/api/openai': {
+          target: 'https://api.openai.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/openai/, ''),
+          headers: {
+            'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
           },
         },
       },

@@ -67,6 +67,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
 import { getStats, getSavedLectures, getFlashcards, getQuizHistory, getLectureProgress, getOnboardingComplete, saveOnboardingComplete } from './services/dbService';
 import { offlineCache } from './lib/offlineCache';
+import { hydratePortalProgress, setPortalProgressUserId } from './services/portalProgress';
 import { scheduleFlashcardReminder, scheduleDailyReminder } from './lib/notifications';
 import NotificationSettings from './components/NotificationSettings';
 import { GlobalCallManager } from './components/GlobalCallManager';
@@ -260,24 +261,34 @@ export default function App() {
     if (!isSupabaseConfigured) { setAuthLoading(false); return; }
 
     // Check active sessions and subscribe to auth changes
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         const u = session.user;
+        setPortalProgressUserId(u.id);
+        await Promise.race([
+          hydratePortalProgress(u.id),
+          new Promise<void>(resolve => window.setTimeout(resolve, 2000)),
+        ]);
         setUser({ id: u.id, email: u.email, avatarUrl: u.user_metadata?.avatar_url, displayName: u.user_metadata?.full_name || u.user_metadata?.name });
         const meta = u.user_metadata;
         setUserMeta({ firstName: meta?.first_name || meta?.full_name?.split(' ')[0] || '' });
         getStats(u.id).then(setStats).catch(() => { });
-        getSavedLectures(u.id).then(lectures => { setSavedLectures(lectures); lectures.forEach(l => offlineCache.saveLecture(l).catch(() => { })); }).catch(() => { });
+        getSavedLectures(u.id).then(lectures => {
+          setSavedLectures(lectures);
+          lectures.forEach(l => offlineCache.saveLecture(u.id, l).catch(() => { }));
+        }).catch(async () => {
+          setSavedLectures(await offlineCache.getLectures(u.id).catch(() => []));
+        });
         getFlashcards(u.id).then(cards => {
           setFlashcards(cards);
-          cards.forEach(c => offlineCache.saveFlashcard(c).catch(() => { }));
+          cards.forEach(c => offlineCache.saveFlashcard(u.id, c).catch(() => { }));
           // Schedule notification if enabled
           if (localStorage.getItem('notifications_enabled') === 'true') {
             const dueCount = cards.filter(c => new Date(c.nextReview) <= new Date()).length;
             scheduleFlashcardReminder(dueCount, 5000);
             scheduleDailyReminder(9);
           }
-        }).catch(() => { });
+        }).catch(async () => { setFlashcards(await offlineCache.getFlashcards(u.id).catch(() => [])); });
         getQuizHistory(u.id).then(setQuizHistory).catch(() => { });
         getLectureProgress(u.id).then((rows: any[]) => {
           rows.forEach(r => setLectureProgress(r.lectureId, r.completedSections, r.passedSections));
@@ -297,21 +308,30 @@ export default function App() {
         }
       }
       setAuthLoading(false);
-    });
+    }).catch(() => setAuthLoading(false));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        setPortalProgressUserId(session.user.id);
+        void hydratePortalProgress(session.user.id);
         setUser({ id: session.user.id, email: session.user.email, avatarUrl: session.user.user_metadata?.avatar_url, displayName: session.user.user_metadata?.full_name || session.user.user_metadata?.name });
         const meta = session.user.user_metadata;
         setUserMeta({ firstName: meta?.first_name || meta?.full_name?.split(' ')[0] || '' });
         getStats(session.user.id).then(setStats).catch(() => { });
-        getSavedLectures(session.user.id).then(setSavedLectures).catch(() => { });
-        getFlashcards(session.user.id).then(setFlashcards).catch(() => { });
+        getSavedLectures(session.user.id).then(lectures => {
+          setSavedLectures(lectures);
+          lectures.forEach(l => offlineCache.saveLecture(session.user.id, l).catch(() => { }));
+        }).catch(async () => { setSavedLectures(await offlineCache.getLectures(session.user.id).catch(() => [])); });
+        getFlashcards(session.user.id).then(cards => {
+          setFlashcards(cards);
+          cards.forEach(c => offlineCache.saveFlashcard(session.user.id, c).catch(() => { }));
+        }).catch(async () => { setFlashcards(await offlineCache.getFlashcards(session.user.id).catch(() => [])); });
         getQuizHistory(session.user.id).then(setQuizHistory).catch(() => { });
         getLectureProgress(session.user.id).then((rows: any[]) => {
           rows.forEach(r => setLectureProgress(r.lectureId, r.completedSections, r.passedSections));
         }).catch(() => { });
       } else {
+        setPortalProgressUserId(null);
         setUser(null);
         setUserMeta(null);
         setStats(null);
@@ -880,9 +900,9 @@ export default function App() {
               © 2026 LinguistAI. Built for students, by AI.
             </p>
             <div className="flex gap-6">
-              <a href="#" className="text-xs text-stone-400 hover:text-stone-600">Privacy</a>
-              <a href="#" className="text-xs text-stone-400 hover:text-stone-600">Terms</a>
-              <a href="#" className="text-xs text-stone-400 hover:text-stone-600">Contact</a>
+              <a href="/privacy.html" className="text-xs text-stone-400 hover:text-stone-600">Privacy</a>
+              <a href="/terms.html" className="text-xs text-stone-400 hover:text-stone-600">Terms</a>
+              <a href="/contact.html" className="text-xs text-stone-400 hover:text-stone-600">Contact</a>
             </div>
           </div>
         </footer>

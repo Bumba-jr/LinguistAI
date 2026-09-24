@@ -8,6 +8,14 @@ import { chat, parseJSON } from './aiService';
 
 export type JlptLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
+// These six bands are CEFR-aligned course units. The first five map to JLPT
+// targets; C2 is extension study beyond the exam's official N1 ceiling.
+export const JLPT_UI_LABELS: Record<JlptLevel, string> = {
+    A1: 'N5 · A1 reference', A2: 'N4 · A2 reference',
+    B1: 'N3 · A2–B1 reference', B2: 'N2 · B1–B2 reference',
+    C1: 'N1 · B2–C1 reference', C2: 'Beyond N1 · extension',
+};
+
 // CEFR slot → JLPT level (JF Standard mapping).
 export const JLPT_OF_LEVEL: Record<JlptLevel, string> = {
     A1: 'JLPT N5', A2: 'JLPT N4', B1: 'JLPT N3', B2: 'JLPT N2', C1: 'JLPT N1', C2: 'JLPT N1+ (beyond the test)',
@@ -30,11 +38,6 @@ export const JLPT_LEVEL_FORMATS: Record<JlptLevel, JlptLevelFormat> = {
 };
 
 export const JLPT_PASS_NOTE = 'JLPT has NO speaking or writing sections — only Language Knowledge, Reading and Listening. Every scored section has a minimum (19/60-style): one brilliant section cannot rescue a failed one. This portal trains speaking and writing TOO (Track A: real Japanese) alongside the exam (Track B).';
-
-// Rough practice % → CEFR level estimate.
-export const pctToCefr = (pct: number): string =>
-    pct >= 92 ? 'C2' : pct >= 82 ? 'C1' : pct >= 68 ? 'B2' : pct >= 52 ? 'B1' : pct >= 38 ? 'A2' : pct >= 20 ? 'A1' : '<A1';
-export const cefrIndex = (l: string) => ['<A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'].indexOf(l);
 
 // ── Vocabulary: JLPT-themed domains ──────────────────────────────────────────
 export const JLPT_VOCAB_TOPICS: { id: string; label: string; hint: string }[] = [
@@ -92,10 +95,14 @@ export const JLPT_SYLLABUS: Record<JlptLevel, { title: string; slug: string; foc
         { title: 'Advanced Kanji & Readings', slug: 'n1-kanji', focus: 'uncommon readings, context-dependent kanji, ateji and names' },
         { title: 'Academic & Professional Japanese', slug: 'academic', focus: 'papers, reports, presentations, formal keigo at full depth' },
         { title: 'Implicit Meaning & Nuance', slug: 'nuance', focus: 'author intention, sarcasm, indirect refusals, register shifts' },
+        { title: 'News, Lectures & Listening Notes', slug: 'n1-choukai-dense', focus: 'Follow long natural-speed speech, identify the speaker’s stance, distinguish evidence from opinion, and take concise notes' },
     ],
     C2: [
         { title: 'Beyond N1: Mastery', slug: 'mastery', focus: 'literature, wordplay, historical expressions, regional variety comprehension' },
         { title: 'Dialect & Variation', slug: 'hougen', focus: 'Kansai Japanese, youth language, internet Japanese — comprehension skill' },
+        { title: 'Beyond N1: Pragmatics & Implicature', slug: 'beyond-n1-pragmatics', focus: 'Interpret indirect refusals, humour, shared context and subtle stance across formal and informal interaction' },
+        { title: 'Beyond N1: Long-Form Reading & Synthesis', slug: 'beyond-n1-synthesis', focus: 'Compare arguments across essays and editorials, track references, and write a concise evidence-based synthesis' },
+        { title: 'Beyond N1: Wordplay & Rhetorical Style', slug: 'beyond-n1-rhetoric', focus: 'Understand wordplay, rhetorical rhythm, allusion and stylistic shifts in literary and public writing' },
     ],
 };
 

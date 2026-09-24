@@ -6,7 +6,7 @@ import { speakText, stopSpeaking } from '../../services/voiceService';
 import {
     generateJapaneseListening, generateJapaneseReading, generateJlptKnowledge,
     JapaneseListening, JapaneseReading, JlptKnowledge, JlptLevel,
-    JLPT_OF_LEVEL, JLPT_PASS_NOTE,
+    JLPT_OF_LEVEL, JLPT_PASS_NOTE, JLPT_UI_LABELS,
 } from '../../services/japaneseService';
 import { saveMock } from '../../services/japaneseStorage';
 
@@ -173,7 +173,7 @@ export const JapaneseMockExam = ({ level, onLevelChange }: { level: JlptLevel; o
                     <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-xs text-amber-800">{JLPT_PASS_NOTE}</div>
                     <button onClick={begin} disabled={loading}
                         className="w-full py-3.5 bg-rose-500 text-white text-sm font-bold rounded-2xl hover:bg-rose-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-                        {loading ? <><Loader2 size={15} className="animate-spin" /> Preparing your exam…</> : <><Play size={15} /> Start the {level} simulation</>}
+                        {loading ? <><Loader2 size={15} className="animate-spin" /> Preparing your exam…</> : <><Play size={15} /> Start the {JLPT_UI_LABELS[level]} simulation</>}
                     </button>
                     {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
                 </div>

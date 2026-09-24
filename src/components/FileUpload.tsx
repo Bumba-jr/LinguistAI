@@ -9,7 +9,8 @@ const FileUpload = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { setExtractedText, setGenerationMode } = useAppStore();
+  const { setExtractedText, setGenerationMode, quizSettings } = useAppStore();
+  const language = quizSettings.targetLanguage;
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -21,9 +22,9 @@ const FileUpload = () => {
     try {
       let text = '';
       if (file.type === 'application/pdf') {
-        text = await extractTextFromPDF(file);
+        text = await extractTextFromPDF(file, language);
       } else if (file.type.startsWith('image/')) {
-        text = await extractTextFromImage(file);
+        text = await extractTextFromImage(file, language);
       }
       
       if (!text || text.trim().length < 10) {
@@ -39,7 +40,7 @@ const FileUpload = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [setExtractedText]);
+  }, [setExtractedText, language]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

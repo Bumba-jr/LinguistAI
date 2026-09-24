@@ -229,11 +229,14 @@ export const DELE_SYLLABUS: Record<DeleLevel, { title: string; slug: string; foc
         { title: 'Academic Writing & Synthesis', slug: 'sintesis', focus: 'summarising sources, nominalisation, formal discourse markers' },
         { title: 'Register Control & Nuance', slug: 'matiz', focus: 'implicit meaning, euphemism, sophisticated idioms' },
         { title: 'Formal Debate', slug: 'debate', focus: 'spontaneous sophisticated discourse, conceding and rebutting' },
+        { title: 'Listening to Interviews & Lectures', slug: 'escucha-densa', focus: 'Track stance, evidence, reformulation and implied disagreement in long unscripted speech' },
     ],
     C2: [
         { title: 'Stylistic Precision', slug: 'estilo', focus: 'choosing the exact construction a native would choose' },
         { title: 'Literary & Journalistic Spanish', slug: 'literario', focus: 'authentic material, metaphor, irony, register shifts' },
         { title: 'Regional Variation Mastery', slug: 'regional', focus: 'Spain, Mexico, Argentina, Caribbean — voseo, distinción, ll varieties' },
+        { title: 'Pragmatics & Speech Acts', slug: 'pragmatica', focus: 'Interpret indirect requests, politeness, humour and disagreement across contexts and Spanish-speaking regions' },
+        { title: 'Rhetoric & Persuasive Commentary', slug: 'retorica', focus: 'Evaluate argument, framing, allusion and evidence in essays, interviews and public debate' },
     ],
 };
 

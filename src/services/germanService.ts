@@ -119,11 +119,14 @@ export const GOETHE_SYLLABUS: Record<GoetheLevel, { title: string; slug: string;
         { title: 'Implicit Meaning & Nuance', slug: 'nuance', focus: 'irony, understatement, implied criticism, register shifts' },
         { title: 'Academic & Professional Writing', slug: 'akademisch', focus: 'structured essays, reports, hedging, formal discourse markers' },
         { title: 'Complex Debate', slug: 'debatte', focus: 'spontaneous sophisticated discourse, conceding and rebutting' },
+        { title: 'Dense Listening & Lecture Notes', slug: 'hoerverstehen-vortrag', focus: 'Follow a long lecture or interview, identify argument structure, separate examples from claims, and take concise notes' },
     ],
     C2: [
         { title: 'Stylistic Precision', slug: 'stil', focus: 'choosing the exact construction a native would choose, Umschreibung' },
         { title: 'Literary & Journalistic German', slug: 'literarisch', focus: 'authentic material, metaphor, irony, stylistic registers' },
         { title: 'Regional Variation', slug: 'regional', focus: 'Germany, Austria, Switzerland — vocabulary, pronunciation, culture' },
+        { title: 'Rhetoric, Allusion & Irony', slug: 'rhetorik', focus: 'Interpret allusion, irony, understatement and persuasive intent in dense public and cultural discourse' },
+        { title: 'Advanced Collocations & Phraseology', slug: 'phraseologie', focus: 'Choose idiomatic collocations and fixed expressions precisely across academic, professional and conversational registers' },
     ],
 };
 

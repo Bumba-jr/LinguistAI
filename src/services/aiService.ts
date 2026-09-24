@@ -1,4 +1,5 @@
 import { Question, QuestionType, Difficulty, Lecture, Language } from "../store/useAppStore";
+import { fetchWithAuth } from './apiClient';
 
 // Groq decommissioned the llama-3.x/gemma chat models — these are the
 // replacements verified against the live /api/groq proxy (Sept 2026).
@@ -14,7 +15,7 @@ const isReasoningModel = (model: string) => model.startsWith("openai/gpt-oss");
 // OpenAI chat — used for quiz generation and explanations.
 // Goes through the /api/openai serverless proxy so the key never ships in the bundle.
 const chatOpenAI = async (system: string, user: string, maxTokens = 2048): Promise<string> => {
-  const res = await fetch('/api/openai/v1/chat/completions', {
+  const res = await fetchWithAuth('/api/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -41,7 +42,7 @@ const chatOpenAI = async (system: string, user: string, maxTokens = 2048): Promi
 export const chat = async (system: string, user: string, maxTokens = 8192, large = false): Promise<string> => {
   const primary = large ? MODEL_LARGE : MODEL;
   const tryModel = async (model: string) => {
-    const res = await fetch('/api/groq/openai/v1/chat/completions', {
+    const res = await fetchWithAuth('/api/groq/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -135,8 +136,6 @@ Return ONLY valid JSON:
     return { reply: raw, translation: null, correction: null, newWords: [] };
   }
 };
-
-export const extractTextWithAI = async (_file: File): Promise<string> => "";
 
 export const generateLecture = async (
   content: string,
@@ -1081,7 +1080,7 @@ Exactly ${count} phrases, no more, no less.`;
   const userMsg = `Generate ${count} fresh, varied ${difficulty} ${targetLanguage} pronunciation sentences. Session: ${seed}. Make every sentence different from typical textbook examples.${topic ? ` Focus on: ${topic}.` : ''}`;
 
   // Use temperature 0.9 via the large model for maximum variety
-  const res = await fetch('/api/groq/openai/v1/chat/completions', {
+  const res = await fetchWithAuth('/api/groq/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -1136,7 +1135,7 @@ export const transcribeAudio = async (
   const code = langCodes[language];
   if (code) form.append('language', code);
 
-  const res = await fetch('/api/groq/openai/v1/audio/transcriptions', {
+  const res = await fetchWithAuth('/api/groq/openai/v1/audio/transcriptions', {
     method: 'POST',
     body: form, // let the browser set the multipart boundary
   });

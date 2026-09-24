@@ -1,3 +1,5 @@
+import { fetchWithAuth } from './apiClient';
+
 const LANG_LOCALES: Record<string, string> = {
   French: 'fr-FR', Spanish: 'es-ES', German: 'de-DE',
   Italian: 'it-IT', Japanese: 'ja-JP', Portuguese: 'pt-PT',
@@ -89,8 +91,11 @@ const playBlob = (blob: Blob, onEnd?: () => void) => {
 const speakEdge = async (text: string, lang: string, onEnd?: () => void, rate = 0.88, gender: 'female' | 'male' = 'female'): Promise<boolean> => {
   if (edgeTtsState === 'failed') return false;
   try {
-    const url = `/api/edge-tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}&slow=${rate < 0.7 ? '1' : '0'}&gender=${gender}`;
-    const res = await fetch(url);
+    const res = await fetchWithAuth('/api/edge-tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, lang, slow: rate < 0.7, gender }),
+    });
     if (!res.ok) throw new Error(`edge-tts ${res.status}`);
     const blob = await res.blob();
     if (!blob.type.startsWith('audio')) throw new Error('Not audio');
@@ -106,7 +111,7 @@ const speakEdge = async (text: string, lang: string, onEnd?: () => void, rate = 
 const speakOpenAI = async (text: string, lang: string, onEnd?: () => void, rate = 0.88, gender: 'female' | 'male' = 'female'): Promise<boolean> => {
   if (hdTtsState === 'failed') return false;
   try {
-    const res = await fetch('/api/openai/v1/audio/speech', {
+    const res = await fetchWithAuth('/api/openai/v1/audio/speech', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

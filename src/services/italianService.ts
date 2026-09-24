@@ -145,11 +145,14 @@ export const CILS_SYLLABUS: Record<CilsLevel, { title: string; slug: string; foc
         { title: 'Implicit Meaning & Nuance', slug: 'nuance', focus: 'irony, understatement, implied criticism, register shifts' },
         { title: 'Professional & Academic Writing', slug: 'professionale', focus: 'reports, formal argumentation, hedging' },
         { title: 'Complex Debate', slug: 'dibattito', focus: 'spontaneous sophisticated discourse, conceding and rebutting' },
+        { title: 'Long Listening & Argument Mapping', slug: 'ascolto-argomenti', focus: 'Follow interviews and talks, identify claims and evidence, and infer speaker stance from tone and connectors' },
     ],
     C2: [
         { title: 'Stylistic Precision', slug: 'stile', focus: 'choosing the exact construction a native would choose' },
         { title: 'Literary & Journalistic Italian', slug: 'letterario', focus: 'authentic material, metaphor, rhetoric' },
         { title: 'Regional Variation Mastery', slug: 'regionale', focus: 'North/Centre/South, Sicilian and Neapolitan influence — comprehension skill' },
+        { title: 'Pragmatics, Humour & Implicature', slug: 'pragmatica', focus: 'Interpret indirect meaning, humour, understatement and culturally situated references in varied registers' },
+        { title: 'Rhetoric & Critical Commentary', slug: 'retorica', focus: 'Analyse persuasive structure, allusion and evidence in long-form journalism and public discussion' },
     ],
 };
 

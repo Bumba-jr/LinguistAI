@@ -1,6 +1,8 @@
 // HSK Chinese preparation — AI generation + exam constants.
-// Format verified Sep 2026 (HSK 2.0 levels 1-6 still administered; HSK 3.0 nine-level
-// rollout began 2026): HSK 1 = 20L/20R ~40min · HSK 2 = 35L/25R ~55min ·
+// This course content is explicitly HSK 2.0 (six levels). CTI now publishes
+// the HSK 3.0 three-stage, nine-level syllabus; its exam formats and skill
+// coverage must not be mixed with these older practice estimates.
+// HSK 1 = 20L/20R ~40min · HSK 2 = 35L/25R ~55min ·
 // HSK 3 = 40L/30R/10W ~90min · HSK 4 = 45L/40R/15W ~105min ·
 // HSK 5 = 45L/45R/10W ~120min · HSK 6 = 50L/50R/essay ~140min.
 // Scoring: HSK 1-2 total 200 (pass 120); HSK 3-6 total 300, 100/section (pass 180, total-based).
@@ -11,6 +13,7 @@ import type { Language } from '../store/useAppStore';
 import { chat, parseJSON } from './aiService';
 
 export type HskLevel = '1' | '2' | '3' | '4' | '5' | '6';
+export type HskVersion = '2.0' | '3.0';
 
 export const HSK_LEVEL_INFO: Record<HskLevel, { label: string; words: string; cefr: string; format: string }> = {
     '1': { label: 'HSK 1', words: '150 words', cefr: '≈ A1', format: '20 listening + 20 reading · ~40 min · no writing' },
@@ -136,6 +139,9 @@ export const HSK_SYLLABUS: Record<HskLevel, { title: string; slug: string; focus
         { title: 'Advanced Essay Writing', slug: 'essay', focus: '400-character essays, structure, cohesion, style' },
         { title: 'Literary & Rhetorical Chinese', slug: 'literary', focus: 'Metaphor, parallelism, classical echoes in modern writing' },
         { title: 'Native-speed Comprehension', slug: 'native', focus: 'Fast speech, slang, implicit meaning, debate language' },
+        { title: 'Long Listening & Argument Tracking', slug: 'advanced-listening', focus: 'Follow native-speed interviews and talks, identify claims and evidence, and infer the speaker’s stance' },
+        { title: 'Vocabulary in Context & Paraphrase', slug: 'context-paraphrase', focus: 'Infer advanced vocabulary from context, recognize paraphrases, and distinguish near-synonyms in long passages' },
+        { title: 'Cohesive Argumentative Writing', slug: 'cohesion', focus: 'Develop a clear position with evidence, concessions, logical connectors and a concise conclusion' },
     ],
 };
 

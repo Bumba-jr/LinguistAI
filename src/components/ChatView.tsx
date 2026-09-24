@@ -1754,7 +1754,7 @@ const ChatView = () => {
       console.error('[ChatView] AI error:', err);
       const is429 = err?.status === 429 || err?.message?.includes('429');
       const isAuth = err?.status === 401 || err?.message?.toLowerCase().includes('api key');
-      if (isAuth) setChatError('Invalid API key. Check your VITE_GROQ_API_KEY in .env.local.');
+      if (isAuth) setChatError('Invalid AI provider key. Check the server-side GROQ_API_KEY deployment setting.');
       else if (is429) setChatError('AI is busy right now. Wait a moment and try again.');
       else setChatError(`Error: ${err?.message || 'Something went wrong. Please try again.'}`);
     } finally {

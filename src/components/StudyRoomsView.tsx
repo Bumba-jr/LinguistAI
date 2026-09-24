@@ -11,6 +11,7 @@ import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import {
   getRooms, createRoom, deleteRoom, joinRoom, leaveRoom,
+  joinPrivateRoomByInvite,
   getRoomMembers, getRoomMessages, sendRoomMessage, getReactions,
   toggleReaction, pinMessage, sendAnnouncement, saveQuickReactions, getQuickReactions,
   getThreadMessages, getRoomVocab, addVocabWord, deleteVocabWord, VocabEntry,
@@ -975,6 +976,7 @@ const StudyRoomsView = () => {
   const [search, setSearch] = useState('');
   const [langFilter, setLangFilter] = useState('all');
   const [activeRoom, setActiveRoom] = useState<StudyRoom | null>(null);
+  const [joinError, setJoinError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: '', language: 'French', description: '', isPrivate: false, maxCapacity: 20 });
@@ -1000,20 +1002,26 @@ const StudyRoomsView = () => {
   }, []);
 
   const handleJoin = async (room: StudyRoom) => {
-    if (myId) await joinRoom(room.id, myId, displayName, avatarUrl).catch(() => { });
-    setActiveRoom(room);
+    if (!myId) return;
+    try {
+      await joinRoom(room.id, myId, displayName, avatarUrl);
+      setJoinError('');
+      setActiveRoom(room);
+    } catch {
+      setJoinError('Could not join this room. Check your connection and try again.');
+    }
   };
 
-  // Invite links: #join=<roomId> or ?room=<roomId> auto-join after rooms load
+  // Public invites use the room ID; private invites use their random token.
   const [copiedRoom, setCopiedRoom] = useState<string | null>(null);
-  const inviteLink = (roomId: string) =>
-    `${window.location.origin}${window.location.pathname}#join=${roomId}`;
+  const inviteLink = (room: StudyRoom) =>
+    `${window.location.origin}${window.location.pathname}#join=${room.is_private ? room.invite_code || room.id : room.id}`;
 
-  const shareRoom = async (roomId: string, e: React.MouseEvent) => {
+  const shareRoom = async (room: StudyRoom, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(inviteLink(roomId));
-      setCopiedRoom(roomId);
+      await navigator.clipboard.writeText(inviteLink(room));
+      setCopiedRoom(room.id);
       setTimeout(() => setCopiedRoom(null), 1800);
     } catch { /* clipboard unavailable */ }
   };
@@ -1032,15 +1040,23 @@ const StudyRoomsView = () => {
       for (let t = 0; t < 12 && alive; t++) {
         try {
           const all = await getRooms();
-          const room = all.find(r => r.id === joinTarget);
+          let room = all.find(r => r.id === joinTarget);
           if (room) {
-            await joinRoom(room.id, myId, displayName, avatarUrl).catch(() => { });
+            await joinRoom(room.id, myId, displayName, avatarUrl);
+          } else {
+            const roomId = await joinPrivateRoomByInvite(joinTarget, displayName, avatarUrl);
+            room = (await getRooms()).find(r => r.id === roomId);
+          }
+          if (room) {
             if (!alive) return;
+            setJoinError('');
             setActiveRoom(room);
             window.history.replaceState({}, '', window.location.pathname);
             return;
           }
-        } catch { /* retry */ }
+        } catch {
+          if (t === 11 && alive) setJoinError('This room invite could not be opened. Sign in and ask for a fresh link.');
+        }
         await new Promise(r => setTimeout(r, 500));
       }
     })();
@@ -1054,9 +1070,10 @@ const StudyRoomsView = () => {
       const room = await createRoom(myId, form.name.trim(), form.language, form.description.trim(), form.isPrivate, form.maxCapacity);
       setShowCreate(false);
       setForm({ name: '', language: 'French', description: '', isPrivate: false, maxCapacity: 20 });
-      await joinRoom(room.id, myId, displayName, avatarUrl).catch(() => { });
+      await joinRoom(room.id, myId, displayName, avatarUrl);
+      setJoinError('');
       setActiveRoom(room);
-    } catch { /* silent */ }
+    } catch { setJoinError('Could not create or enter the room. Check your connection and try again.'); }
     finally { setCreating(false); }
   };
 
@@ -1095,6 +1112,8 @@ const StudyRoomsView = () => {
           </button>
         )}
       </div>
+
+      {joinError && <p role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{joinError}</p>}
 
       {/* Search + filters */}
       <div className="space-y-3">
@@ -1275,7 +1294,7 @@ const StudyRoomsView = () => {
                           : null}
                     </div>
                     {/* Share invite — copies a join link for classmates */}
-                    <button onClick={(e) => shareRoom(room.id, e)}
+                    <button onClick={(e) => shareRoom(room, e)}
                       className="absolute top-14 right-4 p-1.5 rounded-xl bg-white/90 border border-stone-100 text-stone-300 hover:text-indigo-500 hover:border-indigo-200 transition-all opacity-0 group-hover:opacity-100 z-10"
                       title={copiedRoom === room.id ? 'Invite link copied!' : 'Copy invite link'}>
                       {copiedRoom === room.id ? <Check size={12} className="text-emerald-500" /> : <Share2 size={12} />}

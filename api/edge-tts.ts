@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
+import { requireAuthenticatedRequest } from '../src/server/apiShared';
 
 // Natural neural voices via Microsoft Edge's speech service — free, no API
 // key, and covers every language the app supports (Groq's TTS only does
@@ -27,6 +28,15 @@ const VOICES_MALE: Record<string, string> = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    if (req.method !== 'GET' && req.method !== 'POST') {
+        res.setHeader('Allow', 'GET, POST');
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    if (!(await requireAuthenticatedRequest(req, res, 'tts'))) return;
+    if (Number(req.headers['content-length'] ?? 0) > 16_384) {
+        return res.status(413).json({ error: 'Speech request is too large.' });
+    }
+
     const isGet = req.method === 'GET';
     const text = String((isGet ? req.query.text : req.body?.text) ?? '');
     const lang = String((isGet ? req.query.lang : req.body?.lang) ?? 'French');
@@ -48,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const audio = Buffer.concat(chunks);
 
         res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('Cache-Control', 'private, no-store');
         return res.status(200).send(audio);
     } catch (err: any) {
         console.error('[edge-tts] synthesis failed:', err?.message);

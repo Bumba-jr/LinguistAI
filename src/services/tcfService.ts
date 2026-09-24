@@ -135,10 +135,15 @@ export const TCF_SYLLABUS: Record<TcfLevel, { title: string; slug: string; focus
         { title: 'Idioms & Register Control', slug: 'idiomes', focus: 'Natural French, nuance, implicit meaning' },
         { title: 'Synthesis & Critical Reading', slug: 'synthese', focus: 'Summarising multiple documents' },
         { title: 'Formal Speaking & Debate', slug: 'debat', focus: 'Spontaneous sophisticated discourse' },
+        { title: 'Evidence-Based Argumentation', slug: 'argumentation-avancee', focus: 'Build a claim from evidence, qualify certainty, address counterarguments and draw a measured conclusion' },
+        { title: 'Fast Speech & Implied Attitude', slug: 'oral-implicite', focus: 'Follow connected speech, speaker stance, irony and unstated assumptions in interviews and discussions' },
     ],
     C2: [
         { title: 'Stylistic Nuance', slug: 'style', focus: 'Precision, flexibility, subtle registers' },
         { title: 'Literary & Journalistic French', slug: 'litteraire', focus: 'Advanced authentic material' },
+        { title: 'Francophone Variation & Context', slug: 'francophonie', focus: 'Understand lexical, idiomatic and register variation across French-speaking communities without flattening regional differences' },
+        { title: 'Rhetoric, Allusion & Irony', slug: 'rhetorique', focus: 'Interpret allusion, understatement, irony and persuasive structure in dense public discourse' },
+        { title: 'Long-Form Synthesis & Commentary', slug: 'commentaire-long', focus: 'Combine several sources into a precise, coherent commentary while distinguishing evidence from interpretation' },
     ],
 };
 

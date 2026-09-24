@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import LessonFeedbackButton from '../exam/LessonFeedbackButton';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
     Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, ClipboardList, Layers, ArrowRightLeft,
@@ -378,7 +379,10 @@ const Curriculum = ({ language }: { language: string }) => {
 
                     <div className="bg-white rounded-3xl border border-stone-100 p-6">
                         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{level} · CAPLE curriculum</p>
-                        <h1 className="text-2xl font-black text-stone-900 mb-2">{lesson.title}</h1>
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                            <h1 className="text-2xl font-black text-stone-900 mb-2">{lesson.title}</h1>
+                            <LessonFeedbackButton portal="CAPLE Portuguese" level={level} lessonKey={lessonKey} lessonTitle={lesson.title} />
+                        </div>
                         <div className="flex items-start gap-2 bg-emerald-50 rounded-2xl p-3">
                             <Target size={14} className="text-emerald-600 mt-0.5 shrink-0" />
                             <p className="text-sm text-emerald-800"><span className="font-black">Objective: </span>{lesson.objective}</p>

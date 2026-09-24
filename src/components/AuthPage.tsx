@@ -616,14 +616,6 @@ const LEARN_LANGS = [
     { code: 'cn', name: 'Chinese' },
 ];
 
-const AVATARS = [
-    { initials: 'AK', bg: '#6366f1' },
-    { initials: 'MR', bg: '#ec4899' },
-    { initials: 'JL', bg: '#f59e0b' },
-    { initials: 'TS', bg: '#10b981' },
-    { initials: 'PW', bg: '#3b82f6' },
-];
-
 export default function AuthPage() {
     const [mode, setMode] = useState<Mode>('login');
     const [email, setEmail] = useState('');
@@ -641,21 +633,6 @@ export default function AuthPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [submitState, setSubmitState] = useState<'idle' | 'loading' | 'success'>('idle');
     const [confetti, setConfetti] = useState(false);
-    const [studyingCount, setStudyingCount] = useState(() => 230 + Math.floor(Math.random() * 40));
-
-    // Live studying counter — ticks ±1 every 3–6s
-    useEffect(() => {
-        const tick = () => {
-            setStudyingCount(n => Math.max(200, Math.min(320, n + (Math.random() > 0.5 ? 1 : -1))));
-        };
-        const schedule = () => {
-            const delay = 3000 + Math.random() * 3000;
-            return setTimeout(() => { tick(); timerId = schedule(); }, delay);
-        };
-        let timerId = schedule();
-        return () => clearTimeout(timerId);
-    }, []);
-
     const strength = getStrength(password);
     const reset = () => { setError(null); setSuccess(null); };
 
@@ -755,57 +732,11 @@ export default function AuthPage() {
 
                             <h1 className="text-3xl font-black text-stone-900 mb-1">{titles[mode]}</h1>
 
-                            {/* 2. Social proof */}
-                            {mode !== 'reset' && (
-                                <div className="flex items-center gap-2 mb-5">
-                                    <div className="flex items-center">
-                                        {AVATARS.map((a, i) => (
-                                            <div key={i} style={{
-                                                width: 22, height: 22, borderRadius: '50%',
-                                                background: a.bg,
-                                                border: '2px solid white',
-                                                marginLeft: i === 0 ? 0 : -6,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: 7, fontWeight: 800, color: 'white',
-                                                zIndex: AVATARS.length - i,
-                                                position: 'relative',
-                                            }}>{a.initials}</div>
-                                        ))}
-                                    </div>
-                                    <p className="text-xs text-stone-400 font-medium">Join <span className="text-stone-700 font-bold">12,400+</span> learners</p>
-                                </div>
-                            )}
-
                             <p className="text-stone-400 text-sm mb-6">
                                 {mode === 'login' && 'Sign in to continue learning.'}
                                 {mode === 'signup' && 'Start your language journey today.'}
                                 {mode === 'reset' && "We'll send you a reset link."}
                             </p>
-
-                            {/* 3. Live studying counter */}
-                            {mode !== 'reset' && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -4 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl"
-                                    style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)', width: 'fit-content' }}
-                                >
-                                    <motion.div
-                                        animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
-                                        transition={{ duration: 2, repeat: Infinity }}
-                                        style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', flexShrink: 0 }}
-                                    />
-                                    <span className="text-xs font-semibold" style={{ color: '#059669' }}>
-                                        <motion.span
-                                            key={studyingCount}
-                                            initial={{ opacity: 0, y: -4 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.2 }}
-                                            style={{ display: 'inline-block' }}
-                                        >{studyingCount}</motion.span> people studying right now
-                                    </span>
-                                </motion.div>
-                            )}
 
                             {mode !== 'reset' && (
                                 <button onClick={handleGoogle} disabled={googleLoading}
@@ -1090,6 +1021,11 @@ export default function AuthPage() {
                                     <>Already have an account?{' '}<button onClick={() => { setMode('login'); reset(); }} className="text-emerald-600 font-semibold hover:underline">Sign in</button></>
                                 )}
                             </p>
+                            <nav aria-label="Legal and support links" className="mt-6 flex justify-center gap-5 border-t border-stone-100 pt-4">
+                                <a href="/privacy.html" className="text-xs text-stone-400 hover:text-stone-700">Privacy</a>
+                                <a href="/terms.html" className="text-xs text-stone-400 hover:text-stone-700">Terms</a>
+                                <a href="/contact.html" className="text-xs text-stone-400 hover:text-stone-700">Contact</a>
+                            </nav>
                         </motion.div>
                     </AnimatePresence>
                 </div>

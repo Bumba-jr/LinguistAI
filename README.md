@@ -1,46 +1,53 @@
 # LinguistAI
 
-Turn your notes into fluency — an AI-powered language learning app. Upload notes or PDFs, get lessons, flashcards, and quizzes, then train with an AI tutor, exam portals, study rooms, and more.
+An AI-powered language-learning app. Bring notes or study materials, generate lessons and quizzes, build a flashcard habit, and prepare through seven language and exam pathways.
 
-**Live:** https://linguist-ai-phi.vercel.app/ (auto-deploys from `main` on every push)
+**Live:** https://linguist-ai-phi.vercel.app/
 
 ## Features
 
-- **Notes → learning material**: paste notes or drop a PDF/image (OCR via tesseract.js + pdf.js, AI fallback) and generate lectures and quizzes
-- **AI Tutor chat** with scenario starters, corrections, and session summaries
-- **Flashcards** with spaced repetition (due dates, easy/hard scheduling)
-- **Exam prep portals**: TCF Canada (French) and HSK (Chinese) — foundations courses, cheat sheets, vocabulary/sentence trainers, mock exams, live examiners
-- **Study rooms**: community chat, vocabulary boards, challenges, WebRTC calls
-- **Language exchange**: partner matching, connection requests, direct messages
-- Per-language progress: streaks, quiz history, analytics, leaderboard
+- **Notes to lessons and quizzes:** paste notes or upload PDFs and images. Text extraction and scanned-page OCR run in the browser in the selected study language.
+- **Language practice:** AI tutor conversations, pronunciation, dictation, grammar drills, reading, writing, speaking, and progress analytics.
+- **Flashcards:** spaced repetition with browser offline access for saved cards and lessons.
+- **Exam pathways:** TCF Canada (French), Goethe (German), DELE (Spanish), CILS (Italian), CAPLE (Portuguese), JLPT (Japanese), and HSK (Chinese).
+- **Curriculum:** 241 topic prompts across the seven portals generate lessons on demand. The outlines are course maps, not a library of human-reviewed, prewritten lectures. See [curriculum coverage and gaps](docs/curriculum-coverage.md).
+- **JLPT labels:** course units show their N5–N1 target and score-dependent CEFR reference ranges. The final C2 unit is extension study beyond the official JLPT N1 level.
+- **HSK versions:** the lesson library follows HSK 2.0 levels 1–6. HSK 3.0 has a separate syllabus preview; new-framework lessons and scoring are not implemented yet.
+- **Lesson reports:** learners can report factual errors, unclear explanations, translation problems, and missing lesson content.
+- **Community:** study rooms, vocabulary boards, challenges, language exchange, direct messages, and WebRTC calls.
+- **Offline access:** signed-in saved lectures and flashcards are cached per account. Exam-portal progress is account-scoped locally and syncs to Supabase when connected.
+
+After upgrading from an earlier version, sign in while online once so saved lectures and flashcards can repopulate the account-scoped offline cache. Older device-wide cache records have no account owner marker, so the app intentionally does not show them to an account without a successful sync.
 
 ## Tech stack
 
-- React 19 + TypeScript + Vite, Tailwind CSS 4, Zustand, Framer Motion
-- Supabase (auth, Postgres, realtime) — Google OAuth + email/password
-- AI via serverless proxies in `/api` (keys never ship to the client)
-- PWA: service worker offline shell, deployable on Vercel
+- React 19, TypeScript, Vite, Tailwind CSS 4, Zustand
+- Supabase Auth, Postgres, Row Level Security, and Realtime
+- Groq and OpenAI through authenticated Vercel API routes
+- IndexedDB and browser storage for offline learning
 
 ## Develop
 
+Use pnpm (the repository's lockfile is `pnpm-lock.yaml`):
+
 ```bash
 pnpm install
-pnpm dev        # http://localhost:5173
-pnpm build      # production build to dist/
-pnpm lint       # eslint src api
+pnpm dev          # http://localhost:5173
+pnpm build        # production build to dist/
+pnpm lint         # ESLint
+pnpm typecheck    # TypeScript check
 ```
 
-Create a `.env.local` (see `.env.example`) with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. AI keys (`GEMINI_API_KEY`, `GROQ_API_KEY`, OpenAI) are server-side environment variables on Vercel — never in `.env.local`.
+Copy `.env.example` to `.env.local` for local development. Browser settings use `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_APP_URL`. The Vite development proxy reads the server-only `GROQ_API_KEY` and `OPENAI_API_KEY`; configure those keys, along with `SUPABASE_URL` and `SUPABASE_ANON_KEY`, as server-side Vercel variables for deployment. Never put AI provider secrets in a `VITE_` variable.
 
-## Database
+The AI routes require an active Supabase session. Rate limiting uses the `consume_ai_rate_limit` database function. If it is missing, requests fail closed until the database migration is applied.
 
-Schema lives in idempotent migration files at the repo root — run them once in Supabase Dashboard → SQL Editor:
+## Database setup
 
-| File | Purpose |
-|---|---|
-| `supabase-migration-full-schema.sql` | **All tables + RLS** (run this on a fresh project) |
-| `supabase-migration-onboarding-flag.sql` | user_preferences table + onboarding flag |
-| `supabase-migration-language-isolation.sql` | per-language data isolation |
-| `supabase-migration-language-streaks.sql` | per-language streaks |
+For a new Supabase project, run `supabase-migration-full-schema.sql` in the SQL Editor. For an existing project, run `supabase-migration-security-hardening.sql` after the full schema migration. The hardening migration replaces the old broad room policies, preserves private rooms through invite links, and adds server-side AI rate limits, account-scoped portal progress, and private lesson reports.
 
-If a feature silently does nothing, check whether its table exists — `SELECT tablename FROM pg_tables WHERE schemaname = 'public';`
+Migrations are idempotent. After applying them, sign in and confirm the AI features, study rooms, language exchange, and lesson reports work with a normal authenticated account. Do not use the service-role key in the browser.
+
+## Curriculum review
+
+The code stores topic outlines and asks the AI to generate individual lesson content on demand. The C1/C2 outlines have been expanded, but still need teacher review against each exam's official syllabus, authentic source material, and clear assessed outcomes. The HSK 3.0 preview records the current gap so learners do not mistake older HSK 2.0 lessons for new-framework content.

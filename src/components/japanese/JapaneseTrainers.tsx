@@ -6,7 +6,7 @@ import { speakText, stopSpeaking } from '../../services/voiceService';
 import {
     generateJapaneseListening, generateJapaneseReading,
     JapaneseListening, JapaneseReading, JlptLevel,
-    JLPT_VOCAB_TOPICS,
+    JLPT_VOCAB_TOPICS, JLPT_UI_LABELS,
 } from '../../services/japaneseService';
 import { logWeakness, getCachedLesson, cacheLesson } from '../../services/japaneseStorage';
 import { generateVocabSet, generateSentenceTasks, checkSentenceAttempts, SentenceTask } from '../../services/aiService';
@@ -19,7 +19,7 @@ export const LevelBar = ({ level, onLevelChange }: { level: JlptLevel; onLevelCh
             <button key={l} onClick={() => onLevelChange(l)}
                 className={cn('px-3 py-1.5 rounded-xl text-xs font-black transition-colors',
                     level === l ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-400')}>
-                {l}
+                {JLPT_UI_LABELS[l]}
             </button>
         ))}
     </div>
@@ -107,7 +107,7 @@ export const JapaneseListeningTrainer = ({ level, onLevelChange, onDone }: {
         setShowTranscript(true);
         if (ex) {
             const pct = Math.round((correct / ex.questions.length) * 100);
-            onDone(pct, `${level} listening: ${ex.scenario}`);
+            onDone(pct, `${JLPT_UI_LABELS[level]} listening: ${ex.scenario}`);
         }
     };
 
@@ -125,14 +125,14 @@ export const JapaneseListeningTrainer = ({ level, onLevelChange, onDone }: {
                     </ul>
                     <button onClick={start} disabled={loading}
                         className="w-full py-3.5 bg-indigo-600 text-white text-sm font-bold rounded-2xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
-                        <Play size={15} /> Generate a {level} listening exercise
+                        <Play size={15} /> Generate a {JLPT_UI_LABELS[level]} listening exercise
                     </button>
                     {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
                 </div>
             )}
             {loading && (
                 <div className="flex items-center justify-center gap-3 py-10 text-stone-400">
-                    <Loader2 size={20} className="animate-spin" /> Writing a {level} recording…
+                    <Loader2 size={20} className="animate-spin" /> Writing a {JLPT_UI_LABELS[level]} recording…
                 </div>
             )}
             {ex && (
@@ -251,7 +251,7 @@ export const JapaneseReadingTrainer = ({ level, onLevelChange, onDone }: {
         setFinished(true); setShowEn(true);
         if (timerRef.current) clearInterval(timerRef.current);
         setTimerOn(false);
-        if (ex) onDone(Math.round((correct / ex.questions.length) * 100), `${level} reading: ${ex.title}`);
+        if (ex) onDone(Math.round((correct / ex.questions.length) * 100), `${JLPT_UI_LABELS[level]} reading: ${ex.title}`);
     };
     const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
     const ss = String(seconds % 60).padStart(2, '0');
@@ -270,14 +270,14 @@ export const JapaneseReadingTrainer = ({ level, onLevelChange, onDone }: {
                     </ul>
                     <button onClick={start} disabled={loading}
                         className="w-full py-3.5 bg-teal-600 text-white text-sm font-bold rounded-2xl hover:bg-teal-700 transition-colors flex items-center justify-center gap-2">
-                        <Play size={15} /> Generate a {level} reading exercise
+                        <Play size={15} /> Generate a {JLPT_UI_LABELS[level]} reading exercise
                     </button>
                     {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
                 </div>
             )}
             {loading && (
                 <div className="flex items-center justify-center gap-3 py-10 text-stone-400">
-                    <Loader2 size={20} className="animate-spin" /> Writing a {level} document…
+                    <Loader2 size={20} className="animate-spin" /> Writing a {JLPT_UI_LABELS[level]} document…
                 </div>
             )}
             {ex && (
@@ -405,7 +405,7 @@ export const JapaneseVocabTrainer = ({ level, onLevelChange }: {
             <LevelBar level={level} onLevelChange={onLevelChange} />
 
             <div className="bg-white rounded-3xl border border-stone-100 p-5">
-                <p className="text-sm font-black text-stone-900 mb-1">Themed vocabulary — {level}</p>
+                <p className="text-sm font-black text-stone-900 mb-1">Themed vocabulary — {JLPT_UI_LABELS[level]}</p>
                 <p className="text-xs text-stone-400 mb-3">Pick a JLPT domain, get the exam-relevant words, save them to your deck, then quiz yourself.</p>
                 <div className="flex gap-1.5 flex-wrap">
                     {JLPT_VOCAB_TOPICS.map(t => (
@@ -575,7 +575,7 @@ export const JapaneseSentenceBuilder = ({ level, onLevelChange }: {
                     </ul>
                     <button onClick={generate} disabled={loading}
                         className="w-full py-3.5 bg-emerald-500 text-white text-sm font-bold rounded-2xl hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2">
-                        <Play size={15} /> Build a {level} sentence round
+                        <Play size={15} /> Build a {JLPT_UI_LABELS[level]} sentence round
                     </button>
                     {error && <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-red-600 text-sm"><AlertTriangle size={14} /> {error}</div>}
                 </div>
@@ -583,7 +583,7 @@ export const JapaneseSentenceBuilder = ({ level, onLevelChange }: {
 
             {loading && (
                 <div className="flex items-center justify-center gap-3 py-10 text-stone-400">
-                    <Loader2 size={20} className="animate-spin" /> Building your {level} sentence round…
+                    <Loader2 size={20} className="animate-spin" /> Building your {JLPT_UI_LABELS[level]} sentence round…
                 </div>
             )}
 

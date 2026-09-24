@@ -185,8 +185,28 @@ export const getQuizHistory = async (userId: string) => {
     score: row.score,
     total: row.total,
     difficulty: row.difficulty,
-    language: row.quiz_type,
+    language: row.language,
   }));
+};
+
+export const submitLessonFeedback = async (userId: string, feedback: {
+  portal: string;
+  level: string;
+  lessonKey: string;
+  lessonTitle: string;
+  category: 'factual_error' | 'grammar_or_translation' | 'unclear_explanation' | 'missing_content' | 'other';
+  details: string;
+}) => {
+  const { error } = await supabase.from('lesson_feedback').insert({
+    user_id: userId,
+    portal: feedback.portal,
+    level: feedback.level,
+    lesson_key: feedback.lessonKey,
+    lesson_title: feedback.lessonTitle,
+    category: feedback.category,
+    details: feedback.details.trim().slice(0, 2000),
+  });
+  if (error) throw error;
 };
 
 // ── Lectures ──────────────────────────────────────────────────────────────────
@@ -410,6 +430,7 @@ export const getLectureProgress = async (userId: string) => {
 // ── Study Rooms ───────────────────────────────────────────────────────────────
 export interface StudyRoom {
   id: string;
+  invite_code?: string;
   name: string;
   language: string;
   description: string;
@@ -512,6 +533,16 @@ export const deleteRoom = async (roomId: string) => {
 export const joinRoom = async (roomId: string, userId: string, displayName: string, avatarUrl: string | null) => {
   const { error } = await supabase.from('room_members').upsert({ room_id: roomId, user_id: userId, display_name: displayName, avatar_url: avatarUrl });
   if (error) throw error;
+};
+
+export const joinPrivateRoomByInvite = async (inviteCode: string, displayName: string, avatarUrl: string | null): Promise<string> => {
+  const { data, error } = await supabase.rpc('join_private_room', {
+    p_invite_code: inviteCode,
+    p_display_name: displayName,
+    p_avatar_url: avatarUrl,
+  });
+  if (error) throw error;
+  return data as string;
 };
 
 export const leaveRoom = async (roomId: string, userId: string) => {
@@ -951,7 +982,7 @@ export const hideMessageForUser = async (messageId: string, userId: string) => {
   const { error } = await supabase.from('hidden_messages').upsert({
     message_id: messageId,
     user_id: userId,
-  });
+  }, { onConflict: 'message_id,user_id', ignoreDuplicates: true });
   if (error) throw error;
 };
 

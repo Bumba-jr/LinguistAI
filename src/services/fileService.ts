@@ -1,4 +1,4 @@
-import { extractTextWithAI } from './aiService';
+import type { Language } from '../store/useAppStore';
 
 // tesseract.js and pdfjs-dist are two of the heaviest dependencies in the app
 // and are only needed the moment a user actually drops a file, so they are
@@ -21,49 +21,70 @@ const loadPdfjs = () => (pdfjsPromise ??= (async () => {
   return pdfjs;
 })());
 
-export const extractTextFromImage = async (file: File): Promise<string> => {
-  try {
-    const Tesseract = await loadTesseract();
-    const { data: { text } } = await Tesseract.recognize(file, 'fra+eng', {
-      logger: m => console.log(m)
-    });
-
-    if (text && text.trim().length > 20) {
-      return text;
-    }
-
-    // If local OCR is poor, fallback to Gemini
-    console.log('Local OCR returned little text, falling back to AI...');
-    return await extractTextWithAI(file);
-  } catch (error) {
-    console.warn('Local OCR failed, falling back to AI:', error);
-    return await extractTextWithAI(file);
-  }
+const OCR_LANGUAGES: Record<Language, string> = {
+  French: 'fra+eng',
+  Spanish: 'spa+eng',
+  German: 'deu+eng',
+  Japanese: 'jpn+eng',
+  Italian: 'ita+eng',
+  Portuguese: 'por+eng',
+  Chinese: 'chi_sim+eng',
 };
 
-export const extractTextFromPDF = async (file: File): Promise<string> => {
+const recognize = async (image: File | HTMLCanvasElement, language: Language) => {
+  const Tesseract = await loadTesseract();
+  const { data: { text } } = await Tesseract.recognize(image, OCR_LANGUAGES[language] ?? 'eng');
+  return text.trim();
+};
+
+export const extractTextFromImage = async (file: File, language: Language = 'French'): Promise<string> => {
+  const text = await recognize(file, language);
+  if (!text) throw new Error('No readable text was found. Try a clearer image or paste the text directly.');
+  return text;
+};
+
+export const extractTextFromPDF = async (file: File, language: Language = 'French'): Promise<string> => {
+  const pdfjs = await loadPdfjs();
+  const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pages: string[] = [];
+  let scannedPages = 0;
+
   try {
-    const pdfjs = await loadPdfjs();
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(' ');
-      fullText += pageText + '\n';
-    }
+      const pageText = textContent.items.map((item: any) => item.str).filter(Boolean).join(' ').trim();
+      if (pageText.length >= 10) {
+        pages.push(pageText);
+        page.cleanup();
+        continue;
+      }
 
-    if (fullText && fullText.trim().length > 20) {
-      return fullText;
+      // Scanned pages have no text layer. Render just those pages locally and
+      // OCR them in the selected study language.
+      scannedPages += 1;
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      try {
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error(`Could not render PDF page ${pageNumber} for OCR.`);
+        await page.render({ canvas, canvasContext: context, viewport }).promise;
+        const scannedText = await recognize(canvas, language);
+        if (scannedText) pages.push(scannedText);
+      } finally {
+        canvas.width = 0;
+        canvas.height = 0;
+        page.cleanup();
+      }
     }
-
-    // If PDF has no text layer (scanned), fallback to Gemini
-    console.log('PDF has no text layer, falling back to AI...');
-    return await extractTextWithAI(file);
-  } catch (error) {
-    console.warn('PDF extraction failed, falling back to AI:', error);
-    return await extractTextWithAI(file);
+  } finally {
+    await pdf.destroy();
   }
+
+  const fullText = pages.join('\n\n').trim();
+  if (!fullText) throw new Error('No readable text was found. This PDF may be blank or too blurry to scan.');
+  if (scannedPages > 0) console.info(`[fileService] OCR processed ${scannedPages} scanned PDF page(s).`);
+  return fullText;
 };

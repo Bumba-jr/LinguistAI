@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import LessonFeedbackButton from '../exam/LessonFeedbackButton';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
     Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, ClipboardList, Layers, ArrowRightLeft,
@@ -11,7 +12,7 @@ import {
     JlptLevel, JLPT_SYLLABUS,
     generateJapaneseLesson, evaluateJapaneseWriting, evaluateJapaneseSpeaking,
     JapaneseLesson, JapaneseWritingFeedback, JapaneseSpeakingFeedback, JLPT_PASS_NOTE,
-    pctToCefr, cefrIndex, jlptWritingTasksFor, jlptSpeakingTasksFor, JLPT_LEVEL_FORMATS, JLPT_OF_LEVEL,
+    jlptWritingTasksFor, jlptSpeakingTasksFor, JLPT_LEVEL_FORMATS, JLPT_OF_LEVEL, JLPT_UI_LABELS,
 } from '../../services/japaneseService';
 import {
     getJLPTScores, addJLPTScore, getCompletedLessons, markLessonComplete,
@@ -74,7 +75,7 @@ const Overview = ({ onGo }: { onGo: (t: JapaneseTab) => void }) => {
             {/* exam format */}
             <div className="bg-white rounded-3xl border border-stone-100 p-6">
                 <h2 className="font-black text-stone-900 mb-1">The exam at a glance</h2>
-                <p className="text-xs text-stone-400 mb-4">The Japanese-Language Proficiency Test (Japan Foundation & JEES) — three scored sections, no speaking/writing. Levels N5 (easiest) → N1 (hardest), held every July and December.</p>
+                <p className="text-xs text-stone-400 mb-4">The Japanese-Language Proficiency Test (Japan Foundation & JEES) runs from N5 (easiest) to N1 (hardest). N1–N3 score language knowledge, reading, and listening; N4–N5 combine language knowledge with reading and score listening separately. It does not test speaking or writing.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(Object.keys(SKILL_META) as (keyof typeof SKILL_META)[]).map(sk => {
                         const m = SKILL_META[sk];
@@ -99,19 +100,19 @@ const Overview = ({ onGo }: { onGo: (t: JapaneseTab) => void }) => {
                 <div className="mt-4 bg-amber-50 border border-amber-100 rounded-2xl p-3 text-xs text-amber-800">{JLPT_PASS_NOTE}</div>
             </div>
 
-            {/* CILS target level — you register for ONE level, so track against it */}
+            {/* Course target band is a learning path, not an official JLPT result. */}
             <div className="bg-white rounded-3xl border border-stone-100 p-6">
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <div>
-                        <h2 className="font-black text-stone-900 flex items-center gap-2"><Target size={16} className="text-emerald-500" /> Your JLPT target level</h2>
-                        <p className="text-xs text-stone-400 mt-0.5">Pick the level you are aiming for — the trainers, mock and formats below follow it.</p>
+                        <h2 className="font-black text-stone-900 flex items-center gap-2"><Target size={16} className="text-emerald-500" /> Your study target band</h2>
+                        <p className="text-xs text-stone-400 mt-0.5">Choose the course band your practice follows; the course bands are separate from official JLPT levels.</p>
                     </div>
                     <div className="flex gap-1.5 flex-wrap">
-                        {['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map(t => (
+                        {LEVELS.map(t => (
                             <button key={t} onClick={() => setJLPTTarget(t)}
                                 className={cn('px-3 py-1.5 rounded-xl text-xs font-black transition-colors',
                                     target === t ? 'bg-emerald-500 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200')}>
-                                {t}
+                                {JLPT_UI_LABELS[t]}
                             </button>
                         ))}
                     </div>
@@ -119,25 +120,23 @@ const Overview = ({ onGo }: { onGo: (t: JapaneseTab) => void }) => {
                 <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-bold text-stone-400">
                     {(Object.keys(SKILL_META) as (keyof typeof SKILL_META)[]).map(sk => {
                         const last = latest(sk);
-                        const est = last ? pctToCefr(last.pct) : null;
-                        const meets = est ? cefrIndex(est) >= cefrIndex(target) : false;
                         return (
-                            <div key={sk} className={cn('rounded-2xl p-3', meets ? 'bg-emerald-50' : 'bg-stone-50')}>
+                            <div key={sk} className="rounded-2xl bg-stone-50 p-3">
                                 <p className="uppercase tracking-wider mb-1">{SKILL_META[sk].label}</p>
-                                <p className={cn('text-lg font-black', meets ? 'text-emerald-600' : 'text-stone-300')}>
-                                    {est ? est : '—'}
+                                <p className={cn('text-lg font-black', last ? 'text-emerald-600' : 'text-stone-300')}>
+                                    {last ? `${last.pct}%` : '—'}
                                 </p>
-                                <p className="mt-0.5">{last ? `est. ${last.pct}%` : 'no data'}</p>
+                                <p className="mt-0.5">{last ? 'latest practice' : 'no data'}</p>
                             </div>
                         );
                     })}
                 </div>
-                <p className="text-[10px] text-stone-300 mt-3 flex items-center gap-1">
-                    <AlertTriangle size={10} /> All numbers on this page are practice estimates — not official JLPT results.
+                <p className="text-[10px] text-stone-400 mt-3 flex items-start gap-1">
+                    <AlertTriangle size={10} className="mt-0.5 shrink-0" /> These percentages are accuracy on LinguistAI practice tasks, not official JLPT scaled scores or CEFR equivalents. The <a className="underline" href="https://www.jlpt.jp/e/about/cefr_reference.html" target="_blank" rel="noreferrer">official JLPT CEFR reference</a> applies only to passing candidates, uses the official JLPT level and total score, and covers tested receptive skills.
                 </p>
                 {/* what the chosen target level actually looks like, test by test */}
                 <div className="mt-4 bg-stone-900 rounded-2xl p-4 text-white">
-                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">JLPT {target} — what your exam looks like</p>
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">{JLPT_OF_LEVEL[target]} target · {target} course band</p>
                     <div className="space-y-1.5 text-xs">
                         {([['Knowledge', JLPT_LEVEL_FORMATS[target].knowledge],
                            ['Reading', JLPT_LEVEL_FORMATS[target].reading],
@@ -148,7 +147,7 @@ const Overview = ({ onGo }: { onGo: (t: JapaneseTab) => void }) => {
                             </div>
                         ))}
                     </div>
-                    <p className="text-[10px] text-white/40 mt-2">{JLPT_LEVEL_FORMATS[target].note} — the trainers and mock below automatically use {target}-accurate tasks.</p>
+                    <p className="text-[10px] text-white/40 mt-2">{JLPT_LEVEL_FORMATS[target].note} The trainers use practice tasks mapped to this course band.</p>
                 </div>
             </div>
 
@@ -165,10 +164,10 @@ const Overview = ({ onGo }: { onGo: (t: JapaneseTab) => void }) => {
             {/* the JLPT ladder — A1→C1 maps onto N5→N1; C2 is beyond the test */}
             <div className="bg-white rounded-3xl border border-stone-100 p-6">
                 <h2 className="font-black text-stone-900 mb-1">The JLPT ladder</h2>
-                <p className="text-xs text-stone-400 mb-3">JLPT has five levels, N5 (easiest) → N1 (hardest), held in July and December. This course maps the CEFR path onto it — and trains speaking and writing that JLPT does not test.</p>
+                    <p className="text-xs text-stone-400 mb-3">JLPT has five official levels, N5 (easiest) through N1 (hardest). Score reports show a reference CEFR level for passing candidates, based on their JLPT level and total score, and cover tested reception skills only. These six course bands are a separate learning path; the final band is extension study beyond N1. Speaking and writing are broader language practice, not JLPT sections. <a className="underline text-stone-500" href="https://www.jlpt.jp/e/about/cefr_reference.html" target="_blank" rel="noreferrer">See the official reference.</a></p>
                 <div className="flex gap-1.5 flex-wrap">
                     {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as JlptLevel[]).map(l => (
-                        <span key={l} className="text-[11px] font-bold bg-stone-100 text-stone-600 px-2.5 py-1 rounded-xl">{l} → {JLPT_OF_LEVEL[l]}</span>
+                        <span key={l} className="text-[11px] font-bold bg-stone-100 text-stone-600 px-2.5 py-1 rounded-xl">{JLPT_UI_LABELS[l]} → {JLPT_OF_LEVEL[l]}</span>
                     ))}
                 </div>
             </div>
@@ -294,7 +293,7 @@ const Curriculum = ({ language }: { language: string }) => {
                             <button key={l} onClick={() => { setLevel(l); setOpenTopic(null); setLesson(null); }}
                                 className={cn('rounded-2xl p-2.5 text-center transition-all border-2',
                                     level === l ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-100 bg-white hover:border-stone-300')}>
-                                <p className="text-xs font-black">{l}</p>
+                                <p className="text-xs font-black">{JLPT_UI_LABELS[l]}</p>
                                 <div className="h-1 bg-black/10 rounded-full overflow-hidden mt-1.5">
                                     <div className={cn('h-full rounded-full', pct === 100 ? 'bg-emerald-400' : 'bg-emerald-300')} style={{ width: `${pct}%` }} />
                                 </div>
@@ -329,7 +328,7 @@ const Curriculum = ({ language }: { language: string }) => {
                     <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto">
                         <Lock size={22} className="text-amber-500" />
                     </div>
-                    <p className="font-black text-stone-900 text-sm">{level} is locked</p>
+                    <p className="font-black text-stone-900 text-sm">{JLPT_UI_LABELS[level]} is locked</p>
                     <p className="text-xs text-stone-400 max-w-sm mx-auto">Levels never auto-promote: pass the {prevLevel} checkpoint first — 6 questions on what that level taught. You can retake as many times as you need.</p>
                     <button onClick={() => setCheckpointFor(prevLevel)}
                         className="px-6 py-3 bg-amber-500 text-white text-xs font-black rounded-2xl hover:bg-amber-600 transition-colors">
@@ -353,7 +352,7 @@ const Curriculum = ({ language }: { language: string }) => {
                                 <p className="font-black text-stone-900 text-sm pr-6">{t.title}</p>
                                 <p className="text-xs text-stone-400 mt-1">{t.focus}</p>
                                 <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest mt-3">
-                                    {isOpen && loading ? 'Generating lesson…' : `${level} · Lesson`}
+                                    {isOpen && loading ? 'Generating lesson…' : `${JLPT_UI_LABELS[level]} · Lesson`}
                                 </p>
                             </button>
                         );
@@ -363,7 +362,7 @@ const Curriculum = ({ language }: { language: string }) => {
 
             {loading && !lesson && (
                 <div className="flex items-center justify-center gap-3 py-8 text-stone-400">
-                    <Loader2 size={20} className="animate-spin" /> Writing your {level} lesson…
+                    <Loader2 size={20} className="animate-spin" /> Writing your {JLPT_UI_LABELS[level]} lesson…
                 </div>
             )}
 
@@ -376,8 +375,11 @@ const Curriculum = ({ language }: { language: string }) => {
                     </button>
 
                     <div className="bg-white rounded-3xl border border-stone-100 p-6">
-                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{level} · Japanese curriculum</p>
-                        <h1 className="text-2xl font-black text-stone-900 mb-2">{lesson.title}</h1>
+                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{JLPT_UI_LABELS[level]} · Japanese curriculum</p>
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                            <h1 className="text-2xl font-black text-stone-900 mb-2">{lesson.title}</h1>
+                            <LessonFeedbackButton portal="JLPT Japanese" level={level} lessonKey={lessonKey} lessonTitle={lesson.title} />
+                        </div>
                         <div className="flex items-start gap-2 bg-emerald-50 rounded-2xl p-3">
                             <Target size={14} className="text-emerald-600 mt-0.5 shrink-0" />
                             <p className="text-sm text-emerald-800"><span className="font-black">Objective: </span>{lesson.objective}</p>
@@ -658,7 +660,7 @@ const WritingTrainer = ({ level, onLevelChange }: { level: JlptLevel; onLevelCha
             const fb = await evaluateJapaneseWriting(task.label, task.guide, task.minWords, text, level);
             setFeedback(fb);
             const pct = Math.round((fb.score100 / 25) * 100);
-            addJLPTScore({ pct, skill: 'writing', label: `${level} ${task.label}`, score: pct });
+            addJLPTScore({ pct, skill: 'writing', label: `${JLPT_UI_LABELS[level]} ${task.label}`, score: pct });
         } catch {
             setError('Evaluation failed — the AI may be busy. Try again.');
         } finally { setEvaluating(false); }
@@ -810,7 +812,7 @@ const SpeakingTrainer = ({ level, language, onLevelChange }: { level: JlptLevel;
             try {
                 const fb = await evaluateJapaneseSpeaking(task.label, task.guide, task.prompt, t, level);
                 setFeedback(fb);
-                await scoreSpeaking(`${level} ${task.label}`, t);
+                await scoreSpeaking(`${JLPT_UI_LABELS[level]} ${task.label}`, t);
             } catch {
                 setError('Evaluation failed — the AI may be busy. Your transcript is saved below.');
             }
@@ -854,7 +856,7 @@ const SpeakingTrainer = ({ level, language, onLevelChange }: { level: JlptLevel;
             {mode === 'examiner' && (
                 <InteractiveExaminer
                     language="Japanese"
-                    levelLabel={level}
+                    levelLabel={JLPT_UI_LABELS[level]}
                     taskLabel={task.label}
                     taskGuide={task.guide}
                     onDone={finishLiveExam}
