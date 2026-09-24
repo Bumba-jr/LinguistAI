@@ -14,7 +14,7 @@ const SUGGESTED: Record<string, string[]> = {
     Spanish: ['ser', 'estar', 'tener', 'hacer', 'ir', 'poder', 'querer', 'decir', 'comer', 'hablar'],
     German: ['sein', 'haben', 'werden', 'gehen', 'machen', 'sagen', 'können', 'wollen'],
     Italian: ['essere', 'avere', 'andare', 'fare', 'potere', 'volere', 'dire', 'mangiare'],
-    Portuguese: ['ser', 'estar', 'ter', 'fazer', 'ir', 'poder', 'querer', 'dizer'],
+    Portuguese: ['ser', 'estar', 'ter', 'fazer', 'ir', 'poder', 'querer', 'dizer', 'falar', 'comer', 'partir', 'pôr', 'conhecer'],
     Japanese: ['する', 'ある', 'いる', '行く', '食べる', '飲む'],
     Chinese: ['是', '有', '去', '吃', '喝', '说'],
 };
@@ -55,6 +55,7 @@ const TENSES: Record<string, { id: string; label: string; guide: string }[]> = {
         { id: 'imperfeito', label: 'Imperfeito', guide: 'the PRETÉRITO IMPERFEITO' },
         { id: 'futuro', label: 'Futuro', guide: 'the FUTURO DO PRESENTE' },
         { id: 'condicional', label: 'Condicional', guide: 'the CONDICIONAL PRESENTE' },
+        { id: 'conjuntivo', label: 'Conjuntivo', guide: 'the PRESENTE DO CONJUNTIVO (subjunctive) — answers like "fale", "tenha"' },
     ],
     Japanese: [
         { id: 'present', label: 'Present (ます)', guide: 'the polite non-past (ます) form' },

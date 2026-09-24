@@ -13,7 +13,7 @@ const GRAMMAR_RULES: Record<string, string[]> = {
     German: ['Nominative vs Accusative vs Dative', 'Modal verbs', 'Separable verbs', 'Adjective endings', 'Perfekt vs Präteritum', 'Konjunktiv II', 'Word order (V2 rule)', 'Der/Die/Das articles'],
     Italian: ['Passato prossimo vs Imperfetto', 'Subjunctive mood', 'Reflexive verbs', 'Direct & indirect object pronouns', 'Conditional tense', 'Relative pronouns', 'Articles', 'Adjective agreement'],
     Japanese: ['て-form verbs', 'Potential form', 'Passive form', 'Causative form', 'Conditional (たら/ば/と)', 'て-form + いる', 'Honorific speech', 'Particles (は/が/を/に/で)'],
-    Portuguese: ['Ser vs Estar', 'Preterite vs Imperfect', 'Subjunctive mood', 'Reflexive verbs', 'Object pronouns', 'Conditional tense', 'Por vs Para', 'Articles'],
+    Portuguese: ['Pretérito Perfeito vs Imperfeito', 'Futuro do Conjuntivo (quando eu chegar)', 'The Personal Infinitive (falarmos)', 'Clitic placement (chamo-me vs não me chamo)', 'Estar a + infinitive (European progressive)', 'Ser vs Estar', 'Ter vs Haver', 'The se system (fala-se, vendem-se)'],
     Chinese: ['了 (le) particle', '的/地/得 usage', 'Measure words', 'Aspect particles', 'Resultative complements', 'Directional complements', 'Ba construction', 'Comparison structures'],
 };
 
