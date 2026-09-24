@@ -16,6 +16,26 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Vendor splitting: stable libraries live in their own chunks with
+          // stable hashes. App-code chunks change hash on every deploy, but
+          // repeat visitors keep the vendor chunks cached — only the app code
+          // re-downloads. Lazy views keep their own chunks (everything not
+          // matched here follows default chunking).
+          manualChunks(id: string) {
+            if (!id.includes('node_modules')) return undefined;
+            if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'vendor-react';
+            if (id.includes('@supabase')) return 'vendor-supabase';
+            if (/[\\/]node_modules[\\/]motion[\\/]/.test(id)) return 'vendor-motion';
+            if (id.includes('@tiptap') || id.includes('prosemirror')) return 'vendor-tiptap';
+            if (id.includes('lucide-react')) return 'vendor-lucide';
+            return undefined;
+          },
+        },
+      },
+    },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       proxy: {
