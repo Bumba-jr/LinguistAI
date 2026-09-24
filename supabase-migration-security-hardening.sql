@@ -122,7 +122,8 @@ RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
   SELECT auth.uid() IS NOT NULL AND EXISTS (
-    SELECT 1 FROM public.room_members m WHERE m.room_id = p_room_id AND m.user_id = auth.uid()
+    SELECT 1 FROM public.room_members m
+    WHERE m.room_id = p_room_id AND m.user_id::text = auth.uid()::text
   );
 $$;
 
@@ -132,8 +133,8 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
   SELECT auth.uid() IS NOT NULL AND EXISTS (
     SELECT 1 FROM public.study_rooms r
-    WHERE r.id = p_room_id AND (coalesce(r.is_private, false) = false OR r.created_by = auth.uid()
-      OR EXISTS (SELECT 1 FROM public.room_members m WHERE m.room_id = r.id AND m.user_id = auth.uid()))
+    WHERE r.id = p_room_id AND (coalesce(r.is_private, false) = false OR r.created_by::text = auth.uid()::text
+      OR EXISTS (SELECT 1 FROM public.room_members m WHERE m.room_id = r.id AND m.user_id::text = auth.uid()::text))
   );
 $$;
 
@@ -142,8 +143,8 @@ RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
   SELECT auth.uid() IS NOT NULL AND (
-    EXISTS (SELECT 1 FROM public.room_members m WHERE m.room_id = p_room_id AND m.user_id = auth.uid())
-    OR EXISTS (SELECT 1 FROM public.study_rooms r WHERE r.id = p_room_id AND r.created_by = auth.uid())
+    EXISTS (SELECT 1 FROM public.room_members m WHERE m.room_id = p_room_id AND m.user_id::text = auth.uid()::text)
+    OR EXISTS (SELECT 1 FROM public.study_rooms r WHERE r.id = p_room_id AND r.created_by::text = auth.uid()::text)
   );
 $$;
 
@@ -155,7 +156,9 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
-DECLARE matched_room_id uuid;
+DECLARE
+  matched_room_id uuid;
+  member_user_id_is_uuid boolean;
 BEGIN
   IF auth.uid() IS NULL OR p_invite_code IS NULL OR char_length(p_invite_code) > 64 THEN
     RAISE EXCEPTION 'Invalid room invite';
@@ -166,12 +169,28 @@ BEGIN
   LIMIT 1;
   IF matched_room_id IS NULL THEN RAISE EXCEPTION 'Invalid room invite'; END IF;
 
-  INSERT INTO public.room_members (room_id, user_id, display_name, avatar_url)
-  VALUES (matched_room_id, auth.uid(), left(nullif(trim(p_display_name), ''), 80), left(nullif(p_avatar_url, ''), 2048))
-  ON CONFLICT (room_id, user_id) DO UPDATE SET
-    display_name = EXCLUDED.display_name,
-    avatar_url = EXCLUDED.avatar_url,
-    last_active_at = now();
+  SELECT a.atttypid = 'uuid'::regtype INTO member_user_id_is_uuid
+  FROM pg_catalog.pg_attribute a
+  WHERE a.attrelid = 'public.room_members'::regclass
+    AND a.attname = 'user_id' AND a.attnum > 0 AND NOT a.attisdropped;
+
+  -- Existing installations may have created this column as text. Insert a
+  -- value matching the actual column type so both schema generations work.
+  IF member_user_id_is_uuid THEN
+    INSERT INTO public.room_members (room_id, user_id, display_name, avatar_url)
+    VALUES (matched_room_id, auth.uid(), left(nullif(trim(p_display_name), ''), 80), left(nullif(p_avatar_url, ''), 2048))
+    ON CONFLICT (room_id, user_id) DO UPDATE SET
+      display_name = EXCLUDED.display_name,
+      avatar_url = EXCLUDED.avatar_url,
+      last_active_at = now();
+  ELSE
+    INSERT INTO public.room_members (room_id, user_id, display_name, avatar_url)
+    VALUES (matched_room_id, auth.uid()::text, left(nullif(trim(p_display_name), ''), 80), left(nullif(p_avatar_url, ''), 2048))
+    ON CONFLICT (room_id, user_id) DO UPDATE SET
+      display_name = EXCLUDED.display_name,
+      avatar_url = EXCLUDED.avatar_url,
+      last_active_at = now();
+  END IF;
   RETURN matched_room_id;
 END;
 $$;
@@ -191,8 +210,8 @@ BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.exchange_requests x
     WHERE x.status = 'accepted'
-      AND ((x.from_user_id = user_a::uuid AND x.to_user_id = user_b::uuid)
-        OR (x.from_user_id = user_b::uuid AND x.to_user_id = user_a::uuid))
+      AND ((lower(x.from_user_id::text) = lower(user_a) AND lower(x.to_user_id::text) = lower(user_b))
+        OR (lower(x.from_user_id::text) = lower(user_b) AND lower(x.to_user_id::text) = lower(user_a)))
   );
 END;
 $$;
@@ -228,121 +247,121 @@ ALTER TABLE room_challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE room_challenge_completions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "visible rooms read" ON study_rooms FOR SELECT TO authenticated
-  USING (coalesce(is_private, false) = false OR created_by = auth.uid() OR public.is_room_member(id));
+  USING (coalesce(is_private, false) = false OR created_by::text = auth.uid()::text OR public.is_room_member(id));
 CREATE POLICY "room creator insert" ON study_rooms FOR INSERT TO authenticated
-  WITH CHECK (created_by = auth.uid());
+  WITH CHECK (created_by::text = auth.uid()::text);
 CREATE POLICY "room creator update" ON study_rooms FOR UPDATE TO authenticated
-  USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid());
+  USING (created_by::text = auth.uid()::text) WITH CHECK (created_by::text = auth.uid()::text);
 CREATE POLICY "room creator delete" ON study_rooms FOR DELETE TO authenticated
-  USING (created_by = auth.uid());
+  USING (created_by::text = auth.uid()::text);
 
 CREATE POLICY "room members visible to room" ON room_members FOR SELECT TO authenticated
   USING (public.can_access_room(room_id));
 CREATE POLICY "self joins public room or owner manages" ON room_members FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid() AND EXISTS (
+  WITH CHECK (user_id::text = auth.uid()::text AND EXISTS (
       SELECT 1 FROM study_rooms r WHERE r.id = room_id
-        AND (coalesce(r.is_private, false) = false OR r.created_by = auth.uid() OR public.is_room_member(r.id))
+        AND (coalesce(r.is_private, false) = false OR r.created_by::text = auth.uid()::text OR public.is_room_member(r.id))
     )
-    OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by = auth.uid()));
+    OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by::text = auth.uid()::text));
 CREATE POLICY "self or owner updates membership" ON room_members FOR UPDATE TO authenticated
-  USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by = auth.uid()))
-  WITH CHECK ((user_id = auth.uid() AND public.can_access_room(room_id))
-    OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by = auth.uid()));
+  USING (user_id::text = auth.uid()::text OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by::text = auth.uid()::text))
+  WITH CHECK ((user_id::text = auth.uid()::text AND public.can_access_room(room_id))
+    OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by::text = auth.uid()::text));
 CREATE POLICY "self or owner leaves membership" ON room_members FOR DELETE TO authenticated
-  USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by = auth.uid()));
+  USING (user_id::text = auth.uid()::text OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by::text = auth.uid()::text));
 
 CREATE POLICY "room messages visible to members" ON room_messages FOR SELECT TO authenticated
   USING (public.can_access_room(room_id));
 CREATE POLICY "room member writes own messages" ON room_messages FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid() AND public.can_participate_in_room(room_id));
+  WITH CHECK (user_id::text = auth.uid()::text AND public.can_participate_in_room(room_id));
 CREATE POLICY "author or room owner updates messages" ON room_messages FOR UPDATE TO authenticated
-  USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by = auth.uid()))
-  WITH CHECK ((user_id = auth.uid() AND public.can_participate_in_room(room_id))
-    OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by = auth.uid()));
+  USING (user_id::text = auth.uid()::text OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by::text = auth.uid()::text))
+  WITH CHECK ((user_id::text = auth.uid()::text AND public.can_participate_in_room(room_id))
+    OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by::text = auth.uid()::text));
 CREATE POLICY "author or room owner deletes messages" ON room_messages FOR DELETE TO authenticated
-  USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by = auth.uid()));
+  USING (user_id::text = auth.uid()::text OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by::text = auth.uid()::text));
 
 CREATE POLICY "room reactions visible to members" ON message_reactions FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM room_messages m WHERE m.id = message_id AND public.can_access_room(m.room_id)));
 CREATE POLICY "members create own reactions" ON message_reactions FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid() AND EXISTS (SELECT 1 FROM room_messages m WHERE m.id = message_id AND public.can_participate_in_room(m.room_id)));
+  WITH CHECK (user_id::text = auth.uid()::text AND EXISTS (SELECT 1 FROM room_messages m WHERE m.id = message_id AND public.can_participate_in_room(m.room_id)));
 CREATE POLICY "members remove own reactions" ON message_reactions FOR DELETE TO authenticated
-  USING (user_id = auth.uid());
+  USING (user_id::text = auth.uid()::text);
 
 CREATE POLICY "room vocabulary visible to members" ON room_vocabulary FOR SELECT TO authenticated
   USING (public.can_access_room(room_id));
 CREATE POLICY "members add own vocabulary" ON room_vocabulary FOR INSERT TO authenticated
-  WITH CHECK (added_by = auth.uid() AND public.can_participate_in_room(room_id));
+  WITH CHECK (added_by::text = auth.uid()::text AND public.can_participate_in_room(room_id));
 CREATE POLICY "author or owner deletes vocabulary" ON room_vocabulary FOR DELETE TO authenticated
-  USING (added_by = auth.uid() OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by = auth.uid()));
+  USING (added_by::text = auth.uid()::text OR EXISTS (SELECT 1 FROM study_rooms r WHERE r.id = room_id AND r.created_by::text = auth.uid()::text));
 
 CREATE POLICY "room challenges visible to members" ON room_challenges FOR SELECT TO authenticated
   USING (public.can_access_room(room_id));
 CREATE POLICY "room owner creates challenges" ON room_challenges FOR INSERT TO authenticated
-  WITH CHECK (created_by = auth.uid() AND public.can_participate_in_room(room_id));
+  WITH CHECK (created_by::text = auth.uid()::text AND public.can_participate_in_room(room_id));
 CREATE POLICY "challenge creator updates" ON room_challenges FOR UPDATE TO authenticated
-  USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid() AND public.can_participate_in_room(room_id));
+  USING (created_by::text = auth.uid()::text) WITH CHECK (created_by::text = auth.uid()::text AND public.can_participate_in_room(room_id));
 CREATE POLICY "challenge creator deletes" ON room_challenges FOR DELETE TO authenticated
-  USING (created_by = auth.uid());
+  USING (created_by::text = auth.uid()::text);
 
 CREATE POLICY "challenge completions visible to members" ON room_challenge_completions FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM room_challenges c WHERE c.id = challenge_id AND public.can_access_room(c.room_id)));
 CREATE POLICY "users complete own challenges" ON room_challenge_completions FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid() AND EXISTS (SELECT 1 FROM room_challenges c WHERE c.id = challenge_id AND public.can_participate_in_room(c.room_id)));
+  WITH CHECK (user_id::text = auth.uid()::text AND EXISTS (SELECT 1 FROM room_challenges c WHERE c.id = challenge_id AND public.can_participate_in_room(c.room_id)));
 CREATE POLICY "users update own challenge completion" ON room_challenge_completions FOR UPDATE TO authenticated
-  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid()
+  USING (user_id::text = auth.uid()::text) WITH CHECK (user_id::text = auth.uid()::text
     AND EXISTS (SELECT 1 FROM room_challenges c WHERE c.id = challenge_id AND public.can_participate_in_room(c.room_id)));
 
 -- A public leaderboard is intentional; writes still remain account-owned.
 ALTER TABLE leaderboard ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "leaderboard visible to members" ON leaderboard FOR SELECT TO authenticated USING (true);
-CREATE POLICY "users create own leaderboard entry" ON leaderboard FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+CREATE POLICY "users create own leaderboard entry" ON leaderboard FOR INSERT TO authenticated WITH CHECK (user_id::text = auth.uid()::text);
 CREATE POLICY "users update own leaderboard entry" ON leaderboard FOR UPDATE TO authenticated
-  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
-CREATE POLICY "users delete own leaderboard entry" ON leaderboard FOR DELETE TO authenticated USING (user_id = auth.uid());
+  USING (user_id::text = auth.uid()::text) WITH CHECK (user_id::text = auth.uid()::text);
+CREATE POLICY "users delete own leaderboard entry" ON leaderboard FOR DELETE TO authenticated USING (user_id::text = auth.uid()::text);
 
 -- Exchange profiles are searchable by signed-in learners; edits remain private to their owner.
 ALTER TABLE exchange_profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "exchange profiles visible to members" ON exchange_profiles FOR SELECT TO authenticated USING (true);
-CREATE POLICY "users create own exchange profile" ON exchange_profiles FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+CREATE POLICY "users create own exchange profile" ON exchange_profiles FOR INSERT TO authenticated WITH CHECK (user_id::text = auth.uid()::text);
 CREATE POLICY "users update own exchange profile" ON exchange_profiles FOR UPDATE TO authenticated
-  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
-CREATE POLICY "users delete own exchange profile" ON exchange_profiles FOR DELETE TO authenticated USING (user_id = auth.uid());
+  USING (user_id::text = auth.uid()::text) WITH CHECK (user_id::text = auth.uid()::text);
+CREATE POLICY "users delete own exchange profile" ON exchange_profiles FOR DELETE TO authenticated USING (user_id::text = auth.uid()::text);
 
 ALTER TABLE exchange_requests ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE exchange_requests FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT ON TABLE exchange_requests TO authenticated;
 GRANT UPDATE (status) ON TABLE exchange_requests TO authenticated;
 CREATE POLICY "participants read exchange requests" ON exchange_requests FOR SELECT TO authenticated
-  USING (auth.uid() = from_user_id OR auth.uid() = to_user_id);
+  USING (from_user_id::text = auth.uid()::text OR to_user_id::text = auth.uid()::text);
 CREATE POLICY "sender creates exchange request" ON exchange_requests FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = from_user_id AND from_user_id <> to_user_id AND status = 'pending');
+  WITH CHECK (from_user_id::text = auth.uid()::text AND from_user_id <> to_user_id AND status = 'pending');
 CREATE POLICY "recipient responds to exchange request" ON exchange_requests FOR UPDATE TO authenticated
-  USING (auth.uid() = to_user_id AND status = 'pending')
-  WITH CHECK (auth.uid() = to_user_id AND status IN ('accepted','declined'));
+  USING (to_user_id::text = auth.uid()::text AND status = 'pending')
+  WITH CHECK (to_user_id::text = auth.uid()::text AND status IN ('accepted','declined'));
 
 ALTER TABLE direct_messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "conversation participants read messages" ON direct_messages FOR SELECT TO authenticated
   USING (public.can_access_conversation(conversation_id));
 CREATE POLICY "conversation participants send own messages" ON direct_messages FOR INSERT TO authenticated
-  WITH CHECK (sender_id = auth.uid() AND public.can_access_conversation(conversation_id));
+  WITH CHECK (sender_id::text = auth.uid()::text AND public.can_access_conversation(conversation_id));
 CREATE POLICY "sender deletes own messages" ON direct_messages FOR DELETE TO authenticated
-  USING (sender_id = auth.uid() AND public.can_access_conversation(conversation_id));
+  USING (sender_id::text = auth.uid()::text AND public.can_access_conversation(conversation_id));
 
 ALTER TABLE hidden_messages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "users read own hidden messages" ON hidden_messages FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "users read own hidden messages" ON hidden_messages FOR SELECT TO authenticated USING (user_id::text = auth.uid()::text);
 CREATE POLICY "users hide own conversation messages" ON hidden_messages FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid() AND EXISTS (
+  WITH CHECK (user_id::text = auth.uid()::text AND EXISTS (
     SELECT 1 FROM direct_messages m WHERE m.id = message_id AND public.can_access_conversation(m.conversation_id)
   ));
-CREATE POLICY "users unhide own messages" ON hidden_messages FOR DELETE TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "users unhide own messages" ON hidden_messages FOR DELETE TO authenticated USING (user_id::text = auth.uid()::text);
 
 ALTER TABLE webrtc_signals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "conversation participants receive signals" ON webrtc_signals FOR SELECT TO authenticated
-  USING ((from_user_id = auth.uid() OR to_user_id = auth.uid()) AND public.can_access_conversation(conversation_id));
+  USING ((from_user_id::text = auth.uid()::text OR to_user_id::text = auth.uid()::text) AND public.can_access_conversation(conversation_id));
 CREATE POLICY "conversation participants send signals" ON webrtc_signals FOR INSERT TO authenticated
-  WITH CHECK (from_user_id = auth.uid() AND public.can_access_conversation(conversation_id)
+  WITH CHECK (from_user_id::text = auth.uid()::text AND public.can_access_conversation(conversation_id)
     AND ((split_part(conversation_id, '__', 1) = from_user_id::text AND split_part(conversation_id, '__', 2) = to_user_id::text)
       OR (split_part(conversation_id, '__', 2) = from_user_id::text AND split_part(conversation_id, '__', 1) = to_user_id::text)));
 CREATE POLICY "participants clean up signals" ON webrtc_signals FOR DELETE TO authenticated
-  USING ((from_user_id = auth.uid() OR to_user_id = auth.uid()) AND public.can_access_conversation(conversation_id));
+  USING ((from_user_id::text = auth.uid()::text OR to_user_id::text = auth.uid()::text) AND public.can_access_conversation(conversation_id));
