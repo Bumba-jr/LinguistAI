@@ -35,6 +35,10 @@ export interface LessonHomework {
 export interface StaticFrenchLesson extends TcfLesson {
     traps?: string[];      // score-destroying traps, shown before the lesson
     homework?: LessonHomework;
+    // Every French surface form used anywhere in the lecture → English.
+    // The tap-to-translate toolkit reads this, so word cards work for the
+    // WHOLE lesson (grammar examples, drills, mini test) with zero AI.
+    glossary?: Record<string, string>;
 }
 
 // ── A1 · Greetings & Introductions ───────────────────────────────────────────
@@ -161,6 +165,63 @@ const a1Greetings: StaticFrenchLesson = {
         'Introducing yourself with "Je suis + name": French uses s\u2019appeler — "Je m\u2019appelle Marie". Save "je suis" for professions, nationalities and states.',
         'Forgetting the speaker-gender agreement on enchanté(e): a woman writes enchantée, a man enchanté. The -e matches YOU, not the other person.',
     ],
+
+    glossary: {
+        // greetings & farewells
+        'bonjour': 'hello / good morning', 'bonsoir': 'good evening', 'salut': 'hi / bye (informal)',
+        'coucou': 'hey (very casual)', 'au revoir': 'goodbye', 'à bientôt': 'see you soon',
+        'à tout à l\u2019heure': 'see you later (same day)', 'à demain': 'see you tomorrow', 'à demain !': 'see you tomorrow',
+        'à plus tard': 'see you later', 'bonne journée': 'have a good day', 'bonne soirée': 'have a good evening',
+        // thanks & politeness
+        'merci': 'thank you', 'merci beaucoup': 'thank you very much', 'de rien': 'you\u2019re welcome (casual)',
+        'je vous en prie': 'you\u2019re welcome (formal)', 's\u2019il vous plaît': 'please (formal/plural)',
+        's\u2019il te plaît': 'please (informal)', 'oui': 'yes', 'non': 'no',
+        'si': 'yes (contradicting a negative)', 'pardon': 'sorry / excuse me', 'excusez-moi': 'excuse me',
+        'désolé': 'sorry', 'désolée': 'sorry (speaker is a woman)',
+        // introductions
+        'enchante': 'nice to meet you (as written, missing accent)', 'enchanté': 'nice to meet you (male speaker)',
+        'enchantée': 'nice to meet you (female speaker)', 'tout le plaisir est pour moi': 'the pleasure is all mine',
+        'je m\u2019appelle': 'my name is (lit. I call myself)', 'tu t\u2019appelles': 'your name is (informal)',
+        'il s\u2019appelle': 'his name is', 'elle s\u2019appelle': 'her name is',
+        'nous nous appelons': 'our names are', 'vous vous appelez': 'your name is (formal)',
+        'm\u2019appelle': '(I) call myself — with je: my name is', 't\u2019appelles': '(you) call yourself',
+        's\u2019appelle': '(he/she) calls himself/herself', 'appelons': '(we) call ourselves',
+        'appelez': '(you) call / your name is (vous form)', 'appelez-vous': 'do you call yourselves? (inversion)',
+        'appelle': 'call / (he) calls', 's\u2019appeler': 'to be called (reflexive verb)',
+        'comment': 'how', 'et': 'and', 'moi': 'me', 'c\u2019est': 'it is', 'est': 'is',
+        // pronouns & verbs
+        'je': 'I', 'tu': 'you (informal)', 'il': 'he', 'elle': 'she', 'nous': 'we', 'vous': 'you (formal/plural)',
+        'ils': 'they (masc/mixed)', 'elles': 'they (fem)', 'on': 'one / we (informal)',
+        'je suis': 'I am', 'tu es': 'you are', 'il est': 'he is', 'elle est': 'she is',
+        'suis': 'am (je suis)', 'es': 'are (tu es)', 'sommes': 'are (nous sommes)',
+        'êtes': 'are (vous êtes)', 'sont': 'are (ils/elles sont)',
+        'ne': 'not (first half of the negation sandwich)', 'pas': 'not (second half of the sandwich)',
+        'on peut': 'one can / we can', 'se tutoyer': 'to use tu with each other (be informal)',
+        'est-ce que': 'question marker (turns a statement into a question)',
+        // example-sentence words
+        'madame': 'ma\u2019am / Mrs', 'monsieur': 'sir / Mr', 'entrez': 'come in',
+        'demain': 'tomorrow', 'beaucoup': 'a lot / very much', 'un': 'a (masculine)', 'une': 'a (feminine)',
+        'café': 'coffee', 'ami': 'friend (male)', 'amie': 'friend (female)',
+        'mon': 'my (masculine)', 'ma': 'my (feminine)', 'mes': 'my (plural)',
+        'présente': 'introduce (je vous présente = let me introduce you to)',
+        'retard': 'lateness', 'en retard': 'late / behind schedule',
+        'marie': 'Marie (name)', 'paul': 'Paul (name)', 'dupont': 'Dupont (surname)',
+        'quoi': 'what', 'quoi de neuf': 'what\u2019s new', 'ou': 'or (as written, missing accent — where is où)',
+        'où': 'where', 'qui': 'who', 'quand': 'when', 'pourquoi': 'why', 'quel': 'which/what',
+        'ça': 'that / it (informal)', 'va': 'goes / is going', 'vas': 'go (tu form)',
+        'allez': 'go (vous form) / are you', 'allez-vous': 'are you? (vous form)', 'vas-tu': 'how are you (informal)',
+        'vais': 'go (je form)', 'très': 'very', 'très bien': 'very well / fine', 'pas mal': 'not bad',
+        'comme ci comme ça': 'so-so', 'neuf': 'new', 'bien': 'well / fine',
+        'mal': 'badly / unwell', 'comme': 'as / like', 'ci': 'this (in fixed phrases)',
+        'tout': 'all / everything', 'à': 'at / to / till (see you…)', 'plaisir': 'pleasure',
+        'le': 'the (masculine)', 'la': 'the (feminine)', 'les': 'the (plural)', 'jour': 'day',
+        'journée': 'day (the whole day)', 'soirée': 'evening (the whole evening)', 'soir': 'evening',
+        'bon': 'good', 'bonne': 'good (feminine)', 'problème': 'problem',
+        // homework answers
+        'est-ce': 'is it (start of est-ce que)', 'que': 'that / what', 'qu\u2019': 'that/what (elided)',
+        'voiture': 'car', 'livre': 'book', 'école': 'school', 'femme': 'woman / wife', 'homme': 'man',
+        'jeune': 'young', 'enfant': 'child', 'chat': 'cat', 'chien': 'dog',
+    },
 
     homework: {
         intro: 'Four sections, do them in order. Check each answer yourself — read the explanation even when you get it right, so nothing stays "right by luck".',

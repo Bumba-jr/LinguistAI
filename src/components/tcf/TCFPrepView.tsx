@@ -43,11 +43,18 @@ const SKILL_META = {
 // ── shared UI ────────────────────────────────────────────────────────────────
 const FrEn = ({ fr, en, dark = false }: { fr: string; en: string; dark?: boolean }) => (
     <div className="space-y-0.5">
-        <InteractiveText text={fr} language="French" dark={dark}
-            className={cn('block font-semibold', dark ? 'text-white' : 'text-stone-900')} />
+        <Fr text={fr} className={cn('block font-semibold', dark ? 'text-white' : 'text-stone-900')} />
         <p className={cn('text-sm', dark ? 'text-white/50' : 'text-stone-400')}>{en}</p>
     </div>
 );
+
+// The active static lesson's glossary (French surface form → English), or null
+// for AI-generated lessons. Every French string in the lesson renderer reads
+// this, so tap-to-translate works for the WHOLE lecture with zero AI.
+const LessonGlossaryContext = React.createContext<Record<string, string> | null>(null);
+
+const normFr = (s: string) =>
+    s.toLowerCase().replace(/[\u2019\u2018`´]/g, "'").replace(/[.,!?;:«»"()—]/g, '').trim();
 
 // Zero-AI word card for static lessons: the translation is already known from
 // the lesson data, so tapping a word works offline and instantly — no
@@ -92,6 +99,50 @@ const StaticWord = ({ word, en }: { word: string; en: string }) => {
             )}
         </span>
     );
+};
+
+// French text where EVERY word is tappable: tokens are matched against the
+// glossary with longest-phrase-first (up to 4 words), so 'je m'appelle',
+// 'à tout à l'heure' and 's'appelle' all resolve to their full entry.
+const StaticFrText = ({ text, className }: { text: string; className?: string }) => {
+    const glossary = React.useContext(LessonGlossaryContext) ?? {};
+    const SEP = /(\s+|[.,!?;:«»"()—¿¡])/;
+    const isWord = (t: string) => !!t.trim() && !SEP.test(t);
+    const parts = text.split(SEP);
+    const out: React.ReactNode[] = [];
+    let i = 0;
+    let key = 0;
+    while (i < parts.length) {
+        const p = parts[i];
+        if (!p) { i++; continue; }
+        if (!isWord(p)) { out.push(<span key={`x${key++}`}>{p}</span>); i++; continue; }
+        // try up to 4 consecutive words, longest glossary match wins
+        let matched = 0, matchedEn = '', surface = p, lastIdx = i;
+        const words: string[] = [];
+        for (let len = 0; len < 4; len++) {
+            const wi = i + len * 2;
+            if (wi >= parts.length || !isWord(parts[wi])) break;
+            words.push(parts[wi]);
+            const n = normFr(words.join(' '));
+            if (n && glossary[n] !== undefined) { matched = len + 1; matchedEn = glossary[n]; surface = parts.slice(i, wi + 1).join(''); lastIdx = wi; }
+        }
+        if (matched > 0) {
+            out.push(<StaticWord key={`w${key++}`} word={surface} en={matchedEn} />);
+            i = lastIdx + 1;
+        } else {
+            out.push(<span key={`p${key++}`}>{p}</span>);
+            i++;
+        }
+    }
+    return <span className={className}>{out}</span>;
+};
+
+// Lesson French: glossary word-cards when a static lesson is open, AI
+// word-breakdown tooltip otherwise (AI lessons unchanged).
+const Fr = ({ text, className }: { text: string; className?: string }) => {
+    const glossary = React.useContext(LessonGlossaryContext);
+    if (glossary) return <StaticFrText text={text} className={className} />;
+    return <InteractiveText text={text} language="French" className={className} />;
 };
 
 const ExamBadge = () => (
@@ -398,6 +449,7 @@ const Curriculum = ({ language }: { language: string }) => {
 
             {/* lesson renderer */}
             {lesson && (
+              <LessonGlossaryContext.Provider value={staticExtras?.glossary ?? null}>
                 <div className="space-y-5">
                     <button onClick={() => { setLesson(null); setOpenTopic(null); }}
                         className="flex items-center gap-2 text-sm font-bold text-stone-400 hover:text-stone-800 transition-colors">
@@ -483,7 +535,7 @@ const Curriculum = ({ language }: { language: string }) => {
                             <div className="space-y-2">
                                 {lesson.pronunciation.map((p, i) => (
                                     <div key={i} className="flex items-center gap-3 bg-stone-50 rounded-xl px-3 py-2">
-                                        <span className="font-bold text-stone-800 text-sm">{p.fr}</span>
+                                        <Fr text={p.fr} className="font-bold text-stone-800 text-sm" />
                                         <span className="text-xs font-mono text-violet-500">/{p.approx}/</span>
                                         <span className="text-xs text-stone-400 flex-1">{p.en}</span>
                                         <button onClick={() => speakText(p.fr, 'French')} className="text-stone-300 hover:text-emerald-500"><Volume2 size={13} /></button>
@@ -558,7 +610,7 @@ const Curriculum = ({ language }: { language: string }) => {
                                 return (
                                     <div key={i} className="bg-stone-50 rounded-2xl p-4">
                                         <p className="text-xs font-bold text-stone-500 mb-1">{ex.instruction}</p>
-                                        <InteractiveText text={ex.question} language="French" className="block text-sm font-semibold text-stone-800" />
+                                        <Fr text={ex.question} className="block text-sm font-semibold text-stone-800" />
                                         <div className="flex items-center gap-2 mt-2">
                                             <button onClick={() => setAnswers(prev => ({ ...prev, [`p${i}`]: 'revealed' }))}
                                                 className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
@@ -592,7 +644,7 @@ const Curriculum = ({ language }: { language: string }) => {
                                 const picked = answers[`r${i}`];
                                 return (
                                     <div key={i} className="bg-stone-50 rounded-2xl p-4">
-                                        <InteractiveText text={t.fr} language="French" className="block text-sm font-semibold text-stone-800 mb-1.5" />
+                                        <Fr text={t.fr} className="block text-sm font-semibold text-stone-800 mb-1.5" />
                                         <button onClick={() => setAnswers(prev => ({ ...prev, [`r${i}`]: 'revealed' }))}
                                             className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700">
                                             {picked ? 'Hide' : 'Show the English'}
@@ -651,7 +703,7 @@ const Curriculum = ({ language }: { language: string }) => {
                                 const right = picked === q.answer;
                                 return (
                                     <div key={i}>
-                                        <InteractiveText text={q.question} language="French" className="block text-sm font-bold text-stone-800 mb-2" />
+                                        <Fr text={q.question} className="block text-sm font-bold text-stone-800 mb-2" />
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             {q.options.map((opt, oi) => (
                                                 <button key={oi} onClick={() => { if (picked === undefined) setAnswers(prev => ({ ...prev, [`m${i}`]: opt })); }}
@@ -688,6 +740,7 @@ const Curriculum = ({ language }: { language: string }) => {
                         </div>
                     )}
                 </div>
+              </LessonGlossaryContext.Provider>
             )}
 
             {showHomework && staticExtras?.homework && (
