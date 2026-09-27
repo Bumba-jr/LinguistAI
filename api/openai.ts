@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireAuthenticatedRequest } from './_apiShared.js';
 
 // Server-side proxy for OpenAI — keeps OPENAI_API_KEY out of the browser bundle.
 // Handles both JSON APIs (chat) and binary responses (TTS audio).
@@ -6,13 +7,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
         res.setHeader('Allow', 'POST');
         return res.status(405).json({ error: 'Method not allowed' });
-    }
-    // TEMP diagnostic: surface the boot error directly in the response
-    let requireAuthenticatedRequest: any;
-    try {
-        ({ requireAuthenticatedRequest } = await import('./_apiShared'));
-    } catch (e: any) {
-        return res.status(500).json({ diagnostic: 'apiShared import failed', error: String(e && e.stack ? e.stack : e) });
     }
     const openaiPath = (req.url ?? '').replace(/^\/api\/openai/, '').split('?')[0] || '/';
     if (!['/v1/chat/completions', '/v1/audio/speech'].includes(openaiPath)) {
