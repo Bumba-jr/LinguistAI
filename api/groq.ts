@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireAuthenticatedRequest } from '../src/server/apiShared';
+import { requireAuthenticatedRequest } from './_apiShared';
 
 export const config = { api: { bodyParser: false } };
 

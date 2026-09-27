@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireAuthenticatedRequest } from '../src/server/apiShared';
+import { requireAuthenticatedRequest } from './_apiShared';
 
 // Server-side proxy for OpenAI — keeps OPENAI_API_KEY out of the browser bundle.
 // Handles both JSON APIs (chat) and binary responses (TTS audio).
