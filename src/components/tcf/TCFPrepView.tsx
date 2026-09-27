@@ -49,6 +49,51 @@ const FrEn = ({ fr, en, dark = false }: { fr: string; en: string; dark?: boolean
     </div>
 );
 
+// Zero-AI word card for static lessons: the translation is already known from
+// the lesson data, so tapping a word works offline and instantly — no
+// getWordBreakdown call, no auth, no rate limit.
+const StaticWord = ({ word, en }: { word: string; en: string }) => {
+    const [open, setOpen] = useState(false);
+    const { addFlashcard, flashcards, user } = useAppStore() as any;
+    const inDeck = flashcards.some((f: any) =>
+        f.word.toLowerCase() === word.toLowerCase() && f.language === 'French');
+    const addToDeck = () => {
+        if (inDeck) return;
+        const card = {
+            id: crypto.randomUUID(),
+            word,
+            translation: en,
+            language: 'French' as const,
+            nextReview: new Date().toISOString(),
+            lastReviewed: null,
+        };
+        addFlashcard(card);
+        if (user) import('../../services/dbService').then(m => m.upsertFlashcard(user.id, card)).catch(() => { });
+    };
+    return (
+        <span className="relative inline-block">
+            <button onClick={() => setOpen(o => !o)}
+                className="font-bold text-stone-900 underline decoration-dotted decoration-[1.5px] underline-offset-[5px] decoration-stone-300 hover:decoration-emerald-500 hover:text-emerald-700 transition-colors cursor-help">
+                {word}
+            </button>
+            {open && (
+                <span className="absolute z-[9999] bottom-full left-0 mb-2 w-max max-w-[260px] rounded-2xl bg-stone-900 text-white shadow-2xl p-3 text-left space-y-2">
+                    <span className="block text-sm"><span className="font-black">{word}</span><span className="mx-1.5 text-white/30">—</span><span className="font-semibold text-emerald-300">{en}</span></span>
+                    <span className="flex items-center gap-2">
+                        <button onClick={(e) => { e.stopPropagation(); speakText(word, 'French'); }}
+                            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"><Volume2 size={12} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); addToDeck(); }}
+                            className={cn('px-2.5 py-1.5 rounded-lg text-[10px] font-black transition-colors',
+                                inDeck ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 hover:bg-white/20')}>
+                            {inDeck ? '✓ In deck' : '+ Flashcards'}
+                        </button>
+                    </span>
+                </span>
+            )}
+        </span>
+    );
+};
+
 const ExamBadge = () => (
     <span className="text-[9px] font-black bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded-full uppercase tracking-widest">practice estimate</span>
 );
@@ -405,7 +450,7 @@ const Curriculum = ({ language }: { language: string }) => {
                                     <div className="flex items-baseline justify-between gap-2">
                                         <div className="flex items-baseline gap-1.5 flex-wrap">
                                             {tooltips
-                                                ? <InteractiveText text={v.fr} language="French" className="font-bold text-stone-900" />
+                                                ? <StaticWord word={v.fr} en={v.en} />
                                                 : <span className="font-bold text-stone-900">{v.fr}</span>}
                                             {v.gender && (
                                                 <span className={cn('text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider',
@@ -646,7 +691,8 @@ const Curriculum = ({ language }: { language: string }) => {
             )}
 
             {showHomework && staticExtras?.homework && (
-                <LessonHomework lesson={staticExtras} onClose={() => setShowHomework(false)} />
+                <LessonHomework lesson={staticExtras} onClose={() => setShowHomework(false)}
+                    onMarkComplete={() => { if (lessonKey) { markLessonComplete(lessonKey); setDone(getCompletedLessons()); } }} />
             )}
         </div>
     );

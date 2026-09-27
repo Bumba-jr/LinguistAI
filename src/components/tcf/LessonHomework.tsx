@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, ClipboardList, PenLine, ListChecks } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, ClipboardList, PenLine, ListChecks, PartyPopper } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { HomeworkCheck, StaticFrenchLesson } from '../../services/frenchLessons';
 
@@ -22,26 +22,27 @@ const isRight = (given: string, item: HomeworkCheck) => {
 
 type SectionKey = 'a' | 'b' | 'c';
 
-const CheckItem = ({ index, tag, item, answer, onAnswer }: {
-    index: number; tag: string; item: HomeworkCheck; answer?: string; onAnswer: (v: string) => void;
+const CheckItem = ({ index, tag, item, answer, onAnswer, graded, onRetry }: {
+    index: number; tag: string; item: HomeworkCheck; answer?: string; onAnswer: (v: string) => void; graded: boolean; onRetry: () => void;
 }) => {
-    const [checked, setChecked] = useState(false);
-    const right = checked && answer !== undefined && isRight(answer, item);
-    const showResult = checked && answer !== undefined && answer.trim().length > 0;
+    const right = graded && answer !== undefined && isRight(answer, item);
+    const showResult = graded;
 
     return (
-        <div className="bg-white rounded-3xl border border-stone-100 p-5 space-y-3">
-            <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{tag} {index + 1}</p>
-            <p className="text-sm font-semibold text-stone-800">{item.prompt}</p>
-            <div className="flex gap-2">
-                <input value={answer ?? ''} onChange={e => onAnswer(e.target.value)}
-                    placeholder="Votre réponse en français…"
-                    className="flex-1 px-4 py-3 text-sm rounded-2xl border border-stone-200 focus:outline-none focus:border-emerald-400 bg-stone-50" />
-                <button onClick={() => setChecked(true)}
-                    className="px-4 py-3 bg-stone-900 text-white text-[11px] font-black rounded-2xl hover:bg-stone-700 transition-colors">
-                    Check
-                </button>
+        <div className={cn('rounded-3xl border p-5 space-y-3 transition-colors',
+            graded ? (right ? 'bg-emerald-50/60 border-emerald-100' : 'bg-red-50/60 border-red-100') : 'bg-white border-stone-100')}>
+            <div className="flex items-center justify-between">
+                <p className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{tag} {index + 1}</p>
+                {graded && (right
+                    ? <CheckCircle2 size={16} className="text-emerald-600" />
+                    : <XCircle size={16} className="text-red-500" />)}
             </div>
+            <p className="text-sm font-semibold text-stone-800">{item.prompt}</p>
+            <input value={answer ?? ''} onChange={e => onAnswer(graded ? answer ?? '' : e.target.value)}
+                readOnly={graded}
+                placeholder="Votre réponse en français…"
+                className={cn('w-full px-4 py-3 text-sm rounded-2xl border focus:outline-none bg-stone-50',
+                    graded ? (right ? 'border-emerald-200' : 'border-red-200') : 'border-stone-200 focus:border-emerald-400')} />
             {showResult && (
                 <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                     className={cn('rounded-2xl p-4 space-y-1.5 border',
@@ -53,8 +54,8 @@ const CheckItem = ({ index, tag, item, answer, onAnswer }: {
                     </p>
                     <p className="text-sm font-bold text-stone-900">{item.answer}</p>
                     <p className="text-xs text-stone-500 leading-relaxed">{item.explanation}</p>
-                    {!right && (
-                        <button onClick={() => { onAnswer(''); setChecked(false); }}
+                    {!right && graded && (
+                        <button onClick={() => { onAnswer(''); onRetry(); }}
                             className="text-[11px] font-black text-emerald-600 hover:text-emerald-700 flex items-center gap-1 pt-1">
                             <RotateCcw size={11} /> Try again
                         </button>
@@ -65,11 +66,12 @@ const CheckItem = ({ index, tag, item, answer, onAnswer }: {
     );
 };
 
-export const LessonHomework = ({ lesson, onClose }: { lesson: StaticFrenchLesson; onClose: () => void }) => {
+export const LessonHomework = ({ lesson, onClose, onMarkComplete }: { lesson: StaticFrenchLesson; onClose: () => void; onMarkComplete: () => void }) => {
     const hw = lesson.homework!;
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [writing, setWriting] = useState('');
     const [ticks, setTicks] = useState<Set<number>>(new Set());
+    const [graded, setGraded] = useState(false);
 
     const set = (key: string) => (v: string) => setAnswers(prev => ({ ...prev, [key]: v }));
     const words = writing.trim() ? writing.trim().split(/\s+/).length : 0;
@@ -124,7 +126,7 @@ export const LessonHomework = ({ lesson, onClose }: { lesson: StaticFrenchLesson
                 </div>
                 <div className="space-y-3">
                     {hw.translation.map((item, i) => (
-                        <CheckItem key={`a${i}`} index={i} tag="Translation" item={item}
+                        <CheckItem key={`a${i}`} index={i} tag="Translation" item={item} graded={graded} onRetry={() => setGraded(false)}
                             answer={answers[`a${i}`]} onAnswer={set(`a${i}`)} />
                     ))}
                 </div>
@@ -136,7 +138,7 @@ export const LessonHomework = ({ lesson, onClose }: { lesson: StaticFrenchLesson
                 </div>
                 <div className="space-y-3">
                     {hw.blanks.map((item, i) => (
-                        <CheckItem key={`b${i}`} index={i} tag="Blank" item={item}
+                        <CheckItem key={`b${i}`} index={i} tag="Blank" item={item} graded={graded} onRetry={() => setGraded(false)}
                             answer={answers[`b${i}`]} onAnswer={set(`b${i}`)} />
                     ))}
                 </div>
@@ -148,10 +150,41 @@ export const LessonHomework = ({ lesson, onClose }: { lesson: StaticFrenchLesson
                 </div>
                 <div className="space-y-3">
                     {hw.corrections.map((item, i) => (
-                        <CheckItem key={`c${i}`} index={i} tag="Fix it" item={item}
+                        <CheckItem key={`c${i}`} index={i} tag="Fix it" item={item} graded={graded} onRetry={() => setGraded(false)}
                             answer={answers[`c${i}`]} onAnswer={set(`c${i}`)} />
                     ))}
                 </div>
+
+                {/* one-button rating — finish everything first, then rate it all at once */}
+                {!graded && (
+                    <div className="bg-stone-900 rounded-3xl p-5 text-center space-y-2">
+                        <p className="text-xs text-white/60">Finish every section above, then rate the whole homework in one go.</p>
+                        <button onClick={() => setGraded(true)} disabled={totalChecked.done < totalChecked.total}
+                            className="px-8 py-3.5 bg-emerald-500 text-white text-sm font-black rounded-2xl hover:bg-emerald-600 transition-colors disabled:opacity-40">
+                            {totalChecked.done < totalChecked.total
+                                ? `Answer everything first (${totalChecked.done}/${totalChecked.total})`
+                                : 'Rate my homework'}
+                        </button>
+                    </div>
+                )}
+                {graded && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                        className={cn('rounded-3xl p-6 text-center text-white', totalChecked.right === totalChecked.total ? 'bg-emerald-600' : 'bg-stone-900')}>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Your homework result</p>
+                        <p className="text-4xl font-black my-2">{totalChecked.right}/{totalChecked.total}</p>
+                        <p className="text-xs opacity-70">
+                            {totalChecked.right === totalChecked.total
+                                ? 'Perfect — every answer explained above, right or wrong. Tick the checklist and close the lesson.'
+                                : 'Read every explanation above, fix the red ones with Try again, then re-rate.'}
+                        </p>
+                        {graded && totalChecked.right < totalChecked.total && (
+                            <button onClick={() => setGraded(false)}
+                                className="mt-3 px-5 py-2.5 bg-white/10 rounded-xl text-xs font-black hover:bg-white/20 inline-flex items-center gap-2">
+                                <RotateCcw size={12} /> Fix answers & re-rate
+                            </button>
+                        )}
+                    </motion.div>
+                )}
 
                 {/* Section D — writing task */}
                 <div className="flex items-center gap-2 mt-8 mb-3">
@@ -189,9 +222,24 @@ export const LessonHomework = ({ lesson, onClose }: { lesson: StaticFrenchLesson
                         </button>
                     ))}
                 </div>
-                <p className="text-[10px] text-stone-300 text-center mt-6">
-                    If any checklist box stays unticked, revisit that part of the lesson before moving to the next topic.
-                </p>
+                {graded && ticks.size === hw.checklist.length ? (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                        className="mt-4 bg-emerald-600 rounded-3xl p-6 text-center text-white space-y-3">
+                        <PartyPopper size={24} className="mx-auto" />
+                        <p className="font-black text-lg">Lesson complete!</p>
+                        <p className="text-xs opacity-80">Homework rated and every checklist box ticked. The lesson is now marked complete in your progress.</p>
+                        <button onClick={() => { onMarkComplete(); onClose(); }}
+                            className="px-8 py-3.5 bg-white text-stone-900 text-sm font-black rounded-2xl hover:bg-stone-100 transition-colors">
+                            Save & back to the lesson
+                        </button>
+                    </motion.div>
+                ) : (
+                    <p className="text-[10px] text-stone-300 text-center mt-6">
+                        {graded
+                            ? `Tick all ${hw.checklist.length} checklist boxes to complete the lesson.`
+                            : 'Rate your homework first — then the checklist unlocks lesson completion.'}
+                    </p>
+                )}
             </div>
         </motion.div>
     );
