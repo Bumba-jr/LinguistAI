@@ -274,21 +274,20 @@ export const LessonHomework = ({ lesson, level = 'A1', onClose, onMarkComplete }
                         </button>
                     ))}
                 </div>
-                {graded && (
-                    <div className="mt-3 bg-white rounded-3xl border border-stone-100 p-5 space-y-3">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                            <p className="text-xs font-bold text-stone-600">
-                                {ticks.size === hw.checklist.length
-                                    ? 'Every box ticked — you understand it all.'
-                                    : `${hw.checklist.length - ticks.size} box${hw.checklist.length - ticks.size !== 1 ? 'es' : ''} unticked — that usually means the point is not solid yet.`}
-                            </p>
-                            {ticks.size < hw.checklist.length && (
-                                <button onClick={() => setShowRemedial(v => !v)}
-                                    className="px-4 py-2.5 bg-violet-500 text-white text-[11px] font-black rounded-2xl hover:bg-violet-600 transition-colors">
-                                    {showRemedial ? 'Hide the mini-lessons' : 'Explain what I missed'}
-                                </button>
-                            )}
-                        </div>
+                <div className="bg-white rounded-3xl border border-stone-100 p-5 space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                        <p className="text-xs font-bold text-stone-600">
+                            {ticks.size === hw.checklist.length
+                                ? 'Every box ticked — you understand it all.'
+                                : `${hw.checklist.length - ticks.size} box${hw.checklist.length - ticks.size !== 1 ? 'es' : ''} unticked — that usually means the point is not solid yet.`}
+                        </p>
+                        {ticks.size < hw.checklist.length && (
+                            <button onClick={() => setShowRemedial(v => !v)}
+                                className="px-4 py-2.5 bg-violet-500 text-white text-[11px] font-black rounded-2xl hover:bg-violet-600 transition-colors">
+                                {showRemedial ? 'Hide the mini-lessons' : 'Explain what I missed'}
+                            </button>
+                        )}
+                    </div>
                         {showRemedial && lesson.checklistRemedial && (
                             <div className="space-y-3">
                                 {lesson.checklistRemedial.map((rl: RemedialLesson, i: number) => {
@@ -315,13 +314,12 @@ export const LessonHomework = ({ lesson, level = 'A1', onClose, onMarkComplete }
                             </div>
                         )}
                     </div>
-                )}
-                {graded && ticks.size === hw.checklist.length ? (
+                {ticks.size === hw.checklist.length ? (
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                         className="mt-4 bg-emerald-600 rounded-3xl p-6 text-center text-white space-y-3">
                         <PartyPopper size={24} className="mx-auto" />
                         <p className="font-black text-lg">Lesson complete!</p>
-                        <p className="text-xs opacity-80">Homework rated and every checklist box ticked. The lesson is now marked complete in your progress.</p>
+                        <p className="text-xs opacity-80">Every checklist box ticked. The lesson is now marked complete in your progress.</p>
                         <button onClick={() => { onMarkComplete(); onClose(); }}
                             className="px-8 py-3.5 bg-white text-stone-900 text-sm font-black rounded-2xl hover:bg-stone-100 transition-colors">
                             Save & back to the lesson
@@ -329,9 +327,7 @@ export const LessonHomework = ({ lesson, level = 'A1', onClose, onMarkComplete }
                     </motion.div>
                 ) : (
                     <p className="text-[10px] text-stone-300 text-center mt-6">
-                        {graded
-                            ? `Tick all ${hw.checklist.length} checklist boxes to complete the lesson.`
-                            : 'Rate your homework first — then the checklist unlocks lesson completion.'}
+                        `Tick all ${hw.checklist.length} checklist boxes to complete the lesson.`
                     </p>
                 )}
             </div>
