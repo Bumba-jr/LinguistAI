@@ -32,6 +32,19 @@ export interface LessonHomework {
     writing: { task: string; requirements: string[]; minWords: number };
     checklist: string[];            // end-of-lesson self check
 }
+export interface RemedialLesson {
+    explanation: string;                     // re-teach the point
+    examples: { fr: string; en: string }[];  // worked examples
+}
+export interface StaticFrenchLesson extends TcfLesson {
+    traps?: string[];      // score-destroying traps, shown before the lesson
+    homework?: LessonHomework;
+    // Every French surface form used anywhere in the lecture → rich entry.
+    // The tap-to-translate toolkit reads this, so word cards work for the
+    // WHOLE lesson (grammar examples, drills, mini test) with zero AI.
+    glossary?: Glossary;
+}
+
 // Rich word card: the tap-to-translate toolkit shows ALL of this —
 // meaning, gender (le/la), register (formal/informal), plural, and
 // usage notes covering multiple meanings and traps.
@@ -47,9 +60,14 @@ export type Glossary = Record<string, GlossaryValue>;
 export const asEntry = (v: GlossaryValue): GlossaryEntry =>
     typeof v === 'string' ? { en: v } : v;
 
+export interface RemedialLesson {
+    explanation: string;                     // re-teach the point
+    examples: { fr: string; en: string }[];  // worked examples
+}
 export interface StaticFrenchLesson extends TcfLesson {
     traps?: string[];      // score-destroying traps, shown before the lesson
     homework?: LessonHomework;
+    checklistRemedial?: RemedialLesson[];  // aligned 1:1 with the checklist items
     // Every French surface form used anywhere in the lecture → rich entry.
     // The tap-to-translate toolkit reads this, so word cards work for the
     // WHOLE lesson (grammar examples, drills, mini test) with zero AI.
@@ -376,6 +394,51 @@ const a1Greetings: StaticFrenchLesson = {
             'I can run the full greeting ritual out loud — morning and evening, formal and casual',
         ],
     },
+    checklistRemedial: [
+            {
+                explanation: 'Tu vs vous is a relationship choice, not a grammar puzzle. Ask: do I know this person personally, and are they my age or younger? → tu. Everyone else — strangers, shopkeepers, teachers, elders, and ANY group of people → vous. In the exam, vous is always the safe answer with the examiner. If a French speaker wants to be informal with you, they will offer it: « On peut se tutoyer ? »',
+                examples: [
+                    { fr: 'Salut Julie, ça va ? (tu — your friend)', en: 'Hi Julie, how are you? (friend)' },
+                    { fr: 'Bonjour Madame, comment allez-vous ? (vous — a stranger)', en: 'Hello ma\u2019am, how are you? (stranger)' },
+                    { fr: 'Vous êtes professeurs ? (vous — a group, even friends)', en: 'Are you teachers? (a group)' },
+                ],
+            },
+            {
+                explanation: 'French introduces names with the REFLEXIVE verb s\u2019appeler — literally "to call oneself". Je m\u2019appelle = "I call myself". "Je suis + name" is not the standard introduction (it is heard in Canada, but the exam expects s\u2019appeler). Keep je suis for profession, nationality and feelings: je suis étudiant, je suis fatigué.',
+                examples: [
+                    { fr: 'Je m\u2019appelle Iliya. Et vous, comment vous appelez-vous ?', en: 'My name is Iliya. And you, what is your name?' },
+                    { fr: 'Elle s\u2019appelle Marie.', en: 'Her name is Marie. (not: Elle est Marie)' },
+                ],
+            },
+            {
+                explanation: 'S\u2019appeler in the present — memorise the whole column as one block, and notice the double pronouns in nous/vous: the subject AND the reflexive pronoun both appear. The -s in tu t\u2019appelles is silent but MUST be written.',
+                examples: [
+                    { fr: 'je m\u2019appelle, tu t\u2019appelles, il/elle s\u2019appelle', en: 'my name is, your name is, his/her name is' },
+                    { fr: 'nous nous appelons, vous vous appelez, ils s\u2019appellent', en: 'our names are, your names are, their names are' },
+                ],
+            },
+            {
+                explanation: 'Enchanté behaves like an adjective that agrees with the PERSON SPEAKING, not the person you meet. A man says enchanté; a woman writes and says enchantée. The pronunciation is identical — only the writing changes, and the exam grades your writing.',
+                examples: [
+                    { fr: 'Enchanté, je suis Pierre. (Pierre is a man)', en: 'Nice to meet you, I am Pierre.' },
+                    { fr: 'Enchantée, je suis Marie. (Marie is a woman)', en: 'Nice to meet you, I am Marie.' },
+                ],
+            },
+            {
+                explanation: 'Final consonants -e, -s, -t, -d, -z, -x, -p, -g are silent. The ONLY final consonants you pronounce are C, R, F, L — remember CaReFuL. Watch out: the feminine -e makes a previously silent consonant come alive in writing (grand → grande, and in liaison the d can sound: grand ami).',
+                examples: [
+                    { fr: 'petit = "puh-TEE" (silent t) · grand = "GRON" (silent d) · vous = "VOO" (silent s)', en: 'small · tall · you' },
+                    { fr: 'sac = "SAK" · mer = "MER" · neuf = "NUFF" · sel = "SEL" (CaReFuL — pronounced)', en: 'bag · sea · new · salt' },
+                ],
+            },
+            {
+                explanation: 'The ritual has four moving parts: greeting (bonjour/bonsoir by the clock), name (je m\u2019appelle), how-are-you (ça va ? informal / comment allez-vous ? formal), farewell (à bientôt / au revoir). Practise the formal and informal chains out loud until you can run them without thinking — the exam opens with exactly this.',
+                examples: [
+                    { fr: 'Informal: Salut ! Je m\u2019appelle Marie. Ça va ? — Oui, et toi ? — À bientôt !', en: 'Hi! My name is Marie. How are you? — Yes, and you? — See you soon!' },
+                    { fr: 'Formal: Bonjour Madame. Je m\u2019appelle Marie Dupont. Comment allez-vous ? — Très bien, merci. Au revoir !', en: 'Hello ma\u2019am. My name is Marie Dupont. How are you? — Very well, thank you. Goodbye!' },
+                ],
+            },
+        ],
 };
 
 // ── Registry ─────────────────────────────────────────────────────────────────

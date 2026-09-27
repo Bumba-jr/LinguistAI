@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, ClipboardList, PenLine, ListChecks, PartyPopper } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import type { HomeworkCheck, StaticFrenchLesson } from '../../services/frenchLessons';
+import type { HomeworkCheck, RemedialLesson, StaticFrenchLesson } from '../../services/frenchLessons';
+import { evaluateTcfWriting } from '../../services/tcfService';
 
 // Full-page homework & assessment — the "Day-1 mega-homework" experience.
 // The learner answers every item, checks it, and reads the explanation for
@@ -66,15 +67,30 @@ const CheckItem = ({ index, tag, item, answer, onAnswer, graded, onRetry }: {
     );
 };
 
-export const LessonHomework = ({ lesson, onClose, onMarkComplete }: { lesson: StaticFrenchLesson; onClose: () => void; onMarkComplete: () => void }) => {
+export const LessonHomework = ({ lesson, level = 'A1', onClose, onMarkComplete }: { lesson: StaticFrenchLesson; level?: string; onClose: () => void; onMarkComplete: () => void }) => {
     const hw = lesson.homework!;
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [writing, setWriting] = useState('');
+    const [writingFb, setWritingFb] = useState<import('../../services/tcfService').TcfWritingFeedback | null>(null);
+    const [writingBusy, setWritingBusy] = useState(false);
+    const [writingErr, setWritingErr] = useState<string | null>(null);
+    const [showRemedial, setShowRemedial] = useState(false);
     const [ticks, setTicks] = useState<Set<number>>(new Set());
     const [graded, setGraded] = useState(false);
 
     const set = (key: string) => (v: string) => setAnswers(prev => ({ ...prev, [key]: v }));
     const words = writing.trim() ? writing.trim().split(/\s+/).length : 0;
+
+    const rateWriting = async () => {
+        setWritingBusy(true); setWritingErr(null); setWritingFb(null);
+        try {
+            const fb = await evaluateTcfWriting(
+                'Homework writing task', hw.writing.task, hw.writing.minWords, writing, (level as any) || 'A1');
+            setWritingFb(fb);
+        } catch {
+            setWritingErr('Evaluation failed — the AI may be busy. Try again in a moment.');
+        } finally { setWritingBusy(false); }
+    };
 
     const totalChecked = useMemo(() => {
         const all: [string, HomeworkCheck][] = [
@@ -201,7 +217,36 @@ export const LessonHomework = ({ lesson, onClose, onMarkComplete }: { lesson: St
                     <textarea value={writing} onChange={e => setWriting(e.target.value)} rows={8}
                         placeholder="Écrivez votre réponse…"
                         className="w-full px-4 py-3 text-sm rounded-2xl border border-stone-200 focus:outline-none focus:border-amber-400 bg-stone-50 resize-y" />
-                    <p className="text-[10px] font-bold text-stone-300">{words} words (target: at least {hw.writing.minWords})</p>
+                    <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-bold text-stone-300">{words} words (target: at least {hw.writing.minWords})</p>
+                        <button onClick={rateWriting} disabled={writingBusy || words < 10}
+                            className="px-4 py-2.5 bg-amber-500 text-white text-[11px] font-black rounded-2xl hover:bg-amber-600 transition-colors disabled:opacity-40">
+                            {writingBusy ? 'Your examiner is grading…' : 'Rate my writing'}
+                        </button>
+                    </div>
+                    {writingErr && <p className="text-xs text-red-500">{writingErr}</p>}
+                    {writingFb && (
+                        <div className="space-y-2 pt-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-2xl font-black text-amber-500">{writingFb.score20}<span className="text-sm text-stone-300">/20</span></span>
+                                <span className="text-xs font-black text-emerald-600">est. {writingFb.estimatedLevel}</span>
+                            </div>
+                            {writingFb.corrections?.map((c, i) => (
+                                <div key={i} className="bg-stone-50 rounded-2xl p-3 space-y-0.5">
+                                    <p className="text-xs text-red-400 line-through">{c.original}</p>
+                                    <p className="text-xs font-bold text-emerald-600">{c.corrected}</p>
+                                    <p className="text-[11px] text-stone-400">{c.why}</p>
+                                </div>
+                            ))}
+                            {writingFb.improvements?.length > 0 && (
+                                <ul className="space-y-1 pt-1">
+                                    {writingFb.improvements.map((im, i) => (
+                                        <li key={i} className="text-[11px] text-stone-500 flex gap-1.5"><span className="text-amber-400">•</span>{im}</li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Final checklist */}
@@ -222,6 +267,48 @@ export const LessonHomework = ({ lesson, onClose, onMarkComplete }: { lesson: St
                         </button>
                     ))}
                 </div>
+                {graded && (
+                    <div className="mt-3 bg-white rounded-3xl border border-stone-100 p-5 space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                            <p className="text-xs font-bold text-stone-600">
+                                {ticks.size === hw.checklist.length
+                                    ? 'Every box ticked — you understand it all.'
+                                    : `${hw.checklist.length - ticks.size} box${hw.checklist.length - ticks.size !== 1 ? 'es' : ''} unticked — that usually means the point is not solid yet.`}
+                            </p>
+                            {ticks.size < hw.checklist.length && (
+                                <button onClick={() => setShowRemedial(v => !v)}
+                                    className="px-4 py-2.5 bg-violet-500 text-white text-[11px] font-black rounded-2xl hover:bg-violet-600 transition-colors">
+                                    {showRemedial ? 'Hide the mini-lessons' : 'Explain what I missed'}
+                                </button>
+                            )}
+                        </div>
+                        {showRemedial && lesson.checklistRemedial && (
+                            <div className="space-y-3">
+                                {lesson.checklistRemedial.map((rl: RemedialLesson, i: number) => {
+                                    if (ticks.has(i)) return null;
+                                    return (
+                                        <div key={i} className="bg-violet-50 border border-violet-100 rounded-2xl p-4 space-y-2">
+                                            <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest">{hw.checklist[i]}</p>
+                                            <p className="text-xs text-stone-700 leading-relaxed">{rl.explanation}</p>
+                                            <div className="space-y-1">
+                                                {rl.examples.map((ex, ei) => (
+                                                    <div key={ei} className="bg-white rounded-xl px-3 py-2">
+                                                        <p className="text-xs font-bold text-stone-800">{ex.fr}</p>
+                                                        <p className="text-[11px] text-stone-400">{ex.en}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <button onClick={() => toggleTick(i)}
+                                                className="text-[11px] font-black text-emerald-600 hover:text-emerald-700">
+                                                Got it now — tick this box
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
                 {graded && ticks.size === hw.checklist.length ? (
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                         className="mt-4 bg-emerald-600 rounded-3xl p-6 text-center text-white space-y-3">

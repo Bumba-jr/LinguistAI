@@ -36,9 +36,17 @@ export const requireAuthenticatedRequest = async (
 
     const { data: allowed, error: limitError } = await client.rpc('consume_ai_rate_limit', { p_bucket: bucket });
     if (limitError) {
-      console.error('[api] AI rate limiter unavailable:', limitError.message);
-      res.status(503).json({ error: 'AI service is temporarily unavailable. Please try again shortly.' });
-      return false;
+      // Fail OPEN when the limiter infrastructure is missing (migration not
+      // applied yet) so the AI keeps working; fail CLOSED on any other limiter
+      // error so a broken limiter never lets requests flood the AI providers.
+      const missing = (limitError as any)?.code === 'PGRST202' || /could not find the function/i.test(limitError.message);
+      if (!missing) {
+        console.error('[api] AI rate limiter error:', limitError.message);
+        res.status(503).json({ error: 'AI service is temporarily unavailable. Please try again shortly.' });
+        return false;
+      }
+      console.error('[api] RATE LIMITER OFF — run supabase-migration-security-hardening.sql in Supabase to enable per-user rate limiting.');
+      return true;
     }
     if (allowed !== true) {
       res.setHeader('Retry-After', '60');
