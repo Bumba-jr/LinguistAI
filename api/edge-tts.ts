@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
-import { requireAuthenticatedRequest } from './_apiShared';
+import { requireAuthenticatedRequest } from './_apiShared.js';
 
 // Natural neural voices via Microsoft Edge's speech service — free, no API
 // key, and covers every language the app supports (Groq's TTS only does

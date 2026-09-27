@@ -1,13 +1,13 @@
+/** @param {string} url */
+// @ts-ignore
 import { createClient } from '@supabase/supabase-js';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+/** @typedef {import('@vercel/node').VercelRequest} VercelRequest */
+/** @typedef {import('@vercel/node').VercelResponse} VercelResponse */
 
-export type AiRateLimitBucket = 'ai' | 'tts';
 
-export const requireAuthenticatedRequest = async (
-  req: VercelRequest,
-  res: VercelResponse,
-  bucket: AiRateLimitBucket = 'ai',
-): Promise<boolean> => {
+
+/** @type {(req: VercelRequest, res: VercelResponse, bucket?: string) => Promise<boolean>} */
+export const requireAuthenticatedRequest = async (req, res, bucket = 'ai') => {
   const authorization = req.headers.authorization ?? '';
   const token = /^Bearer\s+(.+)$/i.exec(authorization)?.[1];
   if (!token) {
@@ -39,7 +39,7 @@ export const requireAuthenticatedRequest = async (
       // Fail OPEN when the limiter infrastructure is missing (migration not
       // applied yet) so the AI keeps working; fail CLOSED on any other limiter
       // error so a broken limiter never lets requests flood the AI providers.
-      const missing = (limitError as any)?.code === 'PGRST202' || /could not find the function/i.test(limitError.message);
+      const missing = limitError?.code === 'PGRST202' || /could not find the function/i.test(limitError.message);
       if (!missing) {
         console.error('[api] AI rate limiter error:', limitError.message);
         res.status(503).json({ error: 'AI service is temporarily unavailable. Please try again shortly.' });

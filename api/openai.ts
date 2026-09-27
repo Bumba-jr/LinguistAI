@@ -18,11 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!['/v1/chat/completions', '/v1/audio/speech'].includes(openaiPath)) {
         return res.status(404).json({ error: 'Unsupported OpenAI endpoint' });
     }
-    try {
-        if (!(await requireAuthenticatedRequest(req, res, openaiPath === '/v1/audio/speech' ? 'tts' : 'ai'))) return;
-    } catch (e: any) {
-        return res.status(500).json({ diagnostic: 'auth check crashed', error: String(e && e.stack ? e.stack : e) });
-    }
+    if (!(await requireAuthenticatedRequest(req, res, openaiPath === '/v1/audio/speech' ? 'tts' : 'ai'))) return;
     const contentLength = Number(req.headers['content-length'] ?? 0);
     let rawRequestBody: string;
     try { rawRequestBody = JSON.stringify(req.body ?? {}); }
