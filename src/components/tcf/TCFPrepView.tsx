@@ -119,9 +119,9 @@ const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: imp
     );
 };
 
-// French text where EVERY word is tappable: tokens are matched against the
-// glossary with longest-phrase-first (up to 4 words), so 'je m'appelle',
-// 'à tout à l'heure' and 's'appelle' all resolve to their full entry.
+// French text where EVERY word is tappable: glossary words get instant offline
+// cards; non-glossary words fall back to the AI word-breakdown tooltip so
+// NOTHING is left without a translation.
 const StaticFrText = ({ text, className }: { text: string; className?: string }) => {
     const glossary = React.useContext(LessonGlossaryContext) ?? {};
     const SEP = /(\s+|[.,!?;:«»"()—¿¡])/;
@@ -149,7 +149,8 @@ const StaticFrText = ({ text, className }: { text: string; className?: string })
             out.push(<StaticWord key={`w${key++}`} word={surface} en={matchedEn} entry={matchedEntry} />);
             i = lastIdx + 1;
         } else {
-            out.push(<span key={`p${key++}`}>{p}</span>);
+            // Not in the glossary → fall back to AI tooltip for full coverage
+            out.push(<InteractiveText key={`p${key++}`} text={p} language="French" className="underline decoration-dotted underline-offset-[5px] decoration-[1.5px] cursor-help" />);
             i++;
         }
     }

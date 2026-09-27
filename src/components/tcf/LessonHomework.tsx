@@ -87,8 +87,15 @@ export const LessonHomework = ({ lesson, level = 'A1', onClose, onMarkComplete }
             const fb = await evaluateTcfWriting(
                 'Homework writing task', hw.writing.task, hw.writing.minWords, writing, (level as any) || 'A1');
             setWritingFb(fb);
-        } catch {
-            setWritingErr('Evaluation failed — the AI may be busy. Try again in a moment.');
+        } catch (e: any) {
+            const msg = e?.message || String(e);
+            if (msg.includes('401') || msg.includes('Sign in')) {
+                setWritingErr('You need to sign in for AI evaluation. The rest of the homework works offline.');
+            } else if (msg.includes('429') || msg.includes('too quickly')) {
+                setWritingErr('Rate limited — wait a minute and try again.');
+            } else {
+                setWritingErr('Evaluation failed: ' + msg.slice(0, 120) + '. Check your connection and try again.');
+            }
         } finally { setWritingBusy(false); }
     };
 
