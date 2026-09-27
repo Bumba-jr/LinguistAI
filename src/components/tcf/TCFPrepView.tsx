@@ -27,6 +27,7 @@ import ExamPlanCard from '../exam/ExamPlanCard';
 import CheckpointQuiz from '../exam/CheckpointQuiz';
 import InteractiveExaminer from '../exam/InteractiveExaminer';
 import { TCF_STRATEGY } from '../../services/frenchFoundation';
+import { STATIC_FRENCH_LESSONS } from '../../services/frenchLessons';
 
 const LEVELS: TcfLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 type TcfTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'vocab' | 'builder' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
@@ -197,6 +198,9 @@ const Curriculum = ({ language }: { language: string }) => {
         setLesson(null); setAnswers({}); setError(null);
         setSavedVocab(new Set());
         setLastLesson(level, topic.slug, topic.title);
+        // Hand-written lecture first: identical for everyone, works offline.
+        const written = STATIC_FRENCH_LESSONS[key];
+        if (written) { setLesson(written); setLessonKey(key); return; }
         // cached lessons reopen instantly and identically
         const cached = getCachedLesson<TcfLesson>(key);
         if (cached) { setLesson(cached); setLessonKey(key); return; }
