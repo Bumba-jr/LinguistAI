@@ -50,6 +50,8 @@ export interface StaticFrenchLesson extends TcfLesson {
 // Rich word card: the tap-to-translate toolkit shows ALL of this —
 // meaning, gender (le/la), register (formal/informal), plural, and
 // usage notes covering multiple meanings and traps.
+export interface ConjugationRow { label: string; form: string }
+export interface MascFemPair { word: string; en: string }
 export interface GlossaryEntry {
     en: string;
     pron?: string;   // honest English approximation: "bohn-ZHOOR"
@@ -59,6 +61,17 @@ export interface GlossaryEntry {
     type?: 'verb' | 'noun' | 'adjective' | 'adverb' | 'phrase' | 'particle' | 'pronoun' | 'number' | 'expression';
     note?: string;   // multiple meanings, usage traps, verb source…
     example?: { fr: string; en: string };
+    // grammar label shown in caps: "1ST PERSON SINGULAR PRESENT OF AVOIR (ELIDED)"
+    label?: string;
+    // the base/infinitive this form comes from
+    base?: { form: string; en: string };
+    // full conjugation table (verbs only)
+    conj?: ConjugationRow[];
+    // masculine/feminine pair (adjectives + nouns)
+    masc?: MascFemPair;
+    fem?: MascFemPair;
+    // the detailed "why" paragraph — how the word is formed and why
+    detail?: string;
 }
 export type GlossaryValue = GlossaryEntry | string;
 export type Glossary = Record<string, GlossaryValue>;

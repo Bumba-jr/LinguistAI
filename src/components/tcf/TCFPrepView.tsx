@@ -61,7 +61,6 @@ const normFr = (s: string) =>
 // getWordBreakdown call, no auth, no rate limit.
 const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: import('../../services/frenchLessons').GlossaryEntry }) => {
     const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLSpanElement>(null);
     const { addFlashcard, flashcards, user } = useAppStore() as any;
     const inDeck = flashcards.some((f: any) =>
         f.word.toLowerCase() === word.toLowerCase() && f.language === 'French');
@@ -85,14 +84,14 @@ const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: imp
         number: 'nombre', expression: 'expression',
     };
     return (
-        <span className="relative inline-block" ref={ref}>
+        <span className="relative inline-block">
             <button onClick={() => setOpen(o => !o)}
                 className="font-bold text-stone-900 underline decoration-dotted decoration-[1.5px] underline-offset-[5px] decoration-stone-300 hover:decoration-emerald-500 hover:text-emerald-700 transition-colors cursor-help">
                 {word}
             </button>
             {open && (
-                <span className="absolute z-[9999] bottom-full left-0 mb-2 w-[300px] rounded-2xl bg-stone-900 text-white shadow-2xl overflow-hidden text-left block">
-                    {/* header: word + meaning */}
+                <span className="absolute z-[9999] bottom-full left-0 mb-2 w-[320px] rounded-2xl bg-stone-900 text-white shadow-2xl overflow-hidden text-left block">
+                    {/* header: word — meaning + pronunciation */}
                     <span className="block px-4 pt-3.5 pb-2">
                         <span className="flex items-baseline gap-1.5 flex-wrap">
                             <span className="text-base font-black">{word}</span>
@@ -101,7 +100,21 @@ const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: imp
                         </span>
                         {g?.pron && <span className="block text-[11px] font-mono text-violet-300 mt-0.5">/{g.pron}/</span>}
                     </span>
-                    {/* chips row: type · gender · register · plural */}
+                    {/* grammar label in caps */}
+                    {g?.label && (
+                        <span className="block px-4 pb-1.5">
+                            <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider">{g.label}</span>
+                        </span>
+                    )}
+                    {/* base form */}
+                    {g?.base && (
+                        <span className="block px-4 pb-2">
+                            <span className="text-[11px] text-white/50">from </span>
+                            <span className="text-[11px] font-black text-amber-300">{g.base.form}</span>
+                            <span className="text-[11px] text-white/40"> — {g.base.en}</span>
+                        </span>
+                    )}
+                    {/* chips: type · gender · register · plural */}
                     {(g?.type || g?.gender || g?.register || g?.plural) && (
                         <span className="flex flex-wrap gap-1 px-4 pb-2">
                             {g.type && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-white/10 text-white/70 uppercase tracking-wider">{typeLabel[g.type] || g.type}</span>}
@@ -116,10 +129,40 @@ const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: imp
                             </span>}
                         </span>
                     )}
-                    {/* note */}
-                    {g?.note && (
+                    {/* conjugation table — the showstopper */}
+                    {g?.conj && g.conj.length > 0 && (
                         <span className="block px-4 pb-2">
-                            <span className="block text-[11px] text-white/60 leading-relaxed">{g.note}</span>
+                            <span className="grid grid-cols-2 gap-1">
+                                {g.conj.map((row, ci) => (
+                                    <span key={ci} className="bg-white/5 rounded-lg px-2.5 py-1.5">
+                                        <span className="block text-[8px] font-black text-white/40 uppercase tracking-wider">{row.label}</span>
+                                        <span className="block text-xs font-bold text-emerald-300">{row.form}</span>
+                                    </span>
+                                ))}
+                            </span>
+                        </span>
+                    )}
+                    {/* masc/fem pair */}
+                    {(g?.masc || g?.fem) && (
+                        <span className="block px-4 pb-2">
+                            <span className="grid grid-cols-2 gap-1">
+                                {g.masc && <span className="bg-blue-500/10 rounded-lg px-2.5 py-1.5 border border-blue-500/20">
+                                    <span className="block text-[8px] font-black text-blue-300 uppercase">♂ masculin</span>
+                                    <span className="block text-xs font-bold text-stone-100">{g.masc.word}</span>
+                                    <span className="block text-[9px] text-white/40">{g.masc.en}</span>
+                                </span>}
+                                {g.fem && <span className="bg-pink-500/10 rounded-lg px-2.5 py-1.5 border border-pink-500/20">
+                                    <span className="block text-[8px] font-black text-pink-300 uppercase">♀ féminin</span>
+                                    <span className="block text-xs font-bold text-stone-100">{g.fem.word}</span>
+                                    <span className="block text-[9px] text-white/40">{g.fem.en}</span>
+                                </span>}
+                            </span>
+                        </span>
+                    )}
+                    {/* detailed explanation — the "why" paragraph */}
+                    {g?.detail && (
+                        <span className="block px-4 pb-2">
+                            <span className="block text-[11px] text-white/60 leading-relaxed">{g.detail}</span>
                         </span>
                     )}
                     {/* example sentence */}
@@ -131,16 +174,22 @@ const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: imp
                             </span>
                         </span>
                     )}
+                    {/* note — multiple meanings */}
+                    {g?.note && !g?.detail && (
+                        <span className="block px-4 pb-2">
+                            <span className="block text-[11px] text-white/60 leading-relaxed">{g.note}</span>
+                        </span>
+                    )}
                     {/* actions */}
-                    <span className="flex items-center gap-2 px-4 pb-3 pt-1">
+                    <span className="flex items-center gap-2 px-4 pb-3 pt-1 border-t border-white/10">
                         <button onClick={(e) => { e.stopPropagation(); speakText(word, 'French'); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-[10px] font-black">
+                            className="flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-[10px] font-black">
                             <Volume2 size={11} /> Hear
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); addToDeck(); }}
-                            className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black transition-colors',
+                            className={cn('flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-xl text-[10px] font-black transition-colors',
                                 inDeck ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-500 text-white hover:bg-emerald-600')}>
-                            {inDeck ? <><CheckCircle2 size={11} /> In deck</> : <><Plus size={11} /> Flashcards</>}
+                            {inDeck ? <><CheckCircle2 size={11} /> In deck</> : <><Plus size={11} /> Add to deck</>}
                         </button>
                     </span>
                 </span>
