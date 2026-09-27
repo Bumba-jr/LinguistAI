@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 import LessonFeedbackButton from '../exam/LessonFeedbackButton';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, ClipboardList, Layers, ArrowRightLeft,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, Plus, ClipboardList, Layers, ArrowRightLeft,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
@@ -61,6 +61,7 @@ const normFr = (s: string) =>
 // getWordBreakdown call, no auth, no rate limit.
 const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: import('../../services/frenchLessons').GlossaryEntry }) => {
     const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLSpanElement>(null);
     const { addFlashcard, flashcards, user } = useAppStore() as any;
     const inDeck = flashcards.some((f: any) =>
         f.word.toLowerCase() === word.toLowerCase() && f.language === 'French');
@@ -77,40 +78,69 @@ const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: imp
         addFlashcard(card);
         if (user) import('../../services/dbService').then(m => m.upsertFlashcard(user.id, card)).catch(() => { });
     };
+    const g = entry;
+    const typeLabel: Record<string, string> = {
+        verb: 'verbe', noun: 'nom', adjective: 'adjectif', adverb: 'adverbe',
+        phrase: 'expression', particle: 'particule', pronoun: 'pronom',
+        number: 'nombre', expression: 'expression',
+    };
     return (
-        <span className="relative inline-block">
+        <span className="relative inline-block" ref={ref}>
             <button onClick={() => setOpen(o => !o)}
                 className="font-bold text-stone-900 underline decoration-dotted decoration-[1.5px] underline-offset-[5px] decoration-stone-300 hover:decoration-emerald-500 hover:text-emerald-700 transition-colors cursor-help">
                 {word}
             </button>
             {open && (
-                <span className="absolute z-[9999] bottom-full left-0 mb-2 w-max max-w-[280px] rounded-2xl bg-stone-900 text-white shadow-2xl p-3.5 text-left space-y-2">
-                    <span className="block text-sm"><span className="font-black">{word}</span><span className="mx-1.5 text-white/30">—</span><span className="font-semibold text-emerald-300">{en}</span></span>
-                    {entry?.gender && (
-                        <span className="flex items-center gap-1.5">
-                            <span className={cn('text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider',
-                                entry?.gender === 'feminine' ? 'bg-pink-500/20 text-pink-300' : entry?.gender === 'masculine' ? 'bg-blue-500/20 text-blue-300' : 'bg-violet-500/20 text-violet-300')}>
-                                {entry?.gender === 'feminine' ? 'la · feminine' : entry?.gender === 'masculine' ? 'le · masculine' : 'm/f'}
-                            </span>
-                            {entry?.plural && <span className="text-[10px] text-white/50">pl. {entry.plural}</span>}
+                <span className="absolute z-[9999] bottom-full left-0 mb-2 w-[300px] rounded-2xl bg-stone-900 text-white shadow-2xl overflow-hidden text-left block">
+                    {/* header: word + meaning */}
+                    <span className="block px-4 pt-3.5 pb-2">
+                        <span className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="text-base font-black">{word}</span>
+                            <span className="text-white/30">—</span>
+                            <span className="text-sm font-semibold text-emerald-300">{en}</span>
+                        </span>
+                        {g?.pron && <span className="block text-[11px] font-mono text-violet-300 mt-0.5">/{g.pron}/</span>}
+                    </span>
+                    {/* chips row: type · gender · register · plural */}
+                    {(g?.type || g?.gender || g?.register || g?.plural) && (
+                        <span className="flex flex-wrap gap-1 px-4 pb-2">
+                            {g.type && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-white/10 text-white/70 uppercase tracking-wider">{typeLabel[g.type] || g.type}</span>}
+                            {g.gender && <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider',
+                                g.gender === 'feminine' ? 'bg-pink-500/20 text-pink-300' : g.gender === 'masculine' ? 'bg-blue-500/20 text-blue-300' : 'bg-violet-500/20 text-violet-300')}>
+                                {g.gender === 'feminine' ? '♀ la' : g.gender === 'masculine' ? '♂ le' : 'm/f'}
+                            </span>}
+                            {g.plural && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-white/50">pl. {g.plural}</span>}
+                            {g.register && <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider',
+                                g.register === 'formal' ? 'bg-amber-500/20 text-amber-300' : g.register === 'informal' ? 'bg-rose-500/20 text-rose-300' : 'bg-white/10 text-white/50')}>
+                                {g.register === 'formal' ? 'vous' : g.register === 'informal' ? 'tu' : 'neutre'}
+                            </span>}
                         </span>
                     )}
-                    {entry?.register && (
-                        <span className="block">
-                            <span className={cn('text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider',
-                                entry?.register === 'formal' ? 'bg-amber-500/20 text-amber-300' : entry?.register === 'informal' ? 'bg-rose-500/20 text-rose-300' : 'bg-white/10 text-white/60')}>
-                                {entry?.register === 'formal' ? 'formel · formal' : entry?.register === 'informal' ? 'informel · casual' : 'registre neutre'}
+                    {/* note */}
+                    {g?.note && (
+                        <span className="block px-4 pb-2">
+                            <span className="block text-[11px] text-white/60 leading-relaxed">{g.note}</span>
+                        </span>
+                    )}
+                    {/* example sentence */}
+                    {g?.example && (
+                        <span className="block px-4 pb-2">
+                            <span className="block bg-white/5 rounded-xl px-3 py-2 space-y-0.5">
+                                <span className="block text-xs font-semibold text-stone-100">{g.example.fr}</span>
+                                <span className="block text-[11px] text-white/40">{g.example.en}</span>
                             </span>
                         </span>
                     )}
-                    {entry?.note && <span className="block text-[11px] text-white/60 leading-relaxed">{entry.note}</span>}
-                    <span className="flex items-center gap-2">
+                    {/* actions */}
+                    <span className="flex items-center gap-2 px-4 pb-3 pt-1">
                         <button onClick={(e) => { e.stopPropagation(); speakText(word, 'French'); }}
-                            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"><Volume2 size={12} /></button>
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-[10px] font-black">
+                            <Volume2 size={11} /> Hear
+                        </button>
                         <button onClick={(e) => { e.stopPropagation(); addToDeck(); }}
-                            className={cn('px-2.5 py-1.5 rounded-lg text-[10px] font-black transition-colors',
-                                inDeck ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 hover:bg-white/20')}>
-                            {inDeck ? '✓ In deck' : '+ Flashcards'}
+                            className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black transition-colors',
+                                inDeck ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-500 text-white hover:bg-emerald-600')}>
+                            {inDeck ? <><CheckCircle2 size={11} /> In deck</> : <><Plus size={11} /> Flashcards</>}
                         </button>
                     </span>
                 </span>
@@ -119,9 +149,6 @@ const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: imp
     );
 };
 
-// French text where EVERY word is tappable: glossary words get instant offline
-// cards; non-glossary words fall back to the AI word-breakdown tooltip so
-// NOTHING is left without a translation.
 const StaticFrText = ({ text, className }: { text: string; className?: string }) => {
     const glossary = React.useContext(LessonGlossaryContext) ?? {};
     const SEP = /(\s+|[.,!?;:«»"()—¿¡])/;

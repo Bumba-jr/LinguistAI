@@ -52,10 +52,13 @@ export interface StaticFrenchLesson extends TcfLesson {
 // usage notes covering multiple meanings and traps.
 export interface GlossaryEntry {
     en: string;
+    pron?: string;   // honest English approximation: "bohn-ZHOOR"
     gender?: 'masculine' | 'feminine' | 'mf';
     plural?: string;
     register?: 'informal' | 'formal' | 'neutral';
+    type?: 'verb' | 'noun' | 'adjective' | 'adverb' | 'phrase' | 'particle' | 'pronoun' | 'number' | 'expression';
     note?: string;   // multiple meanings, usage traps, verb source…
+    example?: { fr: string; en: string };
 }
 export type GlossaryValue = GlossaryEntry | string;
 export type Glossary = Record<string, GlossaryValue>;
