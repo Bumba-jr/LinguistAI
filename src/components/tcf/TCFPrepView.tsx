@@ -27,7 +27,8 @@ import ExamPlanCard from '../exam/ExamPlanCard';
 import CheckpointQuiz from '../exam/CheckpointQuiz';
 import InteractiveExaminer from '../exam/InteractiveExaminer';
 import { TCF_STRATEGY } from '../../services/frenchFoundation';
-import { STATIC_FRENCH_LESSONS } from '../../services/frenchLessons';
+import { STATIC_FRENCH_LESSONS, type StaticFrenchLesson } from '../../services/frenchLessons';
+import { LessonHomework } from './LessonHomework';
 
 const LEVELS: TcfLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 type TcfTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'vocab' | 'builder' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
@@ -186,7 +187,11 @@ const Curriculum = ({ language }: { language: string }) => {
     const [savedVocab, setSavedVocab] = useState<Set<string>>(new Set());
     const [checkpoints, setCheckpoints] = useState<Record<string, boolean>>(getCheckpoints());
     const [checkpointFor, setCheckpointFor] = useState<TcfLevel | null>(null);
+    const [showHomework, setShowHomework] = useState(false);
+    const [tooltips, setTooltips] = useState(true);
     const last = getLastLesson();
+    // static lessons carry extras (traps + homework) keyed off the lesson key
+    const staticExtras: StaticFrenchLesson | undefined = lessonKey ? STATIC_FRENCH_LESSONS[lessonKey] : undefined;
 
     // Never auto-promote: level N+1 stays locked until the level N checkpoint is passed
     const prevLevel = LEVELS[Math.max(0, LEVELS.indexOf(level) - 1)];
@@ -197,6 +202,7 @@ const Curriculum = ({ language }: { language: string }) => {
         setOpenTopic(key);
         setLesson(null); setAnswers({}); setError(null);
         setSavedVocab(new Set());
+        setShowHomework(false);
         setLastLesson(level, topic.slug, topic.title);
         // Hand-written lecture first: identical for everyone, works offline.
         const written = STATIC_FRENCH_LESSONS[key];
@@ -363,12 +369,27 @@ const Curriculum = ({ language }: { language: string }) => {
                             <Target size={14} className="text-emerald-600 mt-0.5 shrink-0" />
                             <p className="text-sm text-emerald-800"><span className="font-black">Objective: </span>{lesson.objective}</p>
                         </div>
+                        {staticExtras?.traps && (
+                            <div className="mt-3 bg-red-50 border border-red-100 rounded-2xl p-4">
+                                <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">The traps that will destroy your score — fix these first</p>
+                                <ul className="space-y-1.5">
+                                    {staticExtras.traps.map((t, i) => (
+                                        <li key={i} className="text-xs text-red-800 flex gap-2"><span className="font-black shrink-0">{i + 1}.</span>{t}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
 
                     {/* vocabulary — long & detailed */}
                     <LessonSection title={`Vocabulary (${lesson.vocabulary.length} items)`} icon={<BookOpen size={13} />}>
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                             <p className="text-[11px] text-stone-400">Every item: French, gender, example, related words — tap any word for more.</p>
+                            <button onClick={() => setTooltips(v => !v)}
+                                className={cn('flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black border-2 transition-colors mr-2',
+                                    tooltips ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-stone-200 bg-white text-stone-400')}>
+                                Tooltips {tooltips ? 'ON' : 'OFF'}
+                            </button>
                             <button onClick={saveAllVocab} disabled={savedVocab.size === lesson.vocabulary.length}
                                 className={cn('flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-colors',
                                     savedVocab.size === lesson.vocabulary.length
@@ -383,7 +404,9 @@ const Curriculum = ({ language }: { language: string }) => {
                                 <div key={i} className="border border-stone-100 rounded-2xl p-3.5 space-y-1.5 bg-stone-50/50">
                                     <div className="flex items-baseline justify-between gap-2">
                                         <div className="flex items-baseline gap-1.5 flex-wrap">
-                                            <InteractiveText text={v.fr} language="French" className="font-bold text-stone-900" />
+                                            {tooltips
+                                                ? <InteractiveText text={v.fr} language="French" className="font-bold text-stone-900" />
+                                                : <span className="font-bold text-stone-900">{v.fr}</span>}
                                             {v.gender && (
                                                 <span className={cn('text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider',
                                                     v.gender.toLowerCase().startsWith('f') ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600')}>
@@ -606,7 +629,24 @@ const Curriculum = ({ language }: { language: string }) => {
                             </button>
                         )}
                     </LessonSection>
+
+                    {/* homework & assessment — full-page section */}
+                    {staticExtras?.homework && (
+                        <div className="bg-stone-900 rounded-3xl p-6 text-white text-center space-y-3">
+                            <ClipboardList size={22} className="text-emerald-400 mx-auto" />
+                            <p className="font-black text-lg">Homework & Assessment</p>
+                            <p className="text-xs text-white/60 max-w-md mx-auto">Four sections: translate, fill in the blanks, fix the errors, and a writing task — every answer checked with a full explanation, plus the end-of-lesson checklist.</p>
+                            <button onClick={() => setShowHomework(true)}
+                                className="px-8 py-3.5 bg-emerald-500 text-white text-sm font-black rounded-2xl hover:bg-emerald-600 transition-colors">
+                                Open Homework & Assessment
+                            </button>
+                        </div>
+                    )}
                 </div>
+            )}
+
+            {showHomework && staticExtras?.homework && (
+                <LessonHomework lesson={staticExtras} onClose={() => setShowHomework(false)} />
             )}
         </div>
     );
@@ -1148,6 +1188,7 @@ const TCFPrepView = () => {
             {tab === 'writing' && <WritingTrainer level={level} onLevelChange={setLevel} />}
             {tab === 'speaking' && <SpeakingTrainer level={level} language={language} onLevelChange={setLevel} />}
             {tab === 'progress' && <Progress scores={scores} />}
+
         </div>
     );
 };

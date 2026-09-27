@@ -17,8 +17,28 @@
 
 import type { TcfLesson } from './tcfService';
 
+// ── Homework & assessment (the Day-1 mega-homework format) ───────────────────
+export interface HomeworkCheck {
+    prompt: string;        // the English sentence (A), sentence with ______ (B), or wrong sentence (C)
+    answer: string;        // the correct French
+    alt?: string[];        // accepted variants
+    explanation: string;   // how the mistake happens, why, and how to fix it
+}
+export interface LessonHomework {
+    intro?: string;
+    translation: HomeworkCheck[];   // Section A — translate EN → FR
+    blanks: HomeworkCheck[];        // Section B — fill in the blank
+    corrections: HomeworkCheck[];   // Section C — correct the error
+    writing: { task: string; requirements: string[]; minWords: number };
+    checklist: string[];            // end-of-lesson self check
+}
+export interface StaticFrenchLesson extends TcfLesson {
+    traps?: string[];      // score-destroying traps, shown before the lesson
+    homework?: LessonHomework;
+}
+
 // ── A1 · Greetings & Introductions ───────────────────────────────────────────
-const a1Greetings: TcfLesson = {
+const a1Greetings: StaticFrenchLesson = {
     title: 'Greetings & Introductions',
     objective: 'Greet people at the right time of day and in the right register, introduce yourself with your name, ask someone their name, and exchange the standard how-are-you ritual — formally and informally.',
 
@@ -134,12 +154,67 @@ const a1Greetings: TcfLesson = {
         'Before the next lesson: practise the tu/vous choice out loud with five imaginary people (friend, shopkeeper, teacher, child, elder).',
         'Next up: Numbers, Dates & Time — you will need "Bonjour" to book things, so keep the greetings warm.',
     ],
+
+    traps: [
+        'Pronouncing every letter: final -e, -s, -t, -d, -z, -x are almost always SILENT. Vous = "voo", grand = "gron". (Only C, R, F, L survive at the end — the CaReFuL rule.)',
+        'Using "tu" with strangers or elders: it reads as disrespect. Default to vous with everyone you don\u2019t know; the TCF examiners expect vous unless they say otherwise.',
+        'Introducing yourself with "Je suis + name": French uses s\u2019appeler — "Je m\u2019appelle Marie". Save "je suis" for professions, nationalities and states.',
+        'Forgetting the speaker-gender agreement on enchanté(e): a woman writes enchantée, a man enchanté. The -e matches YOU, not the other person.',
+    ],
+
+    homework: {
+        intro: 'Four sections, do them in order. Check each answer yourself — read the explanation even when you get it right, so nothing stays "right by luck".',
+        translation: [
+            { prompt: 'Good evening!', answer: 'Bonsoir !', alt: ['Bonsoir'], explanation: 'Bonsoir takes over from bonjour around 6pm. Saying "bonjour" late at night is a classic time-of-day slip the exam notices.' },
+            { prompt: 'My name is Paul.', answer: 'Je m\u2019appelle Paul.', alt: ["Je m'appelle Paul"], explanation: 'Names use s\u2019appeler (to call oneself): je m\u2019appelle. "Je suis Paul" is heard in Canada/Belgium but the standard French introduction is s\u2019appeler.' },
+            { prompt: 'What is your name? (asking a stranger)', answer: 'Comment vous appelez-vous ?', alt: ["Comment est-ce que vous vous appelez ?"], explanation: 'A stranger takes vous. Two correct shapes: inversion (Comment vous appelez-vous ?) or est-ce que (Comment est-ce que vous vous appelez ?). The casual "Tu t\u2019appelles comment ?" would be disrespectful here.' },
+            { prompt: 'I am fine, thank you. And you? (talking to a friend)', answer: 'Ça va bien, merci. Et toi ?', alt: ["Ca va bien, merci. Et toi ?"], explanation: 'With a friend the ritual is ça va… et toi ? — "Et vous ?" would sound cold between friends. Register consistency is what the exam grades.' },
+            { prompt: 'See you tomorrow!', answer: 'À demain !', alt: ["A demain !", "À demain"], explanation: 'à + day/time = see you…: à demain (tomorrow), à bientôt (soon), à tout à l\u2019heure (later today). The accent on À is required.' },
+            { prompt: 'A coffee, please. (in a café, to the waiter)', answer: 'Un café, s\u2019il vous plaît.', alt: ["Un café, s'il vous plaît"], explanation: 'Service staff take vous + s\u2019il vous plaît. "S\u2019il te plaît" is only for people you already tutoie.' },
+            { prompt: 'Let me introduce my friend Marie. (her name is Marie)', answer: 'Je vous présente mon amie Marie.', alt: ["Je vous presente mon amie Marie"], explanation: 'Two traps in one line: présenter with vous (je vous présente), and amie is feminine — but because it starts with a vowel, the possessive is mon (never "ma amie"). The noun stays feminine.' },
+            { prompt: 'My name is not Paul.', answer: 'Je ne m\u2019appelle pas Paul.', alt: ["Je ne m'appelle pas Paul"], explanation: 'The negation sandwich wraps the REFLEXIVE verb: je ne m\u2019appelle pas. Do not put ne/pas around the pronoun (never "je m\u2019appelle ne pas").' },
+        ],
+        blanks: [
+            { prompt: 'Je ______ Marie.', answer: 'm\u2019appelle', alt: ["m'appelle"], explanation: 'je + s\u2019appeler → je m\u2019appelle. The m\u2019 is the reflexive pronoun me elided before a vowel.' },
+            { prompt: 'Tu ______ comment ?', answer: 't\u2019appelles', alt: ["t'appelles", "t'appelle"], explanation: 'tu + s\u2019appeler → tu t\u2019appelles. The tu form needs the final -s: t\u2019appelles. (Pronounced the same as je m\u2019appelle — the -s is silent.)' },
+            { prompt: 'Elle ______ Sophie.', answer: 's\u2019appelle', alt: ["s'appelle"], explanation: 'elle + s\u2019appeler → elle s\u2019appelle. Third person singular takes s\u2019appelle — one l doubled, no extra -s.' },
+            { prompt: 'Nous ______ Marie et Paul.', answer: 'nous appelons', alt: ["nous appelons"], explanation: 'nous + s\u2019appeler → nous nous appelons. Both pronouns appear: the subject nous AND the reflexive nous. Only one "l" in appelons.' },
+            { prompt: 'Vous ______ comment ?', answer: 'vous appelez', alt: ["vous appelez"], explanation: 'vous + s\u2019appeler → vous vous appelez. The vous form ends in -ez.' },
+            { prompt: 'Je ne ______ pas Paul.', answer: 'm\u2019appelle', alt: ["m'appelle"], explanation: 'The sandwich rule: ne wraps the CONJUGATED VERB — je ne m\u2019appelle pas. The reflexive pronoun sits inside the sandwich with the verb.' },
+        ],
+        corrections: [
+            { prompt: 'Je suis Paul. (introducing yourself)', answer: 'Je m\u2019appelle Paul.', explanation: 'How the mistake happens: English "I am Paul" translates word-for-word to je suis. Why it does not work: French introduces names with the reflexive s\u2019appeler ("I call myself"). How to fix it: je m\u2019appelle + name. Save je suis for profession/nationality/state.' },
+            { prompt: 'Comment tu t\u2019appelle ?', answer: 'Comment tu t\u2019appelles ?', explanation: 'How the mistake happens: the -s of the tu form is silent, so the ear never hears it. Why it does not work: s\u2019appeler with tu conjugates as tu t\u2019appelles — written French requires the -s. How to fix it: every tu form of an -ER verb ends in -es (tu t\u2019appelles). Silent but written.' },
+            { prompt: 'Enchante ! (written by a woman)', answer: 'Enchantée !', explanation: 'How the mistake happens: pronunciation is identical for both genders. Why it does not work: enchanté behaves like an adjective agreeing with the SPEAKER — a woman adds -e. How to fix it: ask "who is speaking?" — man → enchanté, woman → enchantée.' },
+            { prompt: 'Salut, comment allez-vous ? (to your best friend)', answer: 'Salut, ça va ?', explanation: 'How the mistake happens: memorising "comment allez-vous" as THE how-are-you. Why it does not work: salut (informal) clashes with allez-vous (formal) — a register mismatch in one sentence. How to fix it: keep the register consistent: salut pairs with ça va ? / tu t\u2019appelles comment ?; bonjour pairs with allez-vous.' },
+            { prompt: 'Bonjour, comment allez-vous ? (said at 9pm)', answer: 'Bonsoir, comment allez-vous ?', explanation: 'How the mistake happens: bonjour is memorised as "hello" for everything. Why it does not work: French splits the day — bonjour until roughly 6pm, bonsoir after. How to fix it: check the clock before the greeting; the rest of the sentence stays the same.' },
+        ],
+        writing: {
+            task: 'Write a short dialogue (6–8 lines) between YOU and a French shopkeeper you meet for the first time at 7pm. Greet, introduce yourself, ask their name, exchange how-are-you, and say goodbye. Then write the SAME dialogue again as if the person were your best friend.',
+            requirements: [
+                'Two versions: formal (vous) and informal (tu) — every line register-consistent',
+                's\u2019appeler for both names (never je suis + name)',
+                'Bonsoir for the 7pm greeting in both versions',
+                'One enchanté(e) spelled to match your gender',
+                'One farewell from the à… family (à bientôt / à demain / au revoir)',
+            ],
+            minWords: 40,
+        },
+        checklist: [
+            'I can choose tu or vous for: friend, shopkeeper, teacher, child, elder — instantly',
+            'I introduce myself with je m\u2019appelle, and I know why je suis + name is non-standard',
+            'I wrote the s\u2019appeler column from memory: m\u2019appelle, t\u2019appelles, s\u2019appelle, nous appelons, vous appelez',
+            'My enchanté(e) agrees with MY gender, and I know why',
+            'I know which final consonants are silent and the CaReFuL exceptions',
+            'I can run the full greeting ritual out loud — morning and evening, formal and casual',
+        ],
+    },
 };
 
 // ── Registry ─────────────────────────────────────────────────────────────────
 // Key = `${level}:${slug}` matching TCF_SYLLABUS. Add entries here as lectures
 // are written; unwritten topics fall back to AI generation automatically.
-export const STATIC_FRENCH_LESSONS: Record<string, TcfLesson> = {
+export const STATIC_FRENCH_LESSONS: Record<string, StaticFrenchLesson> = {
     'A1:greetings': a1Greetings,
 };
 
