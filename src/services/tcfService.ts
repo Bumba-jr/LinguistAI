@@ -151,7 +151,7 @@ export const TCF_SYLLABUS: Record<TcfLevel, { title: string; slug: string; focus
 export interface TcfLesson {
     title: string;
     objective: string;
-    vocabulary: { fr: string; en: string; gender?: string; example?: { fr: string; en: string }; related?: { fr: string; en: string }[] }[];
+    vocabulary: { fr: string; en: string; gender?: string; plural?: string; register?: string; note?: string; example?: { fr: string; en: string }; related?: { fr: string; en: string }[] }[];
     pronunciation: { fr: string; approx: string; en: string }[];
     grammar: { rule: string; explanation: string; examples: { fr: string; en: string; breakdown: string[] }[]; commonMistakes: string[] };
     transformations: { type: string; fr: string; en: string }[];

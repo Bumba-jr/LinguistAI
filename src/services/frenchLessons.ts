@@ -16,6 +16,8 @@
 // written following its depth and structure after approval.
 
 import type { TcfLesson } from './tcfService';
+import { STATIC_A1_PART1 } from './frenchLessonsA1';
+import { STATIC_A1_PART2 } from './frenchLessonsA1more';
 
 // ── Homework & assessment (the Day-1 mega-homework format) ───────────────────
 export interface HomeworkCheck {
@@ -446,6 +448,8 @@ const a1Greetings: StaticFrenchLesson = {
 // are written; unwritten topics fall back to AI generation automatically.
 export const STATIC_FRENCH_LESSONS: Record<string, StaticFrenchLesson> = {
     'A1:greetings': a1Greetings,
+    ...STATIC_A1_PART1,
+    ...STATIC_A1_PART2,
 };
 
 export const hasStaticFrenchLesson = (level: string, slug: string): boolean =>
