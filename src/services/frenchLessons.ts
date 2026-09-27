@@ -32,13 +32,28 @@ export interface LessonHomework {
     writing: { task: string; requirements: string[]; minWords: number };
     checklist: string[];            // end-of-lesson self check
 }
+// Rich word card: the tap-to-translate toolkit shows ALL of this —
+// meaning, gender (le/la), register (formal/informal), plural, and
+// usage notes covering multiple meanings and traps.
+export interface GlossaryEntry {
+    en: string;
+    gender?: 'masculine' | 'feminine' | 'mf';
+    plural?: string;
+    register?: 'informal' | 'formal' | 'neutral';
+    note?: string;   // multiple meanings, usage traps, verb source…
+}
+export type GlossaryValue = GlossaryEntry | string;
+export type Glossary = Record<string, GlossaryValue>;
+export const asEntry = (v: GlossaryValue): GlossaryEntry =>
+    typeof v === 'string' ? { en: v } : v;
+
 export interface StaticFrenchLesson extends TcfLesson {
     traps?: string[];      // score-destroying traps, shown before the lesson
     homework?: LessonHomework;
-    // Every French surface form used anywhere in the lecture → English.
+    // Every French surface form used anywhere in the lecture → rich entry.
     // The tap-to-translate toolkit reads this, so word cards work for the
     // WHOLE lesson (grammar examples, drills, mini test) with zero AI.
-    glossary?: Record<string, string>;
+    glossary?: Glossary;
 }
 
 // ── A1 · Greetings & Introductions ───────────────────────────────────────────
@@ -167,62 +182,153 @@ const a1Greetings: StaticFrenchLesson = {
     ],
 
     glossary: {
-        // greetings & farewells
-        'bonjour': 'hello / good morning', 'bonsoir': 'good evening', 'salut': 'hi / bye (informal)',
-        'coucou': 'hey (very casual)', 'au revoir': 'goodbye', 'à bientôt': 'see you soon',
-        'à tout à l\u2019heure': 'see you later (same day)', 'à demain': 'see you tomorrow', 'à demain !': 'see you tomorrow',
-        'à plus tard': 'see you later', 'bonne journée': 'have a good day', 'bonne soirée': 'have a good evening',
-        // thanks & politeness
-        'merci': 'thank you', 'merci beaucoup': 'thank you very much', 'de rien': 'you\u2019re welcome (casual)',
-        'je vous en prie': 'you\u2019re welcome (formal)', 's\u2019il vous plaît': 'please (formal/plural)',
-        's\u2019il te plaît': 'please (informal)', 'oui': 'yes', 'non': 'no',
-        'si': 'yes (contradicting a negative)', 'pardon': 'sorry / excuse me', 'excusez-moi': 'excuse me',
-        'désolé': 'sorry', 'désolée': 'sorry (speaker is a woman)',
-        // introductions
-        'enchante': 'nice to meet you (as written, missing accent)', 'enchanté': 'nice to meet you (male speaker)',
-        'enchantée': 'nice to meet you (female speaker)', 'tout le plaisir est pour moi': 'the pleasure is all mine',
-        'je m\u2019appelle': 'my name is (lit. I call myself)', 'tu t\u2019appelles': 'your name is (informal)',
-        'il s\u2019appelle': 'his name is', 'elle s\u2019appelle': 'her name is',
-        'nous nous appelons': 'our names are', 'vous vous appelez': 'your name is (formal)',
-        'm\u2019appelle': '(I) call myself — with je: my name is', 't\u2019appelles': '(you) call yourself',
-        's\u2019appelle': '(he/she) calls himself/herself', 'appelons': '(we) call ourselves',
-        'appelez': '(you) call / your name is (vous form)', 'appelez-vous': 'do you call yourselves? (inversion)',
-        'appelle': 'call / (he) calls', 's\u2019appeler': 'to be called (reflexive verb)',
-        'comment': 'how', 'et': 'and', 'moi': 'me', 'c\u2019est': 'it is', 'est': 'is',
-        // pronouns & verbs
-        'je': 'I', 'tu': 'you (informal)', 'il': 'he', 'elle': 'she', 'nous': 'we', 'vous': 'you (formal/plural)',
-        'ils': 'they (masc/mixed)', 'elles': 'they (fem)', 'on': 'one / we (informal)',
-        'je suis': 'I am', 'tu es': 'you are', 'il est': 'he is', 'elle est': 'she is',
-        'suis': 'am (je suis)', 'es': 'are (tu es)', 'sommes': 'are (nous sommes)',
-        'êtes': 'are (vous êtes)', 'sont': 'are (ils/elles sont)',
-        'ne': 'not (first half of the negation sandwich)', 'pas': 'not (second half of the sandwich)',
-        'on peut': 'one can / we can', 'se tutoyer': 'to use tu with each other (be informal)',
-        'est-ce que': 'question marker (turns a statement into a question)',
-        // example-sentence words
-        'madame': 'ma\u2019am / Mrs', 'monsieur': 'sir / Mr', 'entrez': 'come in',
-        'demain': 'tomorrow', 'beaucoup': 'a lot / very much', 'un': 'a (masculine)', 'une': 'a (feminine)',
-        'café': 'coffee', 'ami': 'friend (male)', 'amie': 'friend (female)',
-        'mon': 'my (masculine)', 'ma': 'my (feminine)', 'mes': 'my (plural)',
-        'présente': 'introduce (je vous présente = let me introduce you to)',
-        'retard': 'lateness', 'en retard': 'late / behind schedule',
-        'marie': 'Marie (name)', 'paul': 'Paul (name)', 'dupont': 'Dupont (surname)',
-        'quoi': 'what', 'quoi de neuf': 'what\u2019s new', 'ou': 'or (as written, missing accent — where is où)',
-        'où': 'where', 'qui': 'who', 'quand': 'when', 'pourquoi': 'why', 'quel': 'which/what',
-        'ça': 'that / it (informal)', 'va': 'goes / is going', 'vas': 'go (tu form)',
-        'allez': 'go (vous form) / are you', 'allez-vous': 'are you? (vous form)', 'vas-tu': 'how are you (informal)',
-        'vais': 'go (je form)', 'très': 'very', 'très bien': 'very well / fine', 'pas mal': 'not bad',
-        'comme ci comme ça': 'so-so', 'neuf': 'new', 'bien': 'well / fine',
-        'mal': 'badly / unwell', 'comme': 'as / like', 'ci': 'this (in fixed phrases)',
-        'tout': 'all / everything', 'à': 'at / to / till (see you…)', 'plaisir': 'pleasure',
-        'le': 'the (masculine)', 'la': 'the (feminine)', 'les': 'the (plural)', 'jour': 'day',
-        'journée': 'day (the whole day)', 'soirée': 'evening (the whole evening)', 'soir': 'evening',
-        'bon': 'good', 'bonne': 'good (feminine)', 'problème': 'problem',
-        // homework answers
-        'est-ce': 'is it (start of est-ce que)', 'que': 'that / what', 'qu\u2019': 'that/what (elided)',
-        'voiture': 'car', 'livre': 'book', 'école': 'school', 'femme': 'woman / wife', 'homme': 'man',
-        'jeune': 'young', 'enfant': 'child', 'chat': 'cat', 'chien': 'dog',
+        // ── greetings & farewells ──
+        'bonjour': { en: 'hello / good morning', register: 'neutral', note: 'used until ~6pm — and ALWAYS when entering a shop; skipping it is rude' },
+        'bonsoir': { en: 'good evening', register: 'neutral', note: 'takes over from bonjour around 6pm' },
+        'salut': { en: 'hi / bye', register: 'informal', note: 'friends & family only' },
+        'coucou': { en: 'hey', register: 'informal', note: 'very affectionate — close people only' },
+        'au revoir': { en: 'goodbye', register: 'neutral' },
+        'à bientôt': { en: 'see you soon', register: 'neutral' },
+        'à tout à l\u2019heure': { en: 'see you later (same day)', register: 'neutral' },
+        'à demain': { en: 'see you tomorrow', register: 'neutral' },
+        'à plus tard': { en: 'see you later', register: 'informal' },
+        'bonne journée': { en: 'have a good day', register: 'neutral', note: 'the standard closing when leaving a shop' },
+        'bonne soirée': { en: 'have a good evening', register: 'neutral' },
+        // ── thanks & politeness ──
+        'merci': { en: 'thank you', register: 'neutral' },
+        'merci beaucoup': { en: 'thank you very much', register: 'neutral' },
+        'de rien': { en: 'you\u2019re welcome', register: 'informal' },
+        'je vous en prie': { en: 'you\u2019re welcome', register: 'formal' },
+        's\u2019il vous plaît': { en: 'please', register: 'formal', note: 'vous form — also covers plural' },
+        's\u2019il te plaît': { en: 'please', register: 'informal', note: 'tu form — one friend' },
+        'oui': { en: 'yes', register: 'neutral' },
+        'non': { en: 'no', register: 'neutral' },
+        'si': { en: 'yes (contradicting a negative)', register: 'neutral', note: 'Tu ne viens pas ? — Si ! (answering a negative question with yes)' },
+        'pardon': { en: 'sorry / excuse me', register: 'neutral' },
+        'excusez-moi': { en: 'excuse me', register: 'formal', note: 'informal: excuse-moi' },
+        'désolé': { en: 'sorry', gender: 'masculine', register: 'neutral', note: 'speaker is a woman → désolée' },
+        'désolée': { en: 'sorry', gender: 'feminine', register: 'neutral', note: 'speaker is a woman → désolée' },
+        // ── introductions ──
+        'enchante': { en: 'nice to meet you (written without accent)', register: 'neutral', note: 'incorrect as written — enchanté (man) / enchantée (woman)' },
+        'enchanté': { en: 'nice to meet you', gender: 'masculine', register: 'neutral', note: 'lit. delighted — the -e agrees with the SPEAKER' },
+        'enchantée': { en: 'nice to meet you', gender: 'feminine', register: 'neutral', note: 'written by a woman; a man writes enchanté' },
+        'tout le plaisir est pour moi': { en: 'the pleasure is all mine', register: 'formal' },
+        'je m\u2019appelle': { en: 'my name is (lit. I call myself)', register: 'neutral', note: 'from the reflexive verb s\u2019appeler — never je suis + name' },
+        'tu t\u2019appelles': { en: 'your name is (informal)', register: 'informal', note: 'tu form — written -s, pronounced silent' },
+        'il s\u2019appelle': { en: 'his name is', register: 'neutral' },
+        'elle s\u2019appelle': { en: 'her name is', register: 'neutral' },
+        'nous nous appelons': { en: 'our names are', register: 'neutral', note: 'both pronouns appear: subject nous + reflexive nous' },
+        'vous vous appelez': { en: 'your name is (formal)', register: 'formal' },
+        'm\u2019appelle': { en: '(I) call myself — je m\u2019appelle = my name is', register: 'neutral' },
+        't\u2019appelles': { en: '(you) call yourself', register: 'informal', note: 'tu form of s\u2019appeler — silent -s but written' },
+        's\u2019appelle': { en: '(he/she) is called', register: 'neutral' },
+        'appelons': { en: '(we) call', register: 'neutral', note: 'one l only in the nous form' },
+        'appelez': { en: '(you) call', register: 'formal', note: 'vous form of s\u2019appeler' },
+        'appelez-vous': { en: 'are you called? (formal question)', register: 'formal', note: 'inversion — the formal question shape' },
+        'appelle': { en: 'call / is called', register: 'neutral' },
+        's\u2019appeler': { en: 'to be called (reflexive verb)', register: 'neutral', note: 'reflexive: the action bounces back on the subject' },
+        // ── pronouns ──
+        'je': { en: 'I', register: 'neutral', note: 'becomes j\u2019 before a vowel: j\u2019ai' },
+        'tu': { en: 'you', register: 'informal', note: 'friends, family, children — never strangers/elders' },
+        'il': { en: 'he / it', register: 'neutral' },
+        'elle': { en: 'she / it', register: 'neutral' },
+        'nous': { en: 'we', register: 'neutral', note: 'formal/written; spoken French prefers on' },
+        'vous': { en: 'you (formal) / you all', register: 'formal', note: 'strangers, elders, groups — the safe default' },
+        'ils': { en: 'they (masc/mixed)', register: 'neutral', note: 'pronounced exactly like il — context decides' },
+        'elles': { en: 'they (fem)', register: 'neutral', note: 'pronounced exactly like elle' },
+        'on': { en: 'one / we (informal)', register: 'informal', note: 'spoken French uses on for we — takes a 3rd-singular verb' },
+        'moi': { en: 'me', register: 'neutral' },
+        // ── être & negation ──
+        'je suis': { en: 'I am', register: 'neutral' },
+        'tu es': { en: 'you are', register: 'informal' },
+        'il est': { en: 'he is', register: 'neutral' },
+        'elle est': { en: 'she is', register: 'neutral' },
+        'suis': { en: 'am (être conjugated)', register: 'neutral' },
+        'es': { en: 'are (tu es)', register: 'informal' },
+        'est': { en: 'is (il/elle est)', register: 'neutral' },
+        'sommes': { en: 'are (nous sommes)', register: 'neutral' },
+        'êtes': { en: 'are (vous êtes)', register: 'formal' },
+        'sont': { en: 'are (ils/elles sont)', register: 'neutral', note: 'nasal — sounds like song without the g' },
+        'ne': { en: 'not — first half of the sandwich', register: 'neutral', note: 'ne + verb + pas wraps the conjugated verb' },
+        'pas': { en: 'not — second half of the sandwich', register: 'neutral' },
+        'on peut': { en: 'we can / one can', register: 'informal' },
+        'se tutoyer': { en: 'to use tu with each other', register: 'neutral', note: 'On peut se tutoyer ? = can we be informal?' },
+        'est-ce que': { en: 'question marker', register: 'neutral', note: 'put before a statement to make it a question — safe in every register' },
+        'est-ce': { en: 'is it (start of est-ce que)', register: 'neutral' },
+        // ── example-sentence words ──
+        'madame': { en: 'ma\u2019am / Mrs', gender: 'feminine', plural: 'mesdames', register: 'formal' },
+        'monsieur': { en: 'sir / Mr', gender: 'masculine', plural: 'messieurs', register: 'formal' },
+        'entrez': { en: 'come in', register: 'formal', note: 'imperative of entrer' },
+        'demain': { en: 'tomorrow', register: 'neutral', gender: 'masculine' },
+        'beaucoup': { en: 'a lot / very much', register: 'neutral' },
+        'un': { en: 'a (masculine)', gender: 'masculine', register: 'neutral' },
+        'une': { en: 'a (feminine)', gender: 'feminine', register: 'neutral' },
+        'café': { en: 'coffee / café', gender: 'masculine', plural: 'cafés', register: 'neutral' },
+        'ami': { en: 'friend (male)', gender: 'masculine', plural: 'amis', register: 'neutral' },
+        'amie': { en: 'friend (female)', gender: 'feminine', plural: 'amies', register: 'neutral', note: 'vowel start → mon amie (never ma amie)' },
+        'mon': { en: 'my (masculine object)', register: 'neutral', note: 'agrees with the OBJECT owned, not the owner' },
+        'ma': { en: 'my (feminine object)', register: 'neutral', note: 'mon amie — masculine form before a vowel' },
+        'mes': { en: 'my (plural object)', register: 'neutral' },
+        'présente': { en: 'introduce (je vous présente = let me introduce…)', register: 'formal', note: 'from présenter' },
+        'retard': { en: 'lateness', gender: 'masculine', register: 'neutral', note: 'en retard = late' },
+        'en retard': { en: 'late', register: 'neutral' },
+        'marie': { en: 'Marie (a woman\u2019s name)', register: 'neutral' },
+        'paul': { en: 'Paul (a man\u2019s name)', register: 'neutral' },
+        'dupont': { en: 'Dupont (a surname)', register: 'neutral' },
+        'quoi': { en: 'what', register: 'neutral' },
+        'quoi de neuf': { en: 'what\u2019s new', register: 'informal' },
+        'ou': { en: 'or (this spelling is missing an accent — where is où)', register: 'neutral' },
+        'où': { en: 'where', register: 'neutral', note: 'accent required — ou without it means or' },
+        'qui': { en: 'who', register: 'neutral' },
+        'quand': { en: 'when', register: 'neutral' },
+        'pourquoi': { en: 'why', register: 'neutral', note: 'porque = because (one word, no accent)' },
+        'quel': { en: 'which / what', gender: 'masculine', register: 'neutral' },
+        'ça': { en: 'that / it (informal)', register: 'informal' },
+        'va': { en: 'goes / is going (from aller)', register: 'neutral', note: 'ça va ? = how\u2019s it going' },
+        'vas': { en: 'go (tu form of aller)', register: 'informal' },
+        'allez': { en: 'go (vous form of aller)', register: 'formal', note: 'comment allez-vous = how are you (formal)' },
+        'allez-vous': { en: 'are you? (vous form of aller)', register: 'formal' },
+        'vas-tu': { en: 'how are you (informal question)', register: 'informal' },
+        'vais': { en: 'go (je form of aller)', register: 'neutral' },
+        'très': { en: 'very', register: 'neutral' },
+        'très bien': { en: 'very well / fine', register: 'neutral' },
+        'pas mal': { en: 'not bad', register: 'informal' },
+        'comme ci comme ça': { en: 'so-so', register: 'informal' },
+        'neuf': { en: 'new', gender: 'masculine', register: 'neutral', note: 'feminine: neuve' },
+        'bien': { en: 'well / fine (adverb)', register: 'neutral', note: 'bien = well vs bon = good' },
+        'mal': { en: 'badly / unwell (adverb)', register: 'neutral', note: 'mal = badly vs mauvais = bad' },
+        'comme': { en: 'as / like / how', register: 'neutral' },
+        'ci': { en: 'this (in fixed phrases like comme ci comme ça)', register: 'neutral' },
+        'tout': { en: 'all / everything', register: 'neutral' },
+        'à': { en: 'at / to / till', register: 'neutral', note: 'also in see-you phrases: à bientôt, à demain' },
+        'plaisir': { en: 'pleasure', gender: 'masculine', register: 'neutral' },
+        'le': { en: 'the (masculine)', register: 'neutral' },
+        'la': { en: 'the (feminine)', register: 'neutral' },
+        'les': { en: 'the (plural)', register: 'neutral' },
+        'jour': { en: 'day', gender: 'masculine', register: 'neutral', note: 'le jour = the day as a point; la journée = the whole day long' },
+        'journée': { en: 'day (the whole day)', gender: 'feminine', register: 'neutral' },
+        'soirée': { en: 'evening (the whole evening)', gender: 'feminine', register: 'neutral' },
+        'soir': { en: 'evening', gender: 'masculine', register: 'neutral' },
+        'bon': { en: 'good', gender: 'masculine', register: 'neutral', note: 'feminine: bonne' },
+        'bonne': { en: 'good (feminine)', gender: 'feminine', register: 'neutral' },
+        'problème': { en: 'problem', gender: 'masculine', plural: 'problèmes', register: 'neutral', note: 'masculine despite ending in -a (Greek origin)' },
+        // ── homework answer words ──
+        'que': { en: 'that / what', register: 'neutral' },
+        'qu\u2019': { en: 'that / what (elided before a vowel)', register: 'neutral' },
+        'voiture': { en: 'car', gender: 'feminine', plural: 'voitures', register: 'neutral' },
+        'livre': { en: 'book', gender: 'masculine', plural: 'livres', register: 'neutral' },
+        'école': { en: 'school', gender: 'feminine', register: 'neutral', note: 'vowel start → l\u2019école' },
+        'femme': { en: 'woman / wife', gender: 'feminine', register: 'neutral' },
+        'homme': { en: 'man', gender: 'masculine', register: 'neutral', note: 'silent h → l\u2019homme' },
+        'enfant': { en: 'child', gender: 'mf', plural: 'enfants', register: 'neutral', note: 'same form for boys and girls — the article decides' },
+        'chat': { en: 'cat', gender: 'masculine', plural: 'chats', register: 'neutral' },
+        'chien': { en: 'dog', gender: 'masculine', plural: 'chiens', register: 'neutral' },
+        'jeune': { en: 'young', register: 'neutral' },
+        'de': { en: 'of / from', register: 'neutral' },
+        'du': { en: 'of the / from the (masculine)', register: 'neutral', note: 'de + le = du; Je suis du Nigeria' },
+        'et toi': { en: 'and you (informal)', register: 'informal' },
+        'et vous': { en: 'and you (formal)', register: 'formal' },
     },
-
     homework: {
         intro: 'Four sections, do them in order. Check each answer yourself — read the explanation even when you get it right, so nothing stays "right by luck".',
         translation: [

@@ -27,7 +27,7 @@ import ExamPlanCard from '../exam/ExamPlanCard';
 import CheckpointQuiz from '../exam/CheckpointQuiz';
 import InteractiveExaminer from '../exam/InteractiveExaminer';
 import { TCF_STRATEGY } from '../../services/frenchFoundation';
-import { STATIC_FRENCH_LESSONS, type StaticFrenchLesson } from '../../services/frenchLessons';
+import { STATIC_FRENCH_LESSONS, asEntry, type StaticFrenchLesson } from '../../services/frenchLessons';
 import { LessonHomework } from './LessonHomework';
 
 const LEVELS: TcfLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
@@ -51,7 +51,7 @@ const FrEn = ({ fr, en, dark = false }: { fr: string; en: string; dark?: boolean
 // The active static lesson's glossary (French surface form → English), or null
 // for AI-generated lessons. Every French string in the lesson renderer reads
 // this, so tap-to-translate works for the WHOLE lecture with zero AI.
-const LessonGlossaryContext = React.createContext<Record<string, string> | null>(null);
+const LessonGlossaryContext = React.createContext<import('../../services/frenchLessons').Glossary | null>(null);
 
 const normFr = (s: string) =>
     s.toLowerCase().replace(/[\u2019\u2018`´]/g, "'").replace(/[.,!?;:«»"()—]/g, '').trim();
@@ -59,7 +59,7 @@ const normFr = (s: string) =>
 // Zero-AI word card for static lessons: the translation is already known from
 // the lesson data, so tapping a word works offline and instantly — no
 // getWordBreakdown call, no auth, no rate limit.
-const StaticWord = ({ word, en }: { word: string; en: string }) => {
+const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: import('../../services/frenchLessons').GlossaryEntry }) => {
     const [open, setOpen] = useState(false);
     const { addFlashcard, flashcards, user } = useAppStore() as any;
     const inDeck = flashcards.some((f: any) =>
@@ -84,8 +84,26 @@ const StaticWord = ({ word, en }: { word: string; en: string }) => {
                 {word}
             </button>
             {open && (
-                <span className="absolute z-[9999] bottom-full left-0 mb-2 w-max max-w-[260px] rounded-2xl bg-stone-900 text-white shadow-2xl p-3 text-left space-y-2">
+                <span className="absolute z-[9999] bottom-full left-0 mb-2 w-max max-w-[280px] rounded-2xl bg-stone-900 text-white shadow-2xl p-3.5 text-left space-y-2">
                     <span className="block text-sm"><span className="font-black">{word}</span><span className="mx-1.5 text-white/30">—</span><span className="font-semibold text-emerald-300">{en}</span></span>
+                    {entry?.gender && (
+                        <span className="flex items-center gap-1.5">
+                            <span className={cn('text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider',
+                                entry?.gender === 'feminine' ? 'bg-pink-500/20 text-pink-300' : entry?.gender === 'masculine' ? 'bg-blue-500/20 text-blue-300' : 'bg-violet-500/20 text-violet-300')}>
+                                {entry?.gender === 'feminine' ? 'la · feminine' : entry?.gender === 'masculine' ? 'le · masculine' : 'm/f'}
+                            </span>
+                            {entry?.plural && <span className="text-[10px] text-white/50">pl. {entry.plural}</span>}
+                        </span>
+                    )}
+                    {entry?.register && (
+                        <span className="block">
+                            <span className={cn('text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider',
+                                entry?.register === 'formal' ? 'bg-amber-500/20 text-amber-300' : entry?.register === 'informal' ? 'bg-rose-500/20 text-rose-300' : 'bg-white/10 text-white/60')}>
+                                {entry?.register === 'formal' ? 'formel · formal' : entry?.register === 'informal' ? 'informel · casual' : 'registre neutre'}
+                            </span>
+                        </span>
+                    )}
+                    {entry?.note && <span className="block text-[11px] text-white/60 leading-relaxed">{entry.note}</span>}
                     <span className="flex items-center gap-2">
                         <button onClick={(e) => { e.stopPropagation(); speakText(word, 'French'); }}
                             className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"><Volume2 size={12} /></button>
@@ -117,17 +135,18 @@ const StaticFrText = ({ text, className }: { text: string; className?: string })
         if (!p) { i++; continue; }
         if (!isWord(p)) { out.push(<span key={`x${key++}`}>{p}</span>); i++; continue; }
         // try up to 4 consecutive words, longest glossary match wins
-        let matched = 0, matchedEn = '', surface = p, lastIdx = i;
+        let matched = 0, matchedEn = '', matchedEntry: import('../../services/frenchLessons').GlossaryEntry | undefined, surface = p, lastIdx = i;
         const words: string[] = [];
         for (let len = 0; len < 4; len++) {
             const wi = i + len * 2;
             if (wi >= parts.length || !isWord(parts[wi])) break;
             words.push(parts[wi]);
             const n = normFr(words.join(' '));
-            if (n && glossary[n] !== undefined) { matched = len + 1; matchedEn = glossary[n]; surface = parts.slice(i, wi + 1).join(''); lastIdx = wi; }
+            const gv = glossary[n];
+            if (n && gv !== undefined) { matched = len + 1; matchedEn = asEntry(gv).en; matchedEntry = asEntry(gv); surface = parts.slice(i, wi + 1).join(''); lastIdx = wi; }
         }
         if (matched > 0) {
-            out.push(<StaticWord key={`w${key++}`} word={surface} en={matchedEn} />);
+            out.push(<StaticWord key={`w${key++}`} word={surface} en={matchedEn} entry={matchedEntry} />);
             i = lastIdx + 1;
         } else {
             out.push(<span key={`p${key++}`}>{p}</span>);
@@ -288,6 +307,13 @@ const Curriculum = ({ language }: { language: string }) => {
     const last = getLastLesson();
     // static lessons carry extras (traps + homework) keyed off the lesson key
     const staticExtras: StaticFrenchLesson | undefined = lessonKey ? STATIC_FRENCH_LESSONS[lessonKey] : undefined;
+    // rich glossary entry for a surface form (vocabulary + popovers)
+    const glossaryEntryFor = (word: string) => {
+        const g = staticExtras?.glossary;
+        if (!g) return undefined;
+        const v = g[normFr(word)] ?? g[word.toLowerCase()];
+        return v === undefined ? undefined : asEntry(v);
+    };
 
     // Never auto-promote: level N+1 stays locked until the level N checkpoint is passed
     const prevLevel = LEVELS[Math.max(0, LEVELS.indexOf(level) - 1)];
@@ -502,7 +528,7 @@ const Curriculum = ({ language }: { language: string }) => {
                                     <div className="flex items-baseline justify-between gap-2">
                                         <div className="flex items-baseline gap-1.5 flex-wrap">
                                             {tooltips
-                                                ? <StaticWord word={v.fr} en={v.en} />
+                                                ? <StaticWord word={v.fr} en={v.en} entry={glossaryEntryFor(v.fr)} />
                                                 : <span className="font-bold text-stone-900">{v.fr}</span>}
                                             {v.gender && (
                                                 <span className={cn('text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider',
