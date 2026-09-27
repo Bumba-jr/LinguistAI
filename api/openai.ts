@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireAuthenticatedRequest } from './_apiShared';
 
 // Server-side proxy for OpenAI — keeps OPENAI_API_KEY out of the browser bundle.
 // Handles both JSON APIs (chat) and binary responses (TTS audio).
@@ -8,11 +7,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.setHeader('Allow', 'POST');
         return res.status(405).json({ error: 'Method not allowed' });
     }
+    // TEMP diagnostic: surface the boot error directly in the response
+    let requireAuthenticatedRequest: any;
+    try {
+        ({ requireAuthenticatedRequest } = await import('./_apiShared'));
+    } catch (e: any) {
+        return res.status(500).json({ diagnostic: 'apiShared import failed', error: String(e && e.stack ? e.stack : e) });
+    }
     const openaiPath = (req.url ?? '').replace(/^\/api\/openai/, '').split('?')[0] || '/';
     if (!['/v1/chat/completions', '/v1/audio/speech'].includes(openaiPath)) {
         return res.status(404).json({ error: 'Unsupported OpenAI endpoint' });
     }
-    if (!(await requireAuthenticatedRequest(req, res, openaiPath === '/v1/audio/speech' ? 'tts' : 'ai'))) return;
+    try {
+        if (!(await requireAuthenticatedRequest(req, res, openaiPath === '/v1/audio/speech' ? 'tts' : 'ai'))) return;
+    } catch (e: any) {
+        return res.status(500).json({ diagnostic: 'auth check crashed', error: String(e && e.stack ? e.stack : e) });
+    }
     const contentLength = Number(req.headers['content-length'] ?? 0);
     let rawRequestBody: string;
     try { rawRequestBody = JSON.stringify(req.body ?? {}); }
