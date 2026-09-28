@@ -18,6 +18,8 @@
 import type { TcfLesson } from './tcfService';
 import { STATIC_A1_PART1 } from './frenchLessonsA1';
 import { STATIC_A1_PART2 } from './frenchLessonsA1more';
+import { STATIC_A2_PART1 } from './frenchLessonsA2';
+import { STATIC_A2_PART2 } from './frenchLessonsA2more';
 
 // ── Homework & assessment (the Day-1 mega-homework format) ───────────────────
 export interface HomeworkCheck {
@@ -466,6 +468,8 @@ export const STATIC_FRENCH_LESSONS: Record<string, StaticFrenchLesson> = {
     'A1:greetings': a1Greetings,
     ...STATIC_A1_PART1,
     ...STATIC_A1_PART2,
+    ...STATIC_A2_PART1,
+    ...STATIC_A2_PART2,
 };
 
 export const hasStaticFrenchLesson = (level: string, slug: string): boolean =>
