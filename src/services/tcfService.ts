@@ -154,8 +154,8 @@ export interface TcfLesson {
     vocabulary: { fr: string; en: string; gender?: string; plural?: string; register?: string; pron?: string; type?: string; note?: string; example?: { fr: string; en: string }; related?: { fr: string; en: string }[] }[];
     pronunciation: { fr: string; approx: string; en: string }[];
     grammar: { rule: string; explanation: string; examples: { fr: string; en: string; breakdown: string[] }[]; commonMistakes: string[] };
-    transformations: { type: string; fr: string; en: string }[];
-    sentenceBuilding: { fr: string; en: string }[];
+    transformations: { type: string; fr: string; en: string; breakdown?: string[] }[];
+    sentenceBuilding: { fr: string; en: string; breakdown?: string[] }[];
     practice: { instruction: string; question: string; answer: string }[];
     translationPractice: { en: string; fr: string }[];
     reverseTranslation: { fr: string; en: string }[];

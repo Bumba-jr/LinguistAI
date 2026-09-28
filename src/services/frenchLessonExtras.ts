@@ -2144,6 +2144,376 @@ export const C1_EXTRAS: Record<string, LessonExtras> = {
     'C1:oral-implicite': c1OralImplicite,
 };
 
+// ── C2 · Stylistic Nuance ───────────────────────────────────────────────────
+const c2Style: LessonExtras = {
+    warmup: [
+        { q: 'Build the measured close of a commentary: the said is modest, the inferred rich.', a: 'En définitive, le dit est modeste, l\u2019interprété riche.' },
+        { q: 'Tag the level: "Le texte indique que les délais doublent."', a: 'Level 1 — literal, indicative.' },
+        { q: 'Mood: Il est révélateur que le chiffre (disparaître).', a: 'disparaisse — judgement frame → subjunctive.' },
+        { q: 'Join two opposed sources in one phrase.', a: 'Les deux documents se répondent en miroir.' },
+        { q: 'What does distinguer le dit de l\u2019interprété mean?', a: 'Separate what is literally said from what you read into it — the graded reflex.' },
+    ],
+    verbTables: [
+        {
+            title: 'The three intensity ladders side by side',
+            note: 'One rung per sentence — never stack two.',
+            rows: [
+                { label: 'intensity', form: 'un peu → assez → passablement → très → extrêmement', pron: 'pick by proportion' },
+                { label: 'assertion', form: 'dire → affirmer → soutenir → prétendre (doubt)', pron: 'the verb vouches or not' },
+                { label: 'probability', form: 'peut-être → vraisemblablement → sans doute → assurément', pron: 'sans doute = probably!' },
+                { label: 'completion', form: 'presque (70 %) → quasiment (95 %) → entièrement (100 %)', pron: 'light → strong → done' },
+            ],
+        },
+        {
+            title: 'Modulation formulas — the attitude each carries',
+            rows: [
+                { label: 'soften', form: 'pour ainsi dire / si l\u2019on veut', pron: 'claim analogy, not identity' },
+                { label: 'concede', form: 'disons / mettons', pron: 'the spoken calibration' },
+                { label: 'confess', form: 'à vrai dire / en toute franchise', pron: 'before the honest bit' },
+                { label: 'stand firm', form: 'il n\u2019empêche que / cela étant', pron: 'after the concession' },
+                { label: 'cap', form: 'tout au plus / au grand maximum', pron: 'the calibrated ceiling' },
+            ],
+        },
+        {
+            title: 'Placement — seulement scope pair',
+            rows: [
+                { label: 'verb scope', form: 'Il a seulement hésité.', pron: 'the action was minimal' },
+                { label: 'number scope', form: 'Seulement deux ont hésité.', pron: 'the quantity was scarce' },
+                { label: 'literary wrap', form: 'Il ne fait qu\u2019hésiter.', pron: 'ne…que = written only' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'sans doute — the word everyone misreads',
+            uses: [
+                { use: 'modern French = probably', examples: [{ fr: 'Sans doute viendra-t-il demain.', en: 'He\u2019ll probably come tomorrow.' }] },
+                { use: 'full certainty = sans aucun doute', examples: [{ fr: 'C\u2019est, sans aucun doute, le meilleur dossier.', en: 'It\u2019s, without any doubt, the best file.' }] },
+                { use: 'formal inversion flourish', examples: [{ fr: 'Sans doute cette mesure aidera-t-elle.', en: 'This measure will no doubt help.' }] },
+                { use: 'the certainty rung above', examples: [{ fr: 'Il viendra assurément.', en: 'He will assuredly come.' }] },
+            ],
+        },
+        {
+            word: 'presque vs quasiment vs presque-plus',
+            uses: [
+                { use: 'presque — light, oral, 60-80 %', examples: [{ fr: 'Il est presque six heures.', en: 'It\u2019s almost six (i.e. 5:55).' }] },
+                { use: 'quasiment — strong, written, 90 %+', examples: [{ fr: 'Le dossier est quasiment clos.', en: 'The file is all but closed.' }] },
+                { use: 'quasi- prefix — adjective form', examples: [{ fr: 'un quasi-consensus, une quasi-certitude', en: 'a virtual consensus / certainty' }] },
+                { use: 'entièrement — actually done', examples: [{ fr: 'C\u2019est entièrement réglé.', en: 'It\u2019s entirely settled.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Nuance lives in the rung, not the volume: read each line twice — once on the lighter rung, once on the firmer — and keep the facts identical.',
+        lines: [
+            { fr: 'Le dossier est quasiment clos — tout au plus une annexe attendue.', pron: 'luh doh-SYAY eh kwah-zeem-AHN KLOH', en: 'The file is all but closed — at most an appendix awaited.' },
+            { fr: 'À vrai dire, la mesure était passablement impopulaire.', pron: 'ah vreh DEER lah muh-ZÜR', en: 'Truth be told, the measure was quite unpopular.' },
+            { fr: 'Il n\u2019empêche que les délais ont doublé depuis mars.', pron: 'eel nam-PESH kuh lay day-LYEH', en: 'That said, the delays have doubled since March.' },
+            { fr: 'Il soutient que le devis a été respecté ; les factures, elles, disent autre chose.', pron: 'eel soo-TYEN kuh luh duh-VEE', en: 'He maintains the estimate was respected; the invoices, for their part, say otherwise.' },
+            { fr: 'Seulement deux candidats ont osé postuler — il ne manque que le courageux.', pron: 'suhl-mahn duh kahn-dee-DAH', en: 'Only two candidates dared apply — only the brave one is missing.' },
+            { fr: 'Désormais officiel, le calendrier tient — quasiment, pour ainsi dire.', pron: 'day-zor-MEH oh-fee-SYEL', en: 'Now official, the calendar holds — virtually, so to speak.' },
+        ],
+    },
+};
+
+// ── C2 · Literary & Journalistic French ─────────────────────────────────────
+const c2Litteraire: LessonExtras = {
+    warmup: [
+        { q: 'Pick the rung: 95 % done — presque or quasiment ?', a: 'quasiment — presque would undersell it.' },
+        { q: 'Scope: "Il a seulement refusé deux fois" — what is limited?', a: 'The refusals (verb scope) — for the count: il n\u2019a refusé que deux fois.' },
+        { q: 'Modulation to stand firm after a concession?', a: 'Il n\u2019empêche que…' },
+        { q: 'Assertion verb for a claim you doubt?', a: 'prétendre — affirmer would vouch for it.' },
+        { q: 'One sentence with sans doute used correctly.', a: 'Sans doute viendra-t-il — probably, not certainly.' },
+    ],
+    verbTables: [
+        {
+            title: 'The six passé simples you meet most',
+            note: 'Recognition only — you will never speak them.',
+            rows: [
+                { label: 'être', form: 'il fut / ils furent', pron: 'eel FÜ / eel fü-R' },
+                { label: 'avoir', form: 'il eut / ils eurent', pron: 'eel Ü / eelz ü-R' },
+                { label: 'aller', form: 'il alla / ils allèrent', pron: 'eel ah-LAH' },
+                { label: 'venir', form: 'il vint / ils vinrent', pron: 'eel VAN' },
+                { label: 'faire', form: 'il fit / ils firent', pron: 'eel FEE' },
+                { label: 'voir', form: 'il vit / ils virent', pron: 'eel VEE' },
+            ],
+        },
+        {
+            title: 'The press code — ranked by reliability',
+            rows: [
+                { label: 'insider', form: 'De source proche du dossier, …', pron: 'unnamed, close to the case' },
+                { label: 'corroborated', form: 'De source concordante, …', pron: 'several agree' },
+                { label: 'own reporting', form: 'Selon nos informations, …', pron: 'the paper knows, won\u2019t vouch' },
+                { label: 'emergence', form: 'Il ressort du rapport que…', pron: 'it emerges from' },
+                { label: 'weakest', form: 'Des rumeurs circulent selon lesquelles…', pron: 'rumour distance' },
+            ],
+        },
+        {
+            title: 'Devices with their jobs',
+            rows: [
+                { label: 'anaphore', form: 'Je veux… je veux… — momentum', pron: 'repeated openings' },
+                { label: 'antithèse', form: 'je veux / je refuse — balance', pron: 'opposites framed' },
+                { label: 'métaphore filée', form: 'tempête → navire → quai — coherence', pron: 'one image extended' },
+                { label: 'chute', form: 'the last line that flips everything', pron: 'the reframing close' },
+                { label: 'litote', form: 'Il n\u2019y manqua pas — praise by negation', pron: 'literary understatement' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'il fut vs il eut — the pair that grades the paragraph',
+            uses: [
+                { use: 'il fut = he was (être)', examples: [{ fr: 'Il fut un temps où tout semblait simple.', en: 'There was a time when everything seemed simple.' }] },
+                { use: 'il eut = he had (avoir)', examples: [{ fr: 'Il eut trois enfants et un prix.', en: 'He had three children and a prize.' }] },
+                { use: 'inverted narration', examples: [{ fr: 'Puis vint le temps des doutes.', en: 'Then came the time of doubts.' }] },
+                { use: 'plural pair', examples: [{ fr: 'Ils furent nombreux ; ils eurent raison.', en: 'They were many; they were right.' }] },
+            ],
+        },
+        {
+            word: 'conclure à vs conclure que — the verdict frames',
+            uses: [
+                { use: 'conclure à + noun', examples: [{ fr: 'Le rapport conclut à une erreur de procédure.', en: 'The report concludes that a procedural error occurred.' }] },
+                { use: 'conclure que + clause', examples: [{ fr: 'Le rapport conclut que la procédure a été violée.', en: 'The report concludes the procedure was breached.' }] },
+                { use: 'conclure en faveur de', examples: [{ fr: 'L\u2019enquête conclut en faveur du plaignant.', en: 'The inquiry concludes in the complainant\u2019s favour.' }] },
+                { use: 'never mix', examples: [{ fr: 'NOT: conclut que fraude', en: 'a noun needs à' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Two voices in one drill: read each pair first as press (flat, coded), then as literature (inverted, singing). Same events, two centuries.',
+        lines: [
+            { fr: 'Selon nos informations, rien n\u2019est encore signé.', pron: 'sü-LÖN nohz an-for-mah-SYOHN', en: 'According to our information, nothing is signed yet.' },
+            { fr: 'Il fut un temps où tout semblait plus simple.', pron: 'eel FÜ ün TAHN', en: 'There was a time when everything seemed simpler.' },
+            { fr: 'De source proche du dossier, la date avance.', pron: 'duh SOORS prosh dü doh-SYAY', en: 'From a source close to the case, the date is moving up.' },
+            { fr: 'Puis vint le temps des doutes — il n\u2019y manqua pas.', pron: 'püee VAN luh tahn day DOOT', en: 'Then came the time of doubts — he did not fail it.' },
+            { fr: 'En substance, le rapport conclut à une erreur de procédure, non à une fraude.', pron: 'ahn süb-STAHNSS', en: 'In substance, the report concludes a procedural error, not fraud.' },
+            { fr: 'La chute renverse tout : tant que rien n\u2019est signé, tout est signable.', pron: 'lah SHÜT rahn-VAHRS too', en: 'The punchline flips everything: as long as nothing is signed, everything is signable.' },
+        ],
+    },
+};
+
+// ── C2 · Francophone Variation & Context ────────────────────────────────────
+const c2Francophonie: LessonExtras = {
+    warmup: [
+        { q: 'Which passé simple: "Il ______ un temps où tout semblait simple."?', a: 'fut — il fut un temps; eut would mean "he had".' },
+        { q: 'Decode: "La signature interviendrait avant vendredi."', a: 'Hearsay conditional — the paper refuses to vouch.' },
+        { q: 'Name the device: "Je veux savoir ; je veux comprendre ; je veux agir."', a: 'anaphore — repeated openings build momentum.' },
+        { q: 'What does la chute mean in a text-criticism context?', a: 'The final line that reframes everything — the punchline.' },
+        { q: 'Why is an unnamed source ("de source proche du dossier") not checkable?', a: 'The code exists to protect the source — the reader gets proximity, not identity.' },
+    ],
+    verbTables: [
+        {
+            title: 'The meal table — the exam\u2019s favourite trap',
+            rows: [
+                { label: 'FRANCE', form: 'petit-déjeuner · déjeuner · dîner', pron: 'breakfast · lunch · dinner' },
+                { label: 'QUÉBEC', form: 'déjeuner · dîner · souper', pron: 'the old French system' },
+                { label: 'the hour test', form: 'On dîne à midi (QC) = On déjeune à midi (FR)', pron: 'same noon, two words' },
+                { label: 'evening', form: 'On soupe à 18 h (QC) — le dîner à 20 h (FR)', pron: 'two dinner cultures' },
+            ],
+        },
+        {
+            title: 'Numbers across the francophone world',
+            rows: [
+                { label: 'FRANCE / CANADA', form: 'soixante-dix · quatre-vingts · quatre-vingt-dix', pron: '70 · 80 · 90' },
+                { label: 'BELGIQUE / RDC', form: 'septante · quatre-vingts · nonante', pron: '70 · 80 · 90' },
+                { label: 'SUISSE', form: 'septante · huitante · nonante', pron: 'huitante = weet-TAHNT' },
+                { label: 'archaic', form: 'octante — historical, unused today', pron: 'never say it' },
+            ],
+        },
+        {
+            title: 'Quebec essentials — decode on contact',
+            rows: [
+                { label: 'weekend', form: 'la fin de semaine', pron: 'France: le week-end' },
+                { label: 'corner store', form: 'le dépanneur', pron: 'FR: repairman!' },
+                { label: 'college', form: 'le cégep', pron: 'final p pronounced' },
+                { label: 'all good', form: 'c\u2019est correct', pron: 'FR: pas de souci' },
+                { label: 'so', form: 'fait que', pron: 'ça fait que → du coup' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'collège — the false friend of the francophone world',
+            uses: [
+                { use: 'France: middle school (11-15)', examples: [{ fr: 'Il entre au collège à onze ans.', en: 'He enters middle school at eleven. (France)' }] },
+                { use: 'university = la fac', examples: [{ fr: 'Après le lycée, direction la fac.', en: 'After high school, off to university.' }] },
+                { use: 'Quebec track', examples: [{ fr: 'Après le secondaire, le cégep, puis l\u2019université.', en: 'After high school, CEGEP, then university.' }] },
+                { use: 'the trap sentence', examples: [{ fr: 'NOT: il est entré au collège à 18 ans (France)', en: 'that would be l\u2019université' }] },
+            ],
+        },
+        {
+            word: 'accent — describe, don\u2019t prescribe',
+            uses: [
+                { use: 'the C2 stance', examples: [{ fr: 'Un accent n\u2019est pas une faute : c\u2019est une adresse.', en: 'An accent is not a mistake: it\u2019s an address.' }] },
+                { use: 'light, non-judgemental', examples: [{ fr: 'Elle a un léger accent québécois.', en: 'She has a light Quebec accent.' }] },
+                { use: 'variation as heritage', examples: [{ fr: 'La diversité de la francophonie est un patrimoine, pas un écart.', en: 'Francophone diversity is heritage, not deviation.' }] },
+                { use: 'one variety per text', examples: [{ fr: 'Gardez le même système dans un texte — les repas ou les chiffres.', en: 'hold one system per text' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Three accents, one sentence: read each line once in neutral French, once with the regional marker leaned on lightly. Respectful imitation, not caricature.',
+        lines: [
+            { fr: 'Au Québec, on déjeune à sept heures, on dîne à midi, on soupe à dix-huit heures.', pron: 'oh kü-BEK', en: 'In Quebec: breakfast at seven, lunch at noon, dinner at six.' },
+            { fr: 'À Paris, le dîner n\u2019arrive qu\u2019à vingt heures — le déjeuner, c\u2019est midi.', pron: 'ah pah-REE luh dee-NAY', en: 'In Paris, dinner only comes at eight — lunch is noon.' },
+            { fr: 'En Belgique, ça coûte septante euros ; en Suisse, huitante pages.', pron: 'ahn bel-ZEEK sah koot sehp-TAHNT', en: 'In Belgium it costs 70 euros; in Switzerland, 80 pages.' },
+            { fr: 'Après le secondaire, direction le cégep — puis l\u2019université.', pron: 'ah-pray luh suh-kohn-DAIR', en: 'After secondary school, off to CEGEP — then university.' },
+            { fr: '— Désolé pour le retard. — C\u2019est correct, on n\u2019a rien commencé.', pron: 'seh kuh-REHKT', en: '— Sorry I\u2019m late. — All good, we haven\u2019t started. (Quebec)' },
+            { fr: 'Un accent n\u2019est pas une faute : c\u2019est une adresse.', pron: 'uhn-nak-SAHN neh pah-TÜN fohT', en: 'An accent is not a mistake: it\u2019s an address.' },
+        ],
+    },
+};
+
+// ── C2 · Rhetoric, Allusion & Irony ─────────────────────────────────────────
+const c2Rhetorique: LessonExtras = {
+    warmup: [
+        { q: 'The meal words: dinner in Quebec vs dinner in France?', a: 'Quebec: souper. France: dîner (déjeuner = lunch there).' },
+        { q: '90 in Belgian French?', a: 'nonante — France/Canada: quatre-vingt-dix.' },
+        { q: 'What is a cégep?', a: 'Quebec\u2019s two-year college between high school and university.' },
+        { q: 'In France, un collège is…', a: 'middle school (11-15) — university is la fac.' },
+        { q: 'The C2 sentence about accents?', a: 'Un accent n\u2019est pas une faute : c\u2019est une adresse.' },
+    ],
+    verbTables: [
+        {
+            title: 'Device → job — the correcteur\u2019s table',
+            rows: [
+                { label: 'prétérition', form: 'Je ne parlerai pas de son courage… — insist while feigning restraint', pron: 'the denial performs' },
+                { label: 'gradation', form: 'ponctuel ; prévenant ; créatif… — rise to the point', pron: 'Cyrano\u2019s engine' },
+                { label: 'chiasme', form: 'manger pour vivre / vivre pour manger — the mirror IS the argument', pron: 'ABBA' },
+                { label: 'parataxe', form: 'veni, vidi, vici — inevitability by rhythm', pron: 'no connectives' },
+                { label: 'antithèse', form: 'réforme / abdication — the balance frames the verdict', pron: 'je veux / je refuse' },
+            ],
+        },
+        {
+            title: 'The éloge → cependant flip (structural irony)',
+            rows: [
+                { label: 'setup', form: 'Il est ponctuel ; il est prévenant ; il est loyal.', pron: 'three praises' },
+                { label: 'flip', form: 'Cependant, il est loyal… envers ceux qui le payent.', pron: 'the mais governs' },
+                { label: 'lesson', form: 'Read the connector FIRST, then re-weight the adjectives.', pron: 'the graded reflex' },
+            ],
+        },
+        {
+            title: 'Answer template for device questions',
+            rows: [
+                { label: 'name', form: 'C\u2019est une prétérition…', pron: 'identify' },
+                { label: 'mechanism', form: '…qui feint d\u2019omettre…', pron: 'how it works' },
+                { label: 'effect', form: '…pour mieux insister sur le courage.', pron: 'what it allows' },
+                { label: 'visée', form: 'La visée du passage est satirique.', pron: 'the purpose, named' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'allusion fragments — the cultural shelf',
+            uses: [
+                { use: 'historical', examples: [{ fr: 'Un 18 Juin au micro — De Gaulle 1940.', en: 'the date does the citing' }] },
+                { use: 'classical', examples: [{ fr: 'Le talon d\u2019Achille du dossier.', en: 'the file\u2019s one weakness' }] },
+                { use: 'mythological', examples: [{ fr: 'Ouvrir une boîte de Pandore.', en: 'unleash the uncontrollable' }] },
+                { use: 'the rule', examples: [{ fr: 'The fragment cites; culture completes — catch it, name its work.', en: '—' }] },
+            ],
+        },
+        {
+            word: 'irony vs sarcasm — two tempers',
+            uses: [
+                { use: 'sarcasm (blunt)', examples: [{ fr: 'Ah bravo, encore raté !', en: 'Well done, failed again! — names the target' }] },
+                { use: 'irony (structural)', examples: [{ fr: 'Le communiqué salue la « transparence » ; 47 pages restent confidentielles.', en: 'praise + counter-fact' }] },
+                { use: 'affectionate irony', examples: [{ fr: 'Il a encore "oublié" — ce grand étourdi.', en: 'He "forgot" again, the dear scatterbrain.' }] },
+                { use: 'the exam', examples: [{ fr: 'Attitude questions reward the second-degree reading — structure over tone.', en: '—' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Read each line flat — the devices carry the meaning without vocal drama. The quieter you read, the clearer the irony.',
+        lines: [
+            { fr: 'Je ne vous ferai pas l\u2019injure de rappeler les dépassements de budget.', pron: 'zhuh nuh voo fair-AY lee-ZHÜR', en: 'I shan\u2019t insult you by recalling the budget overruns.' },
+            { fr: 'Il est ponctuel ; il est prévenant ; il est, dirons-nous, créatif avec les chiffres.', pron: 'dee-ROHN NOO', en: 'He is punctual; considerate; creative, shall we say, with figures.' },
+            { fr: 'Ce n\u2019est pas une réforme, c\u2019est une abdication ; ce n\u2019est pas un plan, c\u2019est une prière.', pron: 'suh neh PAH ün ray-FORM', en: 'It is not a reform, it is an abdication; not a plan, a prayer.' },
+            { fr: 'Un 18 Juin au micro, des mots de Londres — chacun a compris l\u2019allusion.', pron: 'uhn kehn-ZEEN duh ZHÜAN', en: 'A June 18th at the microphone, words from London — everyone got it.' },
+            { fr: 'Le communiqué salue « une transparence exemplaire » — le rapport compte 47 pages confidentielles.', pron: 'luh koh-mü-ni-KAY sah-LOO', en: 'The statement hails "exemplary transparency" — the report counts 47 confidential pages.' },
+            { fr: 'Chacun sa méthode : elle corrige les copies ; il corrige les statistiques.', pron: 'shah-KÜN sah meh-TOD', en: 'To each their method: she grades papers; he grades statistics.' },
+        ],
+    },
+};
+
+// ── C2 · Long-Form Synthesis & Commentary ───────────────────────────────────
+const c2Commentaire: LessonExtras = {
+    warmup: [
+        { q: 'Name the device: "Je ne vous parlerai pas de son courage…"', a: 'prétérition — it denies while it praises.' },
+        { q: 'Effect of three éloges + one « cependant » ?', a: 'Structural irony — the praise was the setup; read the connector first.' },
+        { q: 'What does "un 18 Juin au micro" allude to?', a: 'De Gaulle\u2019s 1940 appeal from London.' },
+        { q: 'State the visée of a text after decoding.', a: 'La visée est satirique / polémique / mélancolique — device + purpose.' },
+        { q: 'Irony or sarcasm: praise + a contradicting fact?', a: 'Irony — structural; sarcasm names and attacks bluntly.' },
+    ],
+    verbTables: [
+        {
+            title: 'The three reading levels — verbs and moods',
+            rows: [
+                { label: '1 · literal', form: 'Le texte indique/rapporte que… (indicatif)', pron: 'quotable facts' },
+                { label: '2 · implicit', form: 'On peut inférer que… / le texte laisse entendre que…', pron: 'hedged inference' },
+                { label: '3 · interpretive', form: 'Il est révélateur/significatif que… (+ SUBJONCTIF)', pron: 'the judgement frame' },
+                { label: 'mood contrast', form: 'révélateur que + ait · clair que + est', pron: 'the mood IS the analysis' },
+            ],
+        },
+        {
+            title: 'The commentary skeleton — proportions matter',
+            rows: [
+                { label: 'problématique', form: 'One sentence — the question the sources answer differently.', pron: 'early, explicit' },
+                { label: 'constat [1]', form: 'Literal claims, attributed, with figures.', pron: '~1/4 of the text' },
+                { label: 'analyse [2-3]', form: 'Inference + interpretation, moods correct.', pron: '~1/2 of the text' },
+                { label: 'portée', form: 'En définitive + the dit/interprété gap.', pron: 'the measured close' },
+            ],
+        },
+        {
+            title: 'Joins between sources',
+            rows: [
+                { label: 'mirror', form: 'Les deux textes se répondent en miroir.', pron: 'structural echo' },
+                { label: 'echo', form: 'L\u2019annexe fait écho au corps du rapport.', pron: 'lighter join' },
+                { label: 'support', form: 'Deux évaluations à l\u2019appui de cette lecture.', pron: 'converging sources' },
+                { label: 'contrast', form: 'Là où A célèbre, B compte les coûts.', pron: 'the elegant hinge' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'la visée — purpose labels of texts',
+            uses: [
+                { use: 'satirique', examples: [{ fr: 'La visée est satirique : l\u2019éloge prépare l\u2019accusation.', en: 'the praise sets up the charge.' }] },
+                { use: 'polémique', examples: [{ fr: 'Une visée polémique : chaque phrase attaque.', en: 'polemical — attack mode.' }] },
+                { use: 'mélancolique', examples: [{ fr: 'Visée mélancolique : il fut un temps…', en: 'elegiac — the literary opener.' }] },
+                { use: 'didactique', examples: [{ fr: 'Visée didactique : le texte explique, il ne plaide pas.', en: 'teaching, not arguing.' }] },
+            ],
+        },
+        {
+            word: 'weighing without surrendering',
+            uses: [
+                { use: 'qualify', examples: [{ fr: 'Nuancer n\u2019est pas céder.', en: 'Qualifying is not conceding.' }] },
+                { use: 'weigh', examples: [{ fr: 'La portée du texte est réelle, mais l\u2019échantillon est unique.', en: 'significance real, sample single.' }] },
+                { use: 'conditional acceptance', examples: [{ fr: 'Sous réserve de la méthode, la lecture tient.', en: 'subject to method, the reading stands.' }] },
+                { use: 'close on the gap', examples: [{ fr: 'En définitive, le décalage déplace la question.', en: 'the gap moves the question.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'The commentary voice: level, precise, no drama — every level-tag lands softly. Read each line as if a jury were taking notes.',
+        lines: [
+            { fr: 'Le texte indique que les délais ont doublé ; il ne dit pas pourquoi.', pron: 'luh TEHKS-tan-DEEK', en: 'The text indicates the delays doubled; it does not say why.' },
+            { fr: 'On peut toutefois inférer que la décision était prise avant la consultation.', pron: 'ohn puh tooh-foh-ZAN-feh-RAY', en: 'One can nevertheless infer the decision predated the consultation.' },
+            { fr: 'Il est révélateur que le chiffre ait disparu de la version finale.', pron: 'eel eh ray-vay-lah-TUHR kuh', en: 'It is revealing that the figure vanished from the final version.' },
+            { fr: 'Les deux documents se répondent en miroir : l\u2019un célèbre, l\u2019autre compte.', pron: 'luh duh doh-kü-MAHN', en: 'The two documents mirror each other: one celebrates, one counts.' },
+            { fr: 'Nuancer n\u2019est pas céder : la portée est réelle, l\u2019échantillon unique.', pron: 'nü-AHN-say neh pah say-DAY', en: 'Qualifying is not conceding: significance real, sample single.' },
+            { fr: 'En définitive, le dit est modeste, l\u2019interprété riche — et ce décalage fait le texte.', pron: 'ahn day-fee-nee-TEEV', en: 'Ultimately: the said modest, the inferred rich — and that gap makes the text.' },
+        ],
+    },
+};
+
+export const C2_EXTRAS: Record<string, LessonExtras> = {
+    'C2:style': c2Style,
+    'C2:litteraire': c2Litteraire,
+    'C2:francophonie': c2Francophonie,
+    'C2:rhetorique': c2Rhetorique,
+    'C2:commentaire-long': c2Commentaire,
+};
+
 // Merged registry — consumed by frenchLessons.ts
 export const LESSON_EXTRAS: Record<string, LessonExtras> = {
     ...A1_EXTRAS,
@@ -2151,6 +2521,7 @@ export const LESSON_EXTRAS: Record<string, LessonExtras> = {
     ...B1_EXTRAS,
     ...B2_EXTRAS,
     ...C1_EXTRAS,
+    ...C2_EXTRAS,
 };
 
 export type { LessonExtras };

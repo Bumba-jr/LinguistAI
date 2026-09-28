@@ -766,10 +766,19 @@ const Curriculum = ({ language }: { language: string }) => {
                         <LessonSection title="Sentence transformations — one idea, every form" icon={<RotateCcw size={13} />}>
                             <p className="text-xs text-stone-400 mb-3">The same core sentence in every tense and form. Notice what changes and why.</p>
                             <div className="overflow-hidden rounded-2xl border border-stone-100">
-                                {lesson.transformations.map((t, i) => (
-                                    <div key={i} className={cn('flex items-start gap-3 px-4 py-2.5', i % 2 === 0 ? 'bg-white' : 'bg-stone-50')}>
-                                        <span className="text-[9px] font-black text-violet-500 uppercase tracking-wider w-24 shrink-0 pt-0.5">{t.type}</span>
-                                        <div className="flex-1 min-w-0"><FrEn fr={t.fr} en={t.en} /></div>
+                            {lesson.transformations.map((t, i) => (
+                                <div key={i} className={cn('flex items-start gap-3 px-4 py-2.5', i % 2 === 0 ? 'bg-white' : 'bg-stone-50')}>
+                                    <span className="text-[9px] font-black text-violet-500 uppercase tracking-wider w-24 shrink-0 pt-0.5">{t.type}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <FrEn fr={t.fr} en={t.en} />
+                                        {t.breakdown?.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 pt-1">
+                                                {t.breakdown.map((b, bi) => (
+                                                    <span key={bi} className="text-[10px] font-bold bg-white text-stone-500 border border-stone-100 px-2 py-0.5 rounded-lg">{b}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                     </div>
                                 ))}
                             </div>
