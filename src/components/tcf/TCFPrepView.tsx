@@ -3,11 +3,12 @@ import { useAppStore } from '../../store/useAppStore';
 import LessonFeedbackButton from '../exam/LessonFeedbackButton';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, Plus, ClipboardList, Layers, ArrowRightLeft,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, Plus, ClipboardList, Layers, ArrowRightLeft, Sparkles,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
 import { speakText, stopSpeaking } from '../../services/voiceService';
+import { getRichWordCard } from '../../services/aiService';
 import {
     TcfLevel, TCF_SYLLABUS, TCF_WRITING_TASKS, TCF_SPEAKING_TASKS,
     generateTcfLesson, evaluateTcfWriting, evaluateTcfSpeaking,
@@ -56,16 +57,118 @@ const LessonGlossaryContext = React.createContext<import('../../services/frenchL
 const normFr = (s: string) =>
     s.toLowerCase().replace(/[\u2019\u2018`´]/g, "'").replace(/[.,!?;:«»"()—]/g, '').trim();
 
-// Zero-AI word card for static lessons: the translation is already known from
-// the lesson data, so tapping a word works offline and instantly — no
-// getWordBreakdown call, no auth, no rate limit.
-const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: import('../../services/frenchLessons').GlossaryEntry }) => {
-    const [open, setOpen] = useState(false);
-    const { addFlashcard, flashcards, user } = useAppStore() as any;
-    const inDeck = flashcards.some((f: any) =>
-        f.word.toLowerCase() === word.toLowerCase() && f.language === 'French');
+// Shared rich card body — renders ONE schema (the glossary entry) for both
+// the instant hand-written cards and the AI-generated ones, so every tapped
+// word gets the same look: pronunciation, chips, conjugation table, masc/fem
+// pair, detail paragraph, example.
+const WordCardBody = ({ word, en, g }: { word: string; en: string; g?: import('../../services/frenchLessons').GlossaryEntry }) => {
+    const typeLabel: Record<string, string> = {
+        verb: 'verbe', noun: 'nom', adjective: 'adjectif', adverb: 'adverbe',
+        phrase: 'expression', particle: 'particule', pronoun: 'pronom',
+        number: 'nombre', expression: 'expression',
+    };
+    return (
+        <>
+            {/* header: word — meaning + pronunciation */}
+            <span className="block px-4 pt-3.5 pb-2">
+                <span className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-base font-black">{word}</span>
+                    <span className="text-white/30">—</span>
+                    <span className="text-sm font-semibold text-emerald-300">{en}</span>
+                </span>
+                {g?.pron && <span className="block text-[11px] font-mono text-violet-300 mt-0.5">/{g.pron}/</span>}
+            </span>
+            {/* grammar label in caps */}
+            {g?.label && (
+                <span className="block px-4 pb-1.5">
+                    <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider">{g.label}</span>
+                </span>
+            )}
+            {/* base form */}
+            {g?.base && (
+                <span className="block px-4 pb-2">
+                    <span className="text-[11px] text-white/50">from </span>
+                    <span className="text-[11px] font-black text-amber-300">{g.base.form}</span>
+                    <span className="text-[11px] text-white/40"> — {g.base.en}</span>
+                </span>
+            )}
+            {/* chips: type · gender · register · plural */}
+            {(g?.type || g?.gender || g?.register || g?.plural) && (
+                <span className="flex flex-wrap gap-1 px-4 pb-2">
+                    {g.type && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-white/10 text-white/70 uppercase tracking-wider">{typeLabel[g.type] || g.type}</span>}
+                    {g.gender && <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider',
+                        g.gender === 'feminine' ? 'bg-pink-500/20 text-pink-300' : g.gender === 'masculine' ? 'bg-blue-500/20 text-blue-300' : 'bg-violet-500/20 text-violet-300')}>
+                        {g.gender === 'feminine' ? '♀ la' : g.gender === 'masculine' ? '♂ le' : 'm/f'}
+                    </span>}
+                    {g.plural && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-white/50">pl. {g.plural}</span>}
+                    {g.register && <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider',
+                        g.register === 'formal' ? 'bg-amber-500/20 text-amber-300' : g.register === 'informal' ? 'bg-rose-500/20 text-rose-300' : 'bg-white/10 text-white/50')}>
+                        {g.register === 'formal' ? 'vous' : g.register === 'informal' ? 'tu' : 'neutre'}
+                    </span>}
+                </span>
+            )}
+            {/* conjugation table — the showstopper */}
+            {g?.conj && g.conj.length > 0 && (
+                <span className="block px-4 pb-2">
+                    <span className="grid grid-cols-2 gap-1">
+                        {g.conj.map((row, ci) => (
+                            <span key={ci} className="bg-white/5 rounded-lg px-2.5 py-1.5">
+                                <span className="block text-[8px] font-black text-white/40 uppercase tracking-wider">{row.label}</span>
+                                <span className="block text-xs font-bold text-emerald-300">{row.form}</span>
+                            </span>
+                        ))}
+                    </span>
+                </span>
+            )}
+            {/* masc/fem pair */}
+            {(g?.masc || g?.fem) && (
+                <span className="block px-4 pb-2">
+                    <span className="grid grid-cols-2 gap-1">
+                        {g.masc && <span className="bg-blue-500/10 rounded-lg px-2.5 py-1.5 border border-blue-500/20">
+                            <span className="block text-[8px] font-black text-blue-300 uppercase">♂ masculin</span>
+                            <span className="block text-xs font-bold text-stone-100">{g.masc.word}</span>
+                            <span className="block text-[9px] text-white/40">{g.masc.en}</span>
+                        </span>}
+                        {g.fem && <span className="bg-pink-500/10 rounded-lg px-2.5 py-1.5 border border-pink-500/20">
+                            <span className="block text-[8px] font-black text-pink-300 uppercase">♀ féminin</span>
+                            <span className="block text-xs font-bold text-stone-100">{g.fem.word}</span>
+                            <span className="block text-[9px] text-white/40">{g.fem.en}</span>
+                        </span>}
+                    </span>
+                </span>
+            )}
+            {/* detailed explanation — the "why" paragraph */}
+            {g?.detail && (
+                <span className="block px-4 pb-2">
+                    <span className="block text-[11px] text-white/60 leading-relaxed">{g.detail}</span>
+                </span>
+            )}
+            {/* example sentence */}
+            {g?.example && (
+                <span className="block px-4 pb-2">
+                    <span className="block bg-white/5 rounded-xl px-3 py-2 space-y-0.5">
+                        <span className="block text-xs font-semibold text-stone-100">{g.example.fr}</span>
+                        <span className="block text-[11px] text-white/40">{g.example.en}</span>
+                    </span>
+                </span>
+            )}
+            {/* note — multiple meanings */}
+            {g?.note && !g?.detail && (
+                <span className="block px-4 pb-2">
+                    <span className="block text-[11px] text-white/60 leading-relaxed">{g.note}</span>
+                </span>
+            )}
+        </>
+    );
+};
+
+// Shared deck actions for both card kinds
+const WordCardActions = ({ word, en, userId }: { word: string; en: string; userId?: string }) => {
+    const { addFlashcard, flashcards } = useAppStore() as any;
+    const [added, setAdded] = useState(flashcards.some((f: any) =>
+        f.word.toLowerCase() === word.toLowerCase() && f.language === 'French'));
     const addToDeck = () => {
-        if (inDeck) return;
+        if (added) return;
         const card = {
             id: crypto.randomUUID(),
             word,
@@ -75,14 +178,31 @@ const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: imp
             lastReviewed: null,
         };
         addFlashcard(card);
-        if (user) import('../../services/dbService').then(m => m.upsertFlashcard(user.id, card)).catch(() => { });
+        setAdded(true);
+        if (userId) import('../../services/dbService').then(m => m.upsertFlashcard(userId, card)).catch(() => { });
     };
+    return (
+        <span className="flex items-center gap-2 px-4 pb-3 pt-1 border-t border-white/10">
+            <button onClick={(e) => { e.stopPropagation(); speakText(word, 'French'); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-[10px] font-black">
+                <Volume2 size={11} /> Hear
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); addToDeck(); }}
+                className={cn('flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-xl text-[10px] font-black transition-colors',
+                    added ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-500 text-white hover:bg-emerald-600')}>
+                {added ? <><CheckCircle2 size={11} /> In deck</> : <><Plus size={11} /> Add to deck</>}
+            </button>
+        </span>
+    );
+};
+
+// Zero-AI word card for static lessons: the translation is already known from
+// the lesson data, so tapping a word works offline and instantly — no
+// getWordBreakdown call, no auth, no rate limit.
+const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: import('../../services/frenchLessons').GlossaryEntry }) => {
+    const [open, setOpen] = useState(false);
+    const { user } = useAppStore() as any;
     const g = entry;
-    const typeLabel: Record<string, string> = {
-        verb: 'verbe', noun: 'nom', adjective: 'adjectif', adverb: 'adverbe',
-        phrase: 'expression', particle: 'particule', pronoun: 'pronom',
-        number: 'nombre', expression: 'expression',
-    };
     return (
         <span className="relative inline-block">
             <button onClick={() => setOpen(o => !o)}
@@ -91,107 +211,66 @@ const StaticWord = ({ word, en, entry }: { word: string; en: string; entry?: imp
             </button>
             {open && (
                 <span className="absolute z-[9999] bottom-full left-0 mb-2 w-[320px] rounded-2xl bg-stone-900 text-white shadow-2xl overflow-hidden text-left block">
-                    {/* header: word — meaning + pronunciation */}
-                    <span className="block px-4 pt-3.5 pb-2">
-                        <span className="flex items-baseline gap-1.5 flex-wrap">
-                            <span className="text-base font-black">{word}</span>
-                            <span className="text-white/30">—</span>
-                            <span className="text-sm font-semibold text-emerald-300">{en}</span>
-                        </span>
-                        {g?.pron && <span className="block text-[11px] font-mono text-violet-300 mt-0.5">/{g.pron}/</span>}
-                    </span>
-                    {/* grammar label in caps */}
-                    {g?.label && (
-                        <span className="block px-4 pb-1.5">
-                            <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider">{g.label}</span>
+                    <WordCardBody word={word} en={en} g={g} />
+                    <WordCardActions word={word} en={en} userId={user?.id} />
+                </span>
+            )}
+        </span>
+    );
+};
+
+// AI-generated rich card for words OUTSIDE the lesson glossary: the model
+// fills the same schema as the hand-written entries, so the card looks and
+// behaves identically — pronunciation, chips, conjugation, masc/fem, detail,
+// example. Cached in localStorage by aiService, so repeat taps are instant.
+const RichAiWord = ({ word }: { word: string }) => {
+    const [open, setOpen] = useState(false);
+    const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+    const [entry, setEntry] = useState<import('../../services/frenchLessons').GlossaryEntry | undefined>();
+    const { user } = useAppStore() as any;
+    const bare = word.replace(/^[«"'(]+/, '').replace(/[.,!?;:»"')]+$/, '');
+    const load = () => {
+        setState('loading');
+        getRichWordCard(bare, 'French')
+            .then(e => { setEntry(e); setState('ready'); })
+            .catch(() => setState('error'));
+    };
+    const toggle = () => {
+        const next = !open;
+        setOpen(next);
+        if (next && !entry) load();
+    };
+    return (
+        <span className="relative inline-block">
+            <button onClick={toggle}
+                className="font-bold text-stone-900 underline decoration-dotted decoration-[1.5px] underline-offset-[5px] decoration-stone-300 hover:decoration-emerald-500 hover:text-emerald-700 transition-colors cursor-help">
+                {word}
+            </button>
+            {open && (
+                <span className="absolute z-[9999] bottom-full left-0 mb-2 w-[320px] rounded-2xl bg-stone-900 text-white shadow-2xl overflow-hidden text-left block">
+                    {state === 'loading' && (
+                        <span className="block px-4 py-7 text-center space-y-2">
+                            <Loader2 size={18} className="animate-spin text-emerald-400 mx-auto" />
+                            <span className="block text-[11px] text-white/50">Your tutor is writing this card…</span>
                         </span>
                     )}
-                    {/* base form */}
-                    {g?.base && (
-                        <span className="block px-4 pb-2">
-                            <span className="text-[11px] text-white/50">from </span>
-                            <span className="text-[11px] font-black text-amber-300">{g.base.form}</span>
-                            <span className="text-[11px] text-white/40"> — {g.base.en}</span>
+                    {state === 'error' && (
+                        <span className="block px-4 py-6 text-center space-y-2">
+                            <span className="block text-xs font-bold text-rose-300">Couldn’t write the card.</span>
+                            <span className="block text-[11px] text-white/40">Check your connection and try again.</span>
+                            <button onClick={(e) => { e.stopPropagation(); load(); }}
+                                className="px-4 py-2 mt-1 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] font-black transition-colors">Retry</button>
                         </span>
                     )}
-                    {/* chips: type · gender · register · plural */}
-                    {(g?.type || g?.gender || g?.register || g?.plural) && (
-                        <span className="flex flex-wrap gap-1 px-4 pb-2">
-                            {g.type && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-white/10 text-white/70 uppercase tracking-wider">{typeLabel[g.type] || g.type}</span>}
-                            {g.gender && <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider',
-                                g.gender === 'feminine' ? 'bg-pink-500/20 text-pink-300' : g.gender === 'masculine' ? 'bg-blue-500/20 text-blue-300' : 'bg-violet-500/20 text-violet-300')}>
-                                {g.gender === 'feminine' ? '♀ la' : g.gender === 'masculine' ? '♂ le' : 'm/f'}
-                            </span>}
-                            {g.plural && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-white/50">pl. {g.plural}</span>}
-                            {g.register && <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider',
-                                g.register === 'formal' ? 'bg-amber-500/20 text-amber-300' : g.register === 'informal' ? 'bg-rose-500/20 text-rose-300' : 'bg-white/10 text-white/50')}>
-                                {g.register === 'formal' ? 'vous' : g.register === 'informal' ? 'tu' : 'neutre'}
-                            </span>}
-                        </span>
-                    )}
-                    {/* conjugation table — the showstopper */}
-                    {g?.conj && g.conj.length > 0 && (
-                        <span className="block px-4 pb-2">
-                            <span className="grid grid-cols-2 gap-1">
-                                {g.conj.map((row, ci) => (
-                                    <span key={ci} className="bg-white/5 rounded-lg px-2.5 py-1.5">
-                                        <span className="block text-[8px] font-black text-white/40 uppercase tracking-wider">{row.label}</span>
-                                        <span className="block text-xs font-bold text-emerald-300">{row.form}</span>
-                                    </span>
-                                ))}
+                    {state === 'ready' && entry && (
+                        <>
+                            <WordCardBody word={word} en={entry.en} g={entry} />
+                            <WordCardActions word={bare} en={entry.en} userId={user?.id} />
+                            <span className="absolute top-2.5 right-3 flex items-center gap-1 text-[8px] font-black text-white/25 uppercase tracking-widest">
+                                <Sparkles size={9} /> AI
                             </span>
-                        </span>
+                        </>
                     )}
-                    {/* masc/fem pair */}
-                    {(g?.masc || g?.fem) && (
-                        <span className="block px-4 pb-2">
-                            <span className="grid grid-cols-2 gap-1">
-                                {g.masc && <span className="bg-blue-500/10 rounded-lg px-2.5 py-1.5 border border-blue-500/20">
-                                    <span className="block text-[8px] font-black text-blue-300 uppercase">♂ masculin</span>
-                                    <span className="block text-xs font-bold text-stone-100">{g.masc.word}</span>
-                                    <span className="block text-[9px] text-white/40">{g.masc.en}</span>
-                                </span>}
-                                {g.fem && <span className="bg-pink-500/10 rounded-lg px-2.5 py-1.5 border border-pink-500/20">
-                                    <span className="block text-[8px] font-black text-pink-300 uppercase">♀ féminin</span>
-                                    <span className="block text-xs font-bold text-stone-100">{g.fem.word}</span>
-                                    <span className="block text-[9px] text-white/40">{g.fem.en}</span>
-                                </span>}
-                            </span>
-                        </span>
-                    )}
-                    {/* detailed explanation — the "why" paragraph */}
-                    {g?.detail && (
-                        <span className="block px-4 pb-2">
-                            <span className="block text-[11px] text-white/60 leading-relaxed">{g.detail}</span>
-                        </span>
-                    )}
-                    {/* example sentence */}
-                    {g?.example && (
-                        <span className="block px-4 pb-2">
-                            <span className="block bg-white/5 rounded-xl px-3 py-2 space-y-0.5">
-                                <span className="block text-xs font-semibold text-stone-100">{g.example.fr}</span>
-                                <span className="block text-[11px] text-white/40">{g.example.en}</span>
-                            </span>
-                        </span>
-                    )}
-                    {/* note — multiple meanings */}
-                    {g?.note && !g?.detail && (
-                        <span className="block px-4 pb-2">
-                            <span className="block text-[11px] text-white/60 leading-relaxed">{g.note}</span>
-                        </span>
-                    )}
-                    {/* actions */}
-                    <span className="flex items-center gap-2 px-4 pb-3 pt-1 border-t border-white/10">
-                        <button onClick={(e) => { e.stopPropagation(); speakText(word, 'French'); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-[10px] font-black">
-                            <Volume2 size={11} /> Hear
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); addToDeck(); }}
-                            className={cn('flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-xl text-[10px] font-black transition-colors',
-                                inDeck ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-500 text-white hover:bg-emerald-600')}>
-                            {inDeck ? <><CheckCircle2 size={11} /> In deck</> : <><Plus size={11} /> Add to deck</>}
-                        </button>
-                    </span>
                 </span>
             )}
         </span>
@@ -229,8 +308,10 @@ const StaticFrText = ({ text, className }: { text: string; className?: string })
             out.push(<StaticWord key={`w${key++}`} word={surface} en={matchedEn} entry={matchedEntry} />);
             i = lastIdx + 1;
         } else {
-            // Not in the glossary → fall back to AI tooltip for full coverage
-            out.push(<InteractiveText key={`p${key++}`} text={p} language="French" className="underline decoration-dotted underline-offset-[5px] decoration-[1.5px] cursor-help" />);
+            // Not in the glossary → AI writes a rich card in the SAME schema
+            // (pron, gender, conjugation, masc/fem, detail, example) — cached
+            // in localStorage, so repeat taps are instant.
+            out.push(<RichAiWord key={`p${key++}`} word={p} />);
             i++;
         }
     }

@@ -508,6 +508,72 @@ Rules:
   return words;
 };
 
+// Rich word card: the AI fills the SAME schema as the hand-written glossary
+// entries (pron, gender, register, conjugation table, masc/fem pair, detail
+// paragraph, example), so ANY tapped word renders through the same rich card
+// component as the instant ones. Results are cached in localStorage — repeat
+// taps are instant and free.
+const RICH_CARD_VERSION = 1;
+const richCardMemory = new Map<string, unknown>();
+const richCardKey = (lang: string, word: string) =>
+    `rich-card:v${RICH_CARD_VERSION}:${lang}:${word.toLowerCase()}`;
+const loadRichCard = (key: string) => {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : undefined;
+    } catch { return undefined; }
+};
+const saveRichCard = (key: string, entry: unknown) => {
+    try { localStorage.setItem(key, JSON.stringify(entry)); } catch { /* quota — memory cache still holds */ }
+};
+
+export const getRichWordCard = async (
+    word: string,
+    targetLanguage: Language
+): Promise<import('./frenchLessons').GlossaryEntry> => {
+    const key = richCardKey(targetLanguage, word);
+    const mem = richCardMemory.get(key);
+    if (mem) return mem as import('./frenchLessons').GlossaryEntry;
+    const cached = loadRichCard(key);
+    if (cached && cached.en) {
+        richCardMemory.set(key, cached);
+        return cached as import('./frenchLessons').GlossaryEntry;
+    }
+
+    const system = `You are a ${targetLanguage} linguistics expert teaching an ENGLISH-speaking student. Return ONLY valid JSON for ONE word card:
+{"en":"english meaning(s) — comma-separated main senses in usage order","pron":"honest learner pronunciation in CAPS syllables, e.g. 'bohn-ZHOOR' or 'trah-vah-YAY'","gender":"masculine|feminine|mf|null","plural":"plural form if a countable noun/adj, else null","register":"informal|formal|neutral","type":"verb|noun|adjective|adverb|phrase|particle|pronoun|number|expression","note":"2-4 sentence ENGLISH usage note: every main sense, the closest confusable word contrast (à vs de, dans vs en…), and the trap that costs points","example":{"fr":"a natural ${targetLanguage} sentence that CONTAINS the word","en":"its english translation"},"base":{"form":"dictionary form if the word is conjugated/inflected, else null","en":"english of the base form"},"conj":[{"label":"je","form":"present form"}, …],"masc":{"word":"masculine form","en":"english"},"fem":{"word":"feminine form","en":"english"},"detail":"2-3 sentence ENGLISH paragraph: how the word is built/why, register guidance, and the classic learner mistake"}
+Rules:
+- conj: VERBS get the full present-tense table (je, tu, il/elle, nous, vous, ils/elles — 6 rows; irregular verbs exactly as they are). All other types: null.
+- masc/fem: nouns and adjectives get the masculine and feminine SINGULAR forms with english (feminine marked, e.g. 'heureuse'); all other types: null.
+- "en" and "note" list MULTIPLE senses when the word has them (à → "to, at, in"; de → "of, from, some").
+- The example sentence must genuinely contain the word.
+- Only the ${targetLanguage} words are in ${targetLanguage}; every other string is English. Compact but rich.`;
+
+    const raw = await chat(system, `Word: "${word}"`, 1200);
+    const d = parseJSON(raw);
+    if (!d || !d.en) throw new Error('bad card');
+    const entry = {
+        en: String(d.en),
+        pron: d.pron || undefined,
+        gender: d.gender || undefined,
+        plural: d.plural || undefined,
+        register: d.register || undefined,
+        type: d.type || undefined,
+        note: d.note || undefined,
+        example: d.example && d.example.fr ? { fr: String(d.example.fr), en: String(d.example.en || '') } : undefined,
+        base: d.base && d.base.form ? { form: String(d.base.form), en: String(d.base.en || '') } : undefined,
+        conj: Array.isArray(d.conj) && d.conj.length > 0
+            ? d.conj.slice(0, 8).map((r: any) => ({ label: String(r.label || ''), form: String(r.form || '') }))
+            : undefined,
+        masc: d.masc && d.masc.word ? { word: String(d.masc.word), en: String(d.masc.en || '') } : undefined,
+        fem: d.fem && d.fem.word ? { word: String(d.fem.word), en: String(d.fem.en || '') } : undefined,
+        detail: d.detail || undefined,
+    } as import('./frenchLessons').GlossaryEntry;
+    saveRichCard(key, entry);
+    richCardMemory.set(key, entry);
+    return entry;
+};
+
 // ── Conjugation trainer (#3) ──────────────────────────────────────────────────
 export interface ConjugationQuestion {
   pronoun: string;      // e.g. "je", "nous"
