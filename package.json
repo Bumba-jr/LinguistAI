@@ -7,6 +7,8 @@
     "dev": "vite --port=5173 --host=0.0.0.0",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
+    "audit:lectures": "tsx scripts/audit-lectures.ts",
+    "coverage:lectures": "tsx scripts/coverage-lectures.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "eslint src api"
