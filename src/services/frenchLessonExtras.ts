@@ -1415,11 +1415,380 @@ export const B1_EXTRAS: Record<string, LessonExtras> = {
     'B1:discours': b1Discours,
 };
 
+// ── B2 · Subjunctive Masterclass ────────────────────────────────────────────
+const b2Subjonctif: LessonExtras = {
+    warmup: [
+        { q: 'Report: "Je viendrai demain" after "il a dit que…".', a: 'Il a dit qu\u2019il viendrait le lendemain — futur → conditionnel + time shift.' },
+        { q: 'Counter-argument hinge: concede it\u2019s expensive, bounce back. One sentence.', a: 'Certes, c\u2019est coûteux ; néanmoins, les bénéfices l\u2019emportent.' },
+        { q: 'Upgrade these B1 connectors to B2: donc, mais, parce que.', a: 'par conséquent, néanmoins/toutefois, car/en effet.' },
+        { q: 'Give the subjunctive… wait — first: indicative or subjunctive after "il est probable que"?', a: 'Indicative — probable = positive expectation. Only doubt takes the subjunctive.' },
+        { q: 'One sentence with l\u2019emporter sur.', a: 'Les avantages l\u2019emportent sur les inconvénients.' },
+    ],
+    verbTables: [
+        {
+            title: 'Subjunctive endings — one set, built from the ils-stem',
+            note: 'ils parlent → parl- → que je parle. The nous/vous forms take the ILS stem too, plus -i-: que nous parlions, que vous parliez.',
+            rows: [
+                { label: 'que je', form: '-e', pron: 'parle → pahrl' },
+                { label: 'que tu', form: '-es', pron: 'parles → pahrl' },
+                { label: 'qu\u2019il / elle', form: '-e', pron: 'parle → pahrl' },
+                { label: 'que nous', form: '-ions', pron: 'parlions → pahrl-YOHN' },
+                { label: 'que vous', form: '-iez', pron: 'parliez → pahrl-YAY' },
+                { label: 'qu\u2019ils / elles', form: '-ent', pron: 'parlent → pahrl' },
+            ],
+        },
+        {
+            title: 'The seven irregular stems — chant them',
+            rows: [
+                { label: 'être', form: 'que je sois', pron: 'SWAH' },
+                { label: 'avoir', form: 'que j\u2019aie', pron: 'EH' },
+                { label: 'aller', form: 'que j\u2019aille', pron: 'EYE' },
+                { label: 'faire', form: 'que je fasse', pron: 'FAHSS' },
+                { label: 'pouvoir', form: 'que je puisse', pron: 'püEESS' },
+                { label: 'savoir', form: 'que je sache', pron: 'SAHSS' },
+                { label: 'vouloir', form: 'que je veuille', pron: 'vuh-EE-yuh' },
+            ],
+        },
+        {
+            title: 'The belief dial — what keeps the indicative',
+            rows: [
+                { label: 'affirmative belief', form: 'Je pense qu\u2019il VIENT.', pron: 'indicative' },
+                { label: 'negated belief', form: 'Je ne pense pas qu\u2019il VIENNE.', pron: 'subjunctive' },
+                { label: 'doubt', form: 'Je doute qu\u2019il VIENNE.', pron: 'subjunctive' },
+                { label: 'confident hope', form: 'J\u2019espère qu\u2019il VIENDRA.', pron: 'indicative — even in the future!' },
+                { label: 'probability', form: 'Il est probable que ce SERA dur.', pron: 'indicative' },
+                { label: 'possibility', form: 'Il est possible que ce SOIT dur.', pron: 'subjunctive' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'il faut que vs devoir vs il faut + infinitif — three levels of must',
+            uses: [
+                { use: 'same subject → il faut + infinitive (no subjunctive)', examples: [{ fr: 'Il faut partir tôt.', en: 'We have to leave early.' }] },
+                { use: 'different subject → il faut que + subjunctive', examples: [{ fr: 'Il faut que TU partieS tôt.', en: 'YOU have to leave early.' }] },
+                { use: 'personal duty → devoir + infinitive', examples: [{ fr: 'Tu dois partir tôt.', en: 'You must leave early.' }] },
+                { use: 'spoken shortcut → Faut que + subjunctive', examples: [{ fr: 'Faut que j\u2019y aille !', en: 'Gotta go!' }] },
+            ],
+        },
+        {
+            word: 'avant que vs après que — one subjunctive, one indicative',
+            uses: [
+                { use: 'avant que — anticipates → subjunctive (+ expletive ne)', examples: [{ fr: 'Pars avant qu\u2019il (ne) pleuve.', en: 'Leave before it rains.' }] },
+                { use: 'après que — reports a fact → indicative', examples: [{ fr: 'On est sortis après qu\u2019il a plu.', en: 'We went out after it rained.' }] },
+                { use: 'jusqu\u2019à ce que — limit → subjunctive', examples: [{ fr: 'Attends jusqu\u2019à ce qu\u2019il revienne.', en: 'Wait until he comes back.' }] },
+                { use: 'depuis que — ongoing fact → indicative', examples: [{ fr: 'Je dors mieux depuis que j\u2019ai déménagé.', en: 'I sleep better since I moved.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'The subjunctive sounds soft and final: -e endings are silent, so qu\u2019il parte and il part sound nearly identical — the trigger word carries the meaning. Read each line, leaning on the trigger.',
+        lines: [
+            { fr: 'Il faut que tu viennes avant qu\u2019il ne soit trop tard.', pron: 'eel foh kuh tü VYEN ah-VAN keel nuh SWAH', en: 'You must come before it\u2019s too late.' },
+            { fr: 'Bien que ce soit cher, je suis content qu\u2019elle ait accepté.', pron: 'byan kuh suh SWAH SHAIR', en: 'Although it\u2019s expensive, I\u2019m glad she accepted.' },
+            { fr: 'Je te le répète pour que tu puisses le répéter.', pron: 'zhuh tuh luh ray-PET poor kuh tü püEESS', en: 'I\u2019m repeating it so that you can repeat it.' },
+            { fr: 'Je doute qu\u2019il fasse beau demain, mais j\u2019espère qu\u2019il fera beau.', pron: 'zhuh doot keel FAHSS boh duh-MAN', en: 'I doubt the weather will be nice tomorrow, but I hope it will be.' },
+            { fr: 'Faut que j\u2019y aille — on veut que tu restes !', pron: 'foh kuh zhy EYE oh vuh kuh tü REST', en: 'Gotta go! — We want you to stay!' },
+            { fr: 'À condition que vous soyez là à l\u2019heure, tout se passera bien.', pron: 'ah koh-dee-SYOHN kuh voo swah-YAY', en: 'Provided you\u2019re there on time, everything will go well.' },
+        ],
+    },
+};
+
+// ── B2 · Formal vs Informal Register ────────────────────────────────────────
+const b2Registre: LessonExtras = {
+    warmup: [
+        { q: 'Form the subjunctive: "Il faut qu\u2019il (faire) attention."', a: 'qu\u2019il fasse attention — irregular stem fass-.' },
+        { q: 'Indicative or subjunctive: "J\u2019espère que tu (venir) demain"?', a: 'Indicative — j\u2019espère que tu viendras (future).' },
+        { q: 'Concede and bounce: "the delay is real… but solutions exist."', a: 'Certes, le retard est réel ; néanmoins, des solutions existent.' },
+        { q: 'What does bien que take after it?', a: 'The subjunctive: bien que ce soit difficile.' },
+        { q: 'Give one upgraded pair: donc → ? ; mais → ?', a: 'par conséquent ; néanmoins / toutefois.' },
+    ],
+    verbTables: [
+        {
+            title: 'The four register dials — one sentence, both ends',
+            rows: [
+                { label: 'pronouns', form: 'Nous allons partir. / On va partir.', pron: 'written vs spoken' },
+                { label: 'negation', form: 'Je ne sais pas. / Je sais pas.', pron: 'ne kept vs dropped' },
+                { label: 'questions', form: 'Viendrez-vous ? / Tu viens ?', pron: 'inversion vs intonation' },
+                { label: 'vocabulary', form: 'Cela m\u2019intéresse. / Ça m\u2019intéresse.', pron: 'cela vs ça' },
+                { label: 'full formal', form: 'Nous ne savons pas si vous viendrez.', pron: 'all four left' },
+                { label: 'full casual', form: 'On sait pas si tu viens ?', pron: 'all four right' },
+            ],
+        },
+        {
+            title: 'Vocabulary ladders — the same idea at three levels',
+            rows: [
+                { label: 'work', form: 'taf → boulot → travail/emploi', pron: 'casual → neutral → formal' },
+                { label: 'money', form: 'pognon → fric → argent/fonds', pron: 'never fric in letters' },
+                { label: 'car', form: 'bagnole → caisse → voiture/véhicule', pron: 'bagnole = very slang' },
+                { label: 'come', form: 'venir → venir → se déplacer', pron: 'the formal twist' },
+                { label: 'say', form: 'dire → dire → informer/faire savoir', pron: 'informer QUE' },
+                { label: 'clothes', form: 'fringues → habits → vêtements', pron: 'fringues = slang' },
+            ],
+        },
+        {
+            title: 'Email formulas — opens and closes ranked',
+            rows: [
+                { label: 'friends', form: 'Coucou ! … À plus !', pron: 'texting register' },
+                { label: 'casual work', form: 'Bonjour Karim, … Cordialement,', pron: 'the everyday default' },
+                { label: 'warm-formal', form: 'Bonjour Madame Roy, … Bien à vous,', pron: 'vous-relationship' },
+                { label: 'administrative', form: 'Madame, Monsieur, … Je vous prie d\u2019agréer…', pron: 'unknown recipient' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'nous vs on — the single most visible register dial',
+            uses: [
+                { use: 'on — the spoken we', examples: [{ fr: 'On va au ciné ce soir ?', en: 'Shall we go to the movies tonight?' }] },
+                { use: 'nous — the written/formal we', examples: [{ fr: 'Nous vous informons que le local fermera tôt.', en: 'We inform you the building will close early.' }] },
+                { use: 'on = one/people in general (both registers)', examples: [{ fr: 'Ici, on parle français.', en: 'French is spoken here.' }] },
+                { use: 'nous = ceremonial we (royal/institutional)', examples: [{ fr: 'Nous, soussignés, certifions que…', en: 'We, the undersigned, certify that…' }] },
+            ],
+        },
+        {
+            word: 'tu vs vous — beyond the A1 rule',
+            uses: [
+                { use: 'vous to one adult stranger — default', examples: [{ fr: 'Bonjour, vous cherchez quelque chose ?', en: 'Hello, are you looking for something?' }] },
+                { use: 'tu among colleagues — ask first', examples: [{ fr: 'On peut se tutoyer ?', en: 'Shall we use tu?' }] },
+                { use: 'vous for one senior official — always', examples: [{ fr: 'Monsieur le Directeur, pourriez-vous…', en: 'Dear Director, could you…' }] },
+                { use: 'flipping by mistake is a social event', examples: [{ fr: 'Pardon, je ne voulais pas vous tutoyer.', en: 'Sorry, I didn\u2019t mean to use tu with you.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Register lives in rhythm: formal lines stretch, casual lines rush. Read each pair of lines twice — once stiff, once relaxed — and feel the same words change shape.',
+        lines: [
+            { fr: 'Nous ne savons pas si nous pourrons nous déplacer.', pron: 'noo nuh sah-VOHN pah see noo poor-ROHN', en: 'We don\u2019t know whether we\u2019ll be able to come. (formal)' },
+            { fr: 'On sait pas si on pourra venir.', pron: 'ohn seh PAH see ohn poo-RAH', en: 'We dunno if we can come. (casual)' },
+            { fr: 'Veuillez trouver ci-joint les documents demandés.', pron: 'vuh-YAY troo-VAY see-ZHWAN', en: 'Please find attached the requested documents.' },
+            { fr: 'Tiens, je t\u2019envoie les papiers tout à l\u2019heure.', pron: 'TYAN zhuh tah-vwah lay pah-PYAY', en: 'Hey, I\u2019ll send you the papers later.' },
+            { fr: 'Je vous remercie par avance de votre compréhension.', pron: 'zhuh voo ruh-mair-SEE pah-zah-VAHNSS', en: 'I thank you in advance for your understanding.' },
+            { fr: 'Merci d\u2019avance, c\u2019est top !', pron: 'mair-SEE dah-VAHNSS seh TOP', en: 'Thanks in advance, that\u2019s great! (casual)' },
+        ],
+    },
+};
+
+// ── B2 · Structured Argumentation ───────────────────────────────────────────
+const b2Argumentation: LessonExtras = {
+    warmup: [
+        { q: 'Move all four register dials into one formal sentence for "On sait pas si on viendra."', a: 'Nous ne savons pas si nous viendrons.' },
+        { q: 'Which email close for a stranger at the mairie?', a: 'Madame, Monsieur, … Je vous prie d\u2019agréer mes salutations distinguées.' },
+        { q: 'taf, fric, bagnole — upgrade all three.', a: 'travail/emploi, argent/fonds, voiture/véhicule.' },
+        { q: 'Veuillez + ? — build one full sentence.', a: 'Veuillez trouver ci-joint les documents demandés.' },
+        { q: 'When is on correct in formal writing?', a: 'As "people in general": Ici, on parle français. Never as the institutional "we".' },
+    ],
+    verbTables: [
+        {
+            title: 'ORECC — the skeleton and its connectors',
+            rows: [
+                { label: 'O — opinion', form: 'Je considère que / il me semble que', pron: 'state it plainly' },
+                { label: 'R — reasons', form: 'En effet… / car…', pron: 'proof-introducer' },
+                { label: 'E — examples', form: 'Notamment… / à l\u2019image de…', pron: 'concrete instance' },
+                { label: 'C — counter', form: 'Certes… mais / néanmoins', pron: 'concede AND return' },
+                { label: 'C — conclusion', form: 'En somme… / l\u2019emportent sur', pron: 'one-sentence verdict' },
+            ],
+        },
+        {
+            title: 'The B1 → B2 connector upgrade table',
+            rows: [
+                { label: 'donc', form: '→ par conséquent', pron: 'ahn kohn-SEE-kwahn' },
+                { label: 'mais', form: '→ néanmoins / toutefois', pron: 'one per joint' },
+                { label: 'parce que', form: '→ car / en effet', pron: 'written reasons' },
+                { label: 'beaucoup de', form: '→ de nombreux / de nombreuses', pron: 'essay quantifier' },
+                { label: 'très', form: '→ particulièrement', pron: 'measured intensity' },
+                { label: 'c\u2019est bien', form: '→ cela constitue un progrès', pron: 'verdict verbs' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'certes… mais — the hinge, used properly',
+            uses: [
+                { use: 'concede a real point', examples: [{ fr: 'Certes, le projet coûte cher.', en: 'Admittedly, the project is expensive.' }] },
+                { use: 'label the objection', examples: [{ fr: 'On objectera que les délais sont longs.', en: 'One might object that the delays are long.' }] },
+                { use: 'bounce back', examples: [{ fr: 'Néanmoins, l\u2019investissement se rentabilise.', en: 'Nevertheless, the investment pays for itself.' }] },
+                { use: 'outweigh and close', examples: [{ fr: 'Les bénéfices l\u2019emportent largement sur les coûts.', en: 'The benefits clearly outweigh the costs.' }] },
+            ],
+        },
+        {
+            word: 'qualification kit — measured claims score higher',
+            uses: [
+                { use: 'partial agreement', examples: [{ fr: 'Dans une certaine mesure, c\u2019est exact.', en: 'To a certain extent, that\u2019s right.' }] },
+                { use: 'condition', examples: [{ fr: 'À condition que le financement suive.', en: 'Provided the funding follows.' }] },
+                { use: 'soft probability', examples: [{ fr: 'Sans doute cette mesure aidera-t-elle.', en: 'This measure will no doubt help.' }] },
+                { use: 'it depends', examples: [{ fr: 'Tout dépend du contexte.', en: 'It all depends on the context.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Essay rhythm: claim — pause — proof — pause — bend — bounce. Read each line with a comma-length pause at every connector and stress the connector itself.',
+        lines: [
+            { fr: 'Je considère que cette mesure constitue un progrès notable.', pron: 'zhuh kohn-SEE-DAIR kuh set meh-ZÜR', en: 'I consider this measure a notable step forward.' },
+            { fr: 'En effet, les chiffres confirment la tendance observée depuis deux ans.', pron: 'ahn eh-FEH lay SHEE-fruh', en: 'Indeed, the figures confirm the trend observed for two years.' },
+            { fr: 'Certes, des réticences subsistent ; néanmoins, elles ne suffisent pas à condamner le projet.', pron: 'sairt day ray-tee-SAHNSS süb-SEEST', en: 'Admittedly, reservations remain; nevertheless, they don\u2019t suffice to condemn the project.' },
+            { fr: 'Bien que la solution soit imparfaite, elle mérite d\u2019être soutenue.', pron: 'byan kuh lah soh-lü-SYOHN swah-zam-pair-FET', en: 'Although the solution is imperfect, it deserves support.' },
+            { fr: 'Il convient de nuancer ce constat : tout dépend du territoire.', pron: 'eel kohn-VYEN duh nü-ahn-SAY', en: 'This finding should be qualified: it all depends on the region.' },
+            { fr: 'En somme, les avantages l\u2019emportent largement sur les contraintes.', pron: 'ahn SAWM lay-zah-vahn-TAHZH', en: 'In short, the advantages clearly outweigh the constraints.' },
+        ],
+    },
+};
+
+// ── B2 · Passive Voice & Complex Clauses ────────────────────────────────────
+const b2Passif: LessonExtras = {
+    warmup: [
+        { q: 'Build the hinge: concede the cost, bounce back with néanmoins.', a: 'Certes, c\u2019est coûteux ; néanmoins, cela se rentabilise rapidement.' },
+        { q: 'One bien que + subjunctive sentence about the weather.', a: 'Bien qu\u2019il pleuve, la collecte aura lieu. (pleuve = subj of pleuvoir)' },
+        { q: 'Upgrade: "Il y a beaucoup de problèmes" → essay register.', a: 'De nombreux défis se posent.' },
+        { q: 'Qualify a claim softly, two ways.', a: 'Dans une certaine mesure… / tout dépend du contexte.' },
+        { q: 'What connector opens a proof?', a: 'En effet — followed by the fact or figure.' },
+    ],
+    verbTables: [
+        {
+            title: 'The passive across tenses — la loi / voter',
+            note: 'être in the tense you need + agreeing participle. Agreement never rests.',
+            rows: [
+                { label: 'présent', form: 'La loi est votée.', pron: 'eh voh-TAY' },
+                { label: 'passé composé', form: 'La loi a été votée.', pron: 'ah ay-TAY voh-TAY' },
+                { label: 'imparfait', form: 'La loi était votée.', pron: 'ay-TEH' },
+                { label: 'futur', form: 'La loi sera votée.', pron: 'suh-RAH' },
+                { label: 'modal', form: 'La loi doit être votée.', pron: 'dwah ETR' },
+                { label: 'agent', form: 'La loi a été votée par l\u2019assemblée.', pron: 'pahr lah-sahn-BLAY' },
+            ],
+        },
+        {
+            title: 'Gerund formation — nous-present + -ant',
+            rows: [
+                { label: 'nous parlons', form: 'en parlant', pron: 'ahn pahr-LAHN' },
+                { label: 'nous faisons', form: 'en faisant', pron: 'ahn fuh-ZAHN' },
+                { label: 'nous prenons', form: 'en prenant', pron: 'ahn pruh-NAHN' },
+                { label: 'nous mangeons', form: 'en mangeant', pron: 'ahn mahn-ZHAHN' },
+                { label: 'nous étudions', form: 'en étudiant', pron: 'ahn-nay-tü-DYAHN' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'passive vs se-passive — who is the doer?',
+            uses: [
+                { use: 'specific doer → active is better', examples: [{ fr: 'Le comité a approuvé la proposition.', en: 'The committee approved the proposal.' }] },
+                { use: 'important result, doer obvious → passive', examples: [{ fr: 'La proposition a été approuvée hier.', en: 'The proposal was approved yesterday.' }] },
+                { use: 'doer = people in general → se-passive', examples: [{ fr: 'Ce fromage se mange jeune.', en: 'This cheese is eaten young.' }] },
+                { use: 'rules and customs → se-passive or impersonal', examples: [{ fr: 'Ça ne se fait pas ici. / Il est interdit de fumer.', en: 'That\u2019s not done here. / Smoking is forbidden.' }] },
+            ],
+        },
+        {
+            word: 'getting things done — se faire vs faire faire',
+            uses: [
+                { use: 'se faire + inf. — it happens TO you', examples: [{ fr: 'Il s\u2019est fait avoir. / Elle s\u2019est fait opérer.', en: 'He got fooled. / She got surgery.' }] },
+                { use: 'faire + inf. — you arranged it', examples: [{ fr: 'J\u2019ai fait réparer la voiture.', en: 'I had the car repaired.' }] },
+                { use: 'faire faire — you commissioned it', examples: [{ fr: 'Elle a fait faire un costume.', en: 'She had a suit made.' }] },
+                { use: 'passive of causation', examples: [{ fr: 'La maison a été construite par son père.', en: 'The house was built by her father.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Official French lands on the participle: a été votée — the last syllable carries the agreement. Read each line stressing that final beat.',
+        lines: [
+            { fr: 'La décision a été prise hier soir, après consultation.', pron: 'lah day-see-ZYOHN ah ay-TAY PREEZ', en: 'The decision was made last night, after consultation.' },
+            { fr: 'Les travaux seront effectués au printemps par une entreprise locale.', pron: 'lay trah-VOH suh-ROHNZ eh-fek-TÜAY', en: 'The works will be carried out in spring by a local company.' },
+            { fr: 'Ce produit se vend très bien — ça se dit même à l\u2019international.', pron: 'suh proh-DÜEE suh VAHN', en: 'This product sells very well — it\u2019s even said internationally.' },
+            { fr: 'En relisant chaque paragraphe, vous éliminerez la plupart des fautes.', pron: 'ahn ruh-LEE-ZAHN shahk pah-rah-GRAHF', en: 'By rereading each paragraph, you\u2019ll eliminate most mistakes.' },
+            { fr: 'Après avoir vérifié les données, le contrôleur a signé le rapport.', pron: 'ah-PRAYZ ah-VWAHR vay-ree-FYAY lay doh-NAY', en: 'After checking the data, the controller signed the report.' },
+            { fr: 'Il s\u2019est fait rembourser sans difficulté — le formulaire a été accepté.', pron: 'eel seh feh ruh-boor-SAY', en: 'He got his refund without difficulty — the form was accepted.' },
+        ],
+    },
+};
+
+// ── B2 · Canadian Society Themes ────────────────────────────────────────────
+const b2Societe: LessonExtras = {
+    warmup: [
+        { q: 'Passive in the future: "On construira l\u2019école ici."', a: 'L\u2019école sera construite ici — être + agreeing participle.' },
+        { q: 'Se-passive or passive? "This cheese (eat) young."', a: 'Ce fromage se mange jeune — generic doer → se-passive.' },
+        { q: 'Gerund: "You learn by practising."', a: 'On apprend en pratiquant — nous-pratiquons → en pratiquant.' },
+        { q: 'Sequence opener for "After checking, she signed."', a: 'Après avoir vérifié, elle a signé.' },
+        { q: 'Agent preposition for feelings: "liked BY all"?', a: 'aimé DE tous — feeling verbs take de.' },
+    ],
+    verbTables: [
+        {
+            title: 'The trend machine — verbs and their nouns',
+            rows: [
+                { label: 'rise', form: 'augmenter / la hausse', pron: 'ohg-mahn-TAY / lah OHSS' },
+                { label: 'fall', form: 'baisser / la baisse', pron: 'beh-SAY / lah BEHSS' },
+                { label: 'progress', form: 'progresser / les progrès', pron: 'proh-greh-SAY' },
+                { label: 'stall', form: 'stagner / la stagnation', pron: 'stahg-NAY' },
+                { label: 'explode', form: 'exploser / le boom', pron: 'ehk-sploy-ZAY' },
+                { label: 'lengthen', form: 's\u2019allonger / l\u2019allongement', pron: 'sah-lohn-ZHAY' },
+            ],
+        },
+        {
+            title: 'The de / à dial — by vs up to',
+            rows: [
+                { label: 'by', form: 'augmenter DE 5 %', pron: 'the size of the change' },
+                { label: 'up to', form: 'monter À 5 %', pron: 'the endpoint' },
+                { label: 'from… to', form: 'passer de 3 % à 5 %', pron: 'both at once' },
+                { label: 'reach', form: 'atteindre un record', pron: 'ah-TAN-druh' },
+                { label: 'half a point', form: 'un demi-point', pron: 'masc — demie only for heure' },
+            ],
+        },
+        {
+            title: 'Commentary ladder — impersonal frames',
+            rows: [
+                { label: 'observed fact', form: 'On constate que + indicatif', pron: 'kohns-TAHT' },
+                { label: 'consensus', form: 'Il est admis que + indicatif', pron: 'ah-MEE' },
+                { label: 'emphasis', form: 'Il convient de souligner que…', pron: 'soo-lee-NYAY' },
+                { label: 'explanation', form: 'Ce phénomène s\u2019explique par…', pron: 'feh-noh-MEN' },
+                { label: 'possibility', form: 'Il est possible que + SUBJONCTIF', pron: 'pos-EE-bluh' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'statistics — the four frames every essay needs',
+            uses: [
+                { use: 'rate of', examples: [{ fr: 'Le taux de chômage atteint 5,2 %.', en: 'The unemployment rate stands at 5.2%.' }] },
+                { use: 'rise of X %', examples: [{ fr: 'Une hausse de 10 % des loyers a été enregistrée.', en: 'A 10% rise in rents was recorded.' }] },
+                { use: 'about / nearly', examples: [{ fr: 'Environ 40 % des nouveaux arrivants… / Près de 200 000 personnes…', en: 'About 40% of newcomers… / Nearly 200,000 people…' }] },
+                { use: 'fractions', examples: [{ fr: 'Un tiers des logements sont locatifs. (un demi, un quart, un tiers)', en: 'A third of homes are rented.' }] },
+            ],
+        },
+        {
+            word: 'the four society clusters — one sentence each',
+            uses: [
+                { use: 'health', examples: [{ fr: 'Les délais d\u2019attente aux urgences s\u2019allongent en raison de la pénurie de médecins.', en: 'ER waiting times are lengthening due to the doctor shortage.' }] },
+                { use: 'work', examples: [{ fr: 'L\u2019embauche a repris, mais la pénurie de main-d\u2019œuvre persiste.', en: 'Hiring has picked up, but the labour shortage persists.' }] },
+                { use: 'housing', examples: [{ fr: 'La pénurie de logements frappe surtout les grandes villes.', en: 'The housing shortage hits big cities hardest.' }] },
+                { use: 'environment', examples: [{ fr: 'Grâce au recyclage, les déchets diminuent, mais les émissions stagnent.', en: 'Thanks to recycling, waste is falling, but emissions are stalling.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'News-anchor voice: flat, even, numbers crisp. Read each line as if reading a Statistique Canada headline — no drama, all precision.',
+        lines: [
+            { fr: 'Le taux de chômage est passé de 6 % à 4,8 % en deux ans.', pron: 'luh TOH duh shoh-MAHZH', en: 'The unemployment rate went from 6% to 4.8% in two years.' },
+            { fr: 'Une hausse de 12 % des loyers a été enregistrée à Toronto.', pron: 'ün OHSS duh dooz uh-RAHN', en: 'A 12% rise in rents was recorded in Toronto.' },
+            { fr: 'Les délais d\u2019attente aux urgences s\u2019allongent, en particulier en hiver.', pron: 'lay day-LEH dah-TAHNT oh-zür-ZHAHNSS', en: 'Waiting times in the ER are lengthening, especially in winter.' },
+            { fr: 'Ce phénomène s\u2019explique par le vieillissement de la population.', pron: 'suh feh-noh-MEN sek-SPLEEK', en: 'This phenomenon is explained by the ageing of the population.' },
+            { fr: 'Il convient de souligner que le recyclage progresse au Québec.', pron: 'eel kohn-VYEN duh soo-lee-NYAY', en: 'It should be noted that recycling is progressing in Quebec.' },
+            { fr: 'Néanmoins, les émissions de gaz à effet de serre stagnent depuis dix ans.', pron: 'nay-ahn-MWAN lay-zay-MISS-YOHN', en: 'Nevertheless, greenhouse-gas emissions have stalled for ten years.' },
+        ],
+    },
+};
+
+export const B2_EXTRAS: Record<string, LessonExtras> = {
+    'B2:subjonctif': b2Subjonctif,
+    'B2:registre': b2Registre,
+    'B2:argumentation': b2Argumentation,
+    'B2:passif': b2Passif,
+    'B2:societe': b2Societe,
+};
+
 // Merged registry — consumed by frenchLessons.ts
 export const LESSON_EXTRAS: Record<string, LessonExtras> = {
     ...A1_EXTRAS,
     ...A2_EXTRAS,
     ...B1_EXTRAS,
+    ...B2_EXTRAS,
 };
 
 export type { LessonExtras };
