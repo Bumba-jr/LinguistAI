@@ -1000,10 +1000,426 @@ export const A2_EXTRAS: Record<string, LessonExtras> = {
     'A2:work': a2Work,
 };
 
+// ── B1 · Passé Composé vs Imparfait ─────────────────────────────────────────
+const b1PasseVsImparfait: LessonExtras = {
+    warmup: [
+        { q: 'How do you build the imparfait? Give the rule and one example.', a: 'nous-form stem + -ais/-ais/-ait/-ions/-iez/-aient: nous parlons → je parlais.' },
+        { q: 'How do you build the passé composé of "elle / se lever"?', a: 'elle s\u2019est levée — reflexive → être auxiliary + agreement.' },
+        { q: 'Name the tense each marker forces: hier / chaque jour / soudain / tous les matins.', a: 'hier → PC, chaque jour → imparfait, soudain → PC, tous les matins → imparfait.' },
+        { q: 'How do you say "It was raining" and "It snowed (once)"?', a: 'Il pleuvait (imparfait — scene) vs il a plu (PC — event).' },
+        { q: 'Translate: "I was reading when you called."', a: 'Je lisais quand tu as appelé. — imparfait + quand + PC.' },
+    ],
+    verbTables: [
+        {
+            title: 'The choice table: what forces which tense',
+            note: 'Read the marker FIRST. The verb follows the marker, not the other way around.',
+            rows: [
+                { label: 'habit → imparfait', form: 'Chaque jour, je jouais dehors.', pron: 'chaque / tous les / d\u2019habitude' },
+                { label: 'event → PC', form: 'Hier, j\u2019ai joué un match.', pron: 'hier / un jour / une fois / deux fois' },
+                { label: 'sudden → PC', form: 'Soudain, le téléphone a sonné.', pron: 'soudain / tout à coup' },
+                { label: 'scene → imparfait', form: 'Il neigeait et il y avait du brouillard.', pron: 'weather, time, age, feelings' },
+                { label: 'interruption', form: 'Je dormais quand l\u2019alarme a sonné.', pron: 'imparfait quand PC — the combo' },
+                { label: 'simultaneous', form: 'Pendant que je lisais, il dormait.', pron: 'both clauses imparfait' },
+            ],
+        },
+        {
+            title: 'il y avait vs il y a eu — scene vs event',
+            rows: [
+                { label: 'scene', form: 'Il y avait beaucoup de monde.', pron: 'eel yah-VEH' },
+                { label: 'event', form: 'Il y a eu un accident.', pron: 'eel ya Ü' },
+                { label: 'state', form: 'C\u2019était magnifique.', pron: 'say-TEH' },
+                { label: 'event (spoken)', form: 'C\u2019a été génial !', pron: 'sah ay-TAY' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'quand, pendant que, comme — the three joins',
+            note: 'The join decides nothing by itself; the ASPECT of each verb decides its tense. Ongoing action → imparfait, finished event → PC.',
+            uses: [
+                { use: 'quand — when (one action meets another)', examples: [{ fr: 'Je sortais quand il a commencé à pleuvoir.', en: 'I was leaving when it started to rain.' }] },
+                { use: 'pendant que — while (two ongoing actions)', examples: [{ fr: 'Pendant que je lisais, il écoutait de la musique.', en: 'While I read, he listened to music.' }] },
+                { use: 'comme — as / just as (formal narrative)', examples: [{ fr: 'Comme je descendais, j\u2019ai croisé le facteur.', en: 'As I was coming down, I ran into the postman.' }] },
+                { use: 'two events back to back', examples: [{ fr: 'Quand il a sonné, j\u2019ai ouvert la porte.', en: 'When he rang, I opened the door. (both PC)' }] },
+            ],
+        },
+        {
+            word: 'state verbs vs action verbs — the hidden bias',
+            uses: [
+                { use: 'state verbs lean imparfait: être, avoir, savoir, penser, vouloir, pouvoir, croire', examples: [{ fr: 'Je ne savais pas quoi faire.', en: 'I didn\u2019t know what to do.' }] },
+                { use: 'punctual verbs lean PC: partir, arriver, se lever, crier, tomber', examples: [{ fr: 'Elle a crié une seule fois.', en: 'She screamed once.' }] },
+                { use: 'but context overrides: "j\u2019ai su" = I found out (change of state)', examples: [{ fr: 'Quand j\u2019ai su la vérité, j\u2019étais furieux.', en: 'When I found out the truth, I was furious.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Storytelling rhythm: the imparfait flows, the PC lands. Read each line, tapping the desk ONCE per passé composé verb.',
+        lines: [
+            { fr: 'Il faisait beau, les oiseaux chantaient, et soudain il a commencé à pleuvoir.', pron: 'eel fuh-ZEH bo… süe-DAN eel ah koh-mahn-SAY ah pluh-VWAHR', en: 'The weather was nice, birds were singing, and suddenly it started raining.' },
+            { fr: 'Quand j\u2019étais petit, nous allions chez mes grands-parents chaque dimanche.', pron: 'kahn zhay-TEH puh-TEE noo-zah-LYOHN shay meh grahn-pah-RAHN', en: 'When I was little, we went to my grandparents\u2019 every Sunday.' },
+            { fr: 'Je lisais tranquillement quand tu as frappé à la porte.', pron: 'zhuh lee-ZEH trahn-kee-yul-MAHN kahn tü ah frah-PAY', en: 'I was reading quietly when you knocked on the door.' },
+            { fr: 'Il y avait une longue file ; il y a eu une alerte au feu.', pron: 'eel yah-VEH ün lohnzh FEEL eel ya Ü ün ah-LERT oh fuh', en: 'There was a long queue; there was a fire alert.' },
+            { fr: 'Elle était fatiguée, alors elle s\u2019est couchée avant minuit.', pron: 'el ay-TEH fah-tee-GAY ah-LOR el suh koo-SHAY', en: 'She was tired, so she went to bed before midnight.' },
+            { fr: 'D\u2019abord il a crié, ensuite il a éclaté en rires — c\u2019était sa façon de dire bonjour.', pron: 'dah-BOR eel ah kree-YAY ahn-SWEE eel ah ehk-lah-TAY', en: 'First he shouted, then he burst out laughing — that was his way of saying hello.' },
+        ],
+    },
+};
+
+// ── B1 · Conditional & Politeness ───────────────────────────────────────────
+const b1Conditionnel: LessonExtras = {
+    warmup: [
+        { q: 'Give the futur simple of être and avoir (je form).', a: 'je serai, j\u2019aurai — the conditional reuses these stems.' },
+        { q: 'How does French say "It was raining, so I stayed home"? (the pattern you\u2019ll reuse)', a: 'Il pleuvait, alors je suis resté(e) — background + event.' },
+        { q: 'What does soudain trigger, and what triggers chaque jour?', a: 'soudain → PC; chaque jour → imparfait.' },
+        { q: 'Name the two verbs where even French speakers slip on agreement.', a: 'Any être-verb question: elle s\u2019est levée, ils sont partis — agreement is graded.' },
+        { q: 'How do you say "There were a lot of people"?', a: 'Il y avait beaucoup de monde. (scene → imparfait)' },
+    ],
+    verbTables: [
+        {
+            title: 'The conditional endings — one set, every verb',
+            note: 'Futur stem + imparfait endings. The -ais/-ait/-aient all sound "eh"; -ions/-iez rhyme with "yon/yay".',
+            rows: [
+                { label: 'je', form: '-ais', pron: 'parlerais → pahrl-ruh-REH' },
+                { label: 'tu', form: '-ais', pron: 'parlerais' },
+                { label: 'il / elle / on', form: '-ait', pron: 'parlerait' },
+                { label: 'nous', form: '-ions', pron: 'parlerions → pahrl-ruh-RYOHN' },
+                { label: 'vous', form: '-iez', pron: 'parleriez → pahrl-ruh-RYAY' },
+                { label: 'ils / elles', form: '-aient', pron: 'parleraient' },
+            ],
+        },
+        {
+            title: 'The politeness ladder — one request, four registers',
+            rows: [
+                { label: 'blunt', form: 'Ouvre la fenêtre.', pron: 'imperative — friends only' },
+                { label: 'careful', form: 'Tu peux ouvrir la fenêtre ?', pron: 'present — neutral spoken' },
+                { label: 'polite', form: 'Tu pourrais ouvrir la fenêtre ?', pron: 'conditional — softer' },
+                { label: 'formal', form: 'Pourriez-vous ouvrir la fenêtre, s\u2019il vous plaît ?', pron: 'full politeness' },
+                { label: 'written', form: 'Je vous serais reconnaissant de bien vouloir l\u2019ouvrir.', pron: 'letter register' },
+            ],
+        },
+        {
+            title: 'The si-system — all three patterns together',
+            rows: [
+                { label: 'real future', form: 'Si j\u2019ai le temps, je viendrai.', pron: 'si + présent → futur' },
+                { label: 'unreal now', form: 'Si j\u2019avais le temps, je viendrais.', pron: 'si + imparfait → conditionnel' },
+                { label: 'regret (past)', form: 'Si j\u2019avais eu le temps, je serais venu.', pron: 'si + PQP → cond. passé (B2 preview)' },
+                { label: 'NEVER', form: 'Si j\u2019aurais… / si je viendrais…', pron: 'conditional banned after si' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'je voudrais — one phrase, many jobs',
+            uses: [
+                { use: 'ordering (food, tickets, services)', examples: [{ fr: 'Je voudrais un croissant et un café, s\u2019il vous plaît.', en: 'I\u2019d like a croissant and a coffee, please.' }] },
+                { use: 'booking appointments', examples: [{ fr: 'Je voudrais prendre rendez-vous pour jeudi.', en: 'I\u2019d like to book an appointment for Thursday.' }] },
+                { use: 'asking information softly', examples: [{ fr: 'Je voudrais savoir si la ligne est directe.', en: 'I\u2019d like to know whether the line is direct.' }] },
+                { use: 'hypothetical wanting', examples: [{ fr: 'Je voudrais bien venir, mais je bosse.', en: 'I\u2019d love to come, but I\u2019m working.' }] },
+            ],
+        },
+        {
+            word: 'devoir & falloir — softening obligations',
+            uses: [
+                { use: 'hard duty: tu dois / il faut', examples: [{ fr: 'Tu dois confirmer avant vendredi. Il faut payer d\u2019avance.', en: 'You must confirm by Friday. Payment is required in advance.' }] },
+                { use: 'soft advice: tu devrais / il faudrait', examples: [{ fr: 'Tu devrais confirmer avant vendredi.', en: 'You should confirm by Friday.' }] },
+                { use: 'regret: j\u2019aurais dû', examples: [{ fr: 'J\u2019aurais dû écouter ma mère.', en: 'I should have listened to my mother.' }] },
+                { use: 'team suggestion: on devrait / on pourrait', examples: [{ fr: 'On devrait réserver une table.', en: 'We should book a table.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'The conditional\u2019s final -ais/-ait/-aient all sound "eh" — the register lives in the ending. Read each line twice: once formal (vous forms), once casual (tu/on).',
+        lines: [
+            { fr: 'Je voudrais réserver une table pour deux, s\u2019il vous plaît.', pron: 'zhuh voo-DREH ray-zair-VAY ün TAH-bluh poor DUH', en: 'I\u2019d like to book a table for two, please.' },
+            { fr: 'Pourriez-vous m\u2019indiquer où se trouve la salle 204 ?', pron: 'poo-ree voo-zan-dee-KAY oo suh TROOV lah sahl duh-sahn-KAHR', en: 'Could you tell me where room 204 is?' },
+            { fr: 'Si j\u2019avais le temps, j\u2019apprendrais le japonais.', pron: 'see zhah-VEH luh tahn zhah-prahn-DREH luh zhah-poh-NEH', en: 'If I had time, I\u2019d learn Japanese.' },
+            { fr: 'Tu devrais tester ce restaurant — on y mangerait très bien.', pron: 'tü duh-VREH tes-TAY suh res-tau-RAHN oh nee mahnzh-REH', en: 'You should try that restaurant — we\u2019d eat very well there.' },
+            { fr: 'Ça m\u2019arrangerait de passer à 15 h plutôt qu\u2019à 14 h.', pron: 'sah mah-rahnzh-REH duh pah-SAY ah kahnz UR plü TAHN', en: 'It would suit me better to come at 3 pm rather than 2.' },
+            { fr: 'J\u2019aurais aimé te dire au revoir, mais le train partait déjà.', pron: 'zhoh-REHZ eh-MAY tuh deer oh ruh-VWAHR', en: 'I would have liked to say goodbye to you, but the train was already leaving.' },
+        ],
+    },
+};
+
+// ── B1 · Relative Pronouns ──────────────────────────────────────────────────
+const b1Relatifs: LessonExtras = {
+    warmup: [
+        { q: 'Give a conditional sentence for "if I were rich…" with the correct si-rule.', a: 'Si j\u2019étais riche, j\u2019achèterais une maison — imparfait after si, conditional in the main clause.' },
+        { q: 'Turn into a polite request: "Ouvre la porte."', a: 'Pourriez-vous ouvrir la porte, s\u2019il vous plaît ? / Tu pourrais ouvrir la porte ?' },
+        { q: 'Give the conditional of pouvoir (je form) and devoir (tu form).', a: 'je pourrais; tu devrais.' },
+        { q: 'Which stem does the conditional borrow — imparfait\u2019s or futur\u2019s?', a: 'The futur\u2019s stem (ser-, aur-, ir-, voudr-…), with imparfait endings.' },
+        { q: 'How do you politely soften "il faut payer d\u2019avance"?', a: 'Il faudrait payer d\u2019avance.' },
+    ],
+    verbTables: [
+        {
+            title: 'The decision table: qui / que / dont / où',
+            note: 'Cover the relative and ask what the clause is missing: a subject (qui), an object (que), a de-phrase (dont), a place or time (où).',
+            rows: [
+                { label: 'subject → qui', form: 'L\u2019homme QUI parle est mon oncle.', pron: 'verb follows the gap' },
+                { label: 'object → que', form: 'Le film QUE j\u2019ai vu est vieux.', pron: 'subject+verb follow; qu\u2019 before vowel' },
+                { label: 'de-phrase → dont', form: 'Le film DONT je parle sort demain.', pron: 'parler de, se souvenir de, avoir besoin de' },
+                { label: 'place → où', form: 'La ville OÙ je suis né…', pron: 'where' },
+                { label: 'time → où', form: 'Le jour OÙ tu es arrivé…', pron: 'when — still où, never que' },
+                { label: 'no noun → ce qui / ce que', form: 'CE QUI m\u2019étonne… / CE QUE tu dis…', pron: 'standalone "what"' },
+            ],
+        },
+        {
+            title: 'The dont-verbs — memorize this de-family',
+            rows: [
+                { label: 'parler de', form: 'le sujet dont il parle', pron: 'the subject he\u2019s talking about' },
+                { label: 'se souvenir de', form: 'la chanson dont je me souviens', pron: 'the song I remember' },
+                { label: 'avoir besoin de', form: 'le document dont j\u2019ai besoin', pron: 'the document I need' },
+                { label: 'être content de', form: 'la nouvelle dont il est content', pron: 'the news he\u2019s happy about' },
+                { label: 'se servir de', form: 'l\u2019outil dont je me sers', pron: 'the tool I use' },
+                { label: 'être fier de', form: 'le projet dont elle est fière', pron: 'the project she\u2019s proud of' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'que — the agreement magnet',
+            note: 'A fronted direct object before an avoir verb forces the participle to agree. The relative que creates exactly that position.',
+            uses: [
+                { use: 'feminine singular', examples: [{ fr: 'La ville que j\u2019ai visitée était belle.', en: 'The city I visited was beautiful.' }] },
+                { use: 'masculine plural', examples: [{ fr: 'Les films que nous avons vus…', en: 'The films we saw…' }] },
+                { use: 'feminine plural', examples: [{ fr: 'Les pommes qu\u2019elle a achetées…', en: 'The apples she bought…' }] },
+                { use: 'no agreement (object after)', examples: [{ fr: 'Elle a acheté les pommes.', en: 'She bought the apples — object follows, no agreement' }] },
+            ],
+        },
+        {
+            word: 'où — the two-dimension pronoun',
+            uses: [
+                { use: 'physical place', examples: [{ fr: 'Le café où on s\u2019est rencontrés a fermé.', en: 'The café where we met has closed.' }] },
+                { use: 'time point', examples: [{ fr: 'Le moment où tout a changé…', en: 'The moment everything changed…' }] },
+                { use: 'extended: partout où, d\u2019où', examples: [{ fr: 'Partout où je vais, je prends des notes. D\u2019où viens-tu ?', en: 'Everywhere I go, I take notes. Where do you come from?' }] },
+                { use: 'fronted time: le jour où vs aujourd\u2019hui', examples: [{ fr: 'Le jour où il a neigé, on est restés dedans.', en: 'The day it snowed, we stayed inside.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Relative pronouns are one-beat words — the music is in what surrounds them. Read each line slowly enough to hear the pronoun click into place.',
+        lines: [
+            { fr: 'Le livre que tu m\u2019as prêté est génial — je l\u2019ai lu en deux jours.', pron: 'luh LEE-vruh küh tü mah preh-TAY', en: 'The book you lent me is great — I read it in two days.' },
+            { fr: 'La ville où je suis né a beaucoup changé depuis.', pron: 'lah VEEL oo zhuh süee NAY', en: 'The city where I was born has changed a lot since.' },
+            { fr: 'Le prof dont je t\u2019ai parlé accepte encore des élèves.', pron: 'luh PROHF dohn zhuh tay pahr-LAY', en: 'The teacher I told you about is still taking students.' },
+            { fr: 'Ce qui me frappe, c\u2019est la lumière de cette ville.', pron: 'suh KEE muh FRAP', en: 'What strikes me is the light of this city.' },
+            { fr: 'Les amis dont j\u2019ai le plus besoin sont ceux qui écoutent.', pron: 'lay-zah-MEE dohn zhay luh plü buh-ZWAN', en: 'The friends I need most are the ones who listen.' },
+            { fr: 'Il y a un moment où il faut choisir — et ce que je choisis, c\u2019est d\u2019avancer.', pron: 'eel ya ün moh-MAHN oo eel foh shwah-ZEER', en: 'There comes a moment when you must choose — and what I choose is to move forward.' },
+        ],
+    },
+};
+
+// ── B1 · Immigration & Settlement ───────────────────────────────────────────
+const b1Immigration: LessonExtras = {
+    warmup: [
+        { q: 'Ask "Could you tell me where room 204 is?" formally.', a: 'Pourriez-vous m\u2019indiquer où se trouve la salle 204 ?' },
+        { q: 'Give the three si-patterns with one example each.', a: 'si + présent → futur; si + imparfait → conditionnel; (B2: si + PQP → cond. passé).' },
+        { q: 'Say "The book I lent you…" with a relative.', a: 'Le livre que je t\u2019ai prêté…' },
+        { q: 'When do you use dont?', a: 'With de-verbs and de-phrases: parler de, se souvenir de, avoir besoin de, être content de.' },
+        { q: 'Correct or not: "La ville que j\u2019ai visité" — and why?', a: 'Not correct — la ville is a fronted feminine object: que j\u2019ai visitée.' },
+    ],
+    verbTables: [
+        {
+            title: 'The obligation toolbox — three ways to say "must"',
+            rows: [
+                { label: 'impersonal', form: 'Il faut renouveler le titre de séjour.', pron: 'eel foh ruh-noo-vluh-LAY' },
+                { label: 'personal', form: 'Je dois fournir trois documents.', pron: 'zhuh dwah foor-NEER' },
+                { label: 'formal', form: 'Nous sommes obligés de tout traduire.', pron: 'noo som-zoh-BLEE-ZHAY' },
+                { label: 'past duty', form: 'Il a fallu attendre deux mois.', pron: 'eel ah fah-lü' },
+                { label: 'future duty', form: 'Il faudra payer les frais.', pron: 'eel foh-DRAH' },
+                { label: 'softened', form: 'Il faudrait vérifier, non ?', pron: 'suggestive — see conditionnel' },
+            ],
+        },
+        {
+            title: 'The letter skeleton — five fixed parts',
+            note: 'Every formal email reuses this frame. Learn it as blocks, not words.',
+            rows: [
+                { label: '1 · greeting', form: 'Madame, Monsieur,', pron: 'never "Cher" to an office' },
+                { label: '2 · opening', form: 'Je me permets de vous écrire au sujet de…', pron: 'I am writing to you about…' },
+                { label: '3 · request', form: 'Je vous prie de bien vouloir + infinitif', pron: 'I kindly ask you to…' },
+                { label: '4 · waiting line', form: 'Dans l\u2019attente de votre réponse,…', pron: 'while awaiting your reply' },
+                { label: '5 · closing', form: 'je vous prie d\u2019agréer… salutations distinguées', pron: 'the full formula, unchanged' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'depuis / pendant / il y a — the three duration prepositions',
+            uses: [
+                { use: 'depuis — started, still running → PRESENT', examples: [{ fr: 'J\u2019attends ma carte depuis trois mois.', en: 'I\u2019ve been waiting for my card for three months.' }] },
+                { use: 'pendant — finished duration → past tense', examples: [{ fr: 'J\u2019ai attendu pendant trois mois. (reçu !)', en: 'I waited for three months. (got it!)' }] },
+                { use: 'il y a — ago → past event', examples: [{ fr: 'J\u2019ai déposé le dossier il y a deux semaines.', en: 'I submitted the file two weeks ago.' }] },
+                { use: 'pour — planned duration (future)', examples: [{ fr: 'Je pars au Japon pour deux semaines.', en: 'I\u2019m going to Japan for two weeks.' }] },
+            ],
+        },
+        {
+            word: 'the paperwork verbs — what offices actually write',
+            uses: [
+                { use: 'déposer — submit', examples: [{ fr: 'J\u2019ai déposé mon dossier le 3 février.', en: 'I submitted my file on Feb 3.' }] },
+                { use: 'fournir — provide', examples: [{ fr: 'Vous devez fournir une preuve de domicile.', en: 'You must provide proof of address.' }] },
+                { use: 'renouveler — renew', examples: [{ fr: 'Il faut renouveler le passeport avant l\u2019expiration.', en: 'The passport must be renewed before expiry.' }] },
+                { use: 'transmettre / joindre — send / attach', examples: [{ fr: 'Je vous prie de trouver ci-joint les documents demandés.', en: 'Please find attached the requested documents.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Administrative French has a beat: obligation… details… request. Read each line with a tiny pause at the commas — offices hear your punctuation.',
+        lines: [
+            { fr: 'Bonjour, je vous appelle au sujet de mon dossier de résidence permanente.', pron: 'bohn-ZHOOR zhuh voo-zah-PEL oh soo-ZHEH duh mohn doh-SYAY', en: 'Hello, I\u2019m calling about my permanent-residence file.' },
+            { fr: 'J\u2019habite à Ottawa depuis 2023 et j\u2019attends une réponse depuis avril.', pron: 'zhah-BEET ah oh-tah-WAH duh-püee duh-MEE vahnt vwa', en: 'I\u2019ve lived in Ottawa since 2023 and I\u2019ve been waiting for a reply since April.' },
+            { fr: 'Pourriez-vous m\u2019indiquer quels documents sont encore requis ?', pron: 'poo-ree voo-zan-dee-KAY kehl doh-kü-MAHN', en: 'Could you tell me which documents are still required?' },
+            { fr: 'Il faudrait que je renouvelle mon bail avant le premier du mois.', pron: 'eel foh-DREH kuh zhuh ruh-noo-VEL mohn BAH-yuh', en: 'I need to renew my lease before the first of the month.' },
+            { fr: 'Dans l\u2019attente de votre réponse, je vous remercie par avance.', pron: 'dahn lahn-TAHNT duh voh-truh ray-POHNSS', en: 'While awaiting your reply, I thank you in advance.' },
+            { fr: 'Je vous prie d\u2019agréer, Madame, Monsieur, mes salutations distinguées.', pron: 'zhuh voo pree dah-gray mah-DAM muh-SYUH', en: 'Please accept, Madam or Sir, my distinguished greetings.' },
+        ],
+    },
+};
+
+// ── B1 · Opinions & Arguments ───────────────────────────────────────────────
+const b1Opinions: LessonExtras = {
+    warmup: [
+        { q: 'Report "Je suis fatigué" in indirect speech after "il a dit que…".', a: 'Il a dit qu\u2019il était fatigué. — présent slides to imparfait.' },
+        { q: 'Report "Tu viens demain ?" after "il m\u2019a demandé…".', a: 'Il m\u2019a demandé si je venais le lendemain. — si + backshift + time shift.' },
+        { q: 'Report "Ferme la porte !" after "il m\u2019a dit…".', a: 'Il m\u2019a dit de fermer la porte. — imperative → de + infinitive.' },
+        { q: 'What does the passé composé become in reported speech?', a: 'The plus-que-parfait: a fini → avait fini.' },
+        { q: 'When does NO backshift happen?', a: 'When the reporter is present: il dit que c\u2019est… — only past reporters shift.' },
+    ],
+    verbTables: [
+        {
+            title: 'The connector families — one argument, four moves',
+            note: 'Every TCF opinion answer is these four moves in order. Memorize one example per family.',
+            rows: [
+                { label: 'claim', form: 'À mon avis, le télétravail est une chance.', pron: 'à mon avis / je pense que / il me semble que' },
+                { label: 'cause', form: '…parce qu\u2019on gagne du temps.', pron: 'parce que / puisque / comme / car' },
+                { label: 'consequence', form: '…donc les entreprises y gagnent.', pron: 'donc / alors / c\u2019est pourquoi' },
+                { label: 'contrast', form: 'Cependant, tout le monde n\u2019y est pas prêt.', pron: 'cependant / en revanche / par contre' },
+                { label: 'concession', form: 'Même si ce n\u2019est pas parfait, je continue.', pron: 'même si (+ indicatif)' },
+                { label: 'conclusion', form: 'En conclusion, le jeu en vaut la chandelle.', pron: 'en conclusion / pour conclure / bref' },
+            ],
+        },
+        {
+            title: 'Cause words with attitude: grâce à vs à cause de',
+            rows: [
+                { label: 'positive', form: 'Grâce à ta préparation, tout a réussi.', pron: 'grahs ah' },
+                { label: 'negative', form: 'À cause du trafic, j\u2019ai raté le train.', pron: 'ah KOHZ dü' },
+                { label: 'neutral', form: 'En raison de la grève, service réduit.', pron: 'ahn rai-ZOHN — written/formal' },
+                { label: 'lack', form: 'Faute de temps, on reporte.', pron: 'foht duh — for lack of' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'je pense que — indicative vs subjunctive',
+            note: 'Affirmative belief + INDICATIVE. Negation or doubt flips it to the subjunctive (B2) — at B1, feel the border, stay indicative.',
+            uses: [
+                { use: 'affirmative → indicative', examples: [{ fr: 'Je pense que c\u2019est une bonne idée.', en: 'I think it\u2019s a good idea.' }] },
+                { use: 'negated → subjunctive (preview)', examples: [{ fr: 'Je ne pense pas que ce soit une bonne idée.', en: 'I don\u2019t think it\u2019s a good idea.' }] },
+                { use: 'doubt → subjunctive (preview)', examples: [{ fr: 'Je doute qu\u2019il vienne.', en: 'I doubt he\u2019s coming.' }] },
+                { use: 'hedged → conditional', examples: [{ fr: 'Je dirais que c\u2019est correct.', en: 'I\u2019d say it\u2019s correct.' }] },
+            ],
+        },
+        {
+            word: 'agreement & disagreement — say it at the right strength',
+            uses: [
+                { use: 'total agreement', examples: [{ fr: 'Je suis tout à fait d\u2019accord.', en: 'I completely agree.' }] },
+                { use: 'partial', examples: [{ fr: 'Je suis d\u2019accord sur le fond, pas sur la forme.', en: 'I agree on substance, not form.' }] },
+                { use: 'polite disagreement', examples: [{ fr: 'Je vois ce que tu veux dire, mais…', en: 'I see what you mean, but…' }] },
+                { use: 'firm refusal of the idea', examples: [{ fr: 'Là, je ne suis pas du tout d\u2019accord.', en: 'There, I don\u2019t agree at all.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Argument rhythm: claim loud, connectors quiet, conclusion firm. Read each line and physically point at each connector as you say it.',
+        lines: [
+            { fr: 'À mon avis, les transports en commun devraient être gratuits.', pron: 'ah mohn ah-VEE lay trahn-SPOR ahn kuh-MÜN', en: 'In my opinion, public transport should be free.' },
+            { fr: 'Puisque la pollution augmente, il faut agir — donc chaque geste compte.', pron: 'püee-SKUH lah poh-lü-SYOHN ohg-MAHNT', en: 'Since pollution is rising, we must act — so every gesture counts.' },
+            { fr: 'C\u2019est cher ; en revanche, la qualité est au rendez-vous.', pron: 'seh SHAIR ahn ruh-VAHNsh', en: 'It\u2019s expensive; on the other hand, the quality is there.' },
+            { fr: 'Même si ce n\u2019est pas facile, je ne renonce pas à mon projet.', pron: 'mem see suh neh pah fah-SEEL', en: 'Even if it\u2019s not easy, I\u2019m not giving up my project.' },
+            { fr: 'Je suis d\u2019accord sur le fond, mais je nuancerais deux points.', pron: 'zhuh süee dah-KOR sür luh FOHN', en: 'I agree on the substance, but I would qualify two points.' },
+            { fr: 'En conclusion, les avantages l\u2019emportent largement sur les inconvénients.', pron: 'ahn kohn-klü-ZYOHN lay-zah-vahn-TAHZH', en: 'In conclusion, the advantages clearly outweigh the drawbacks.' },
+        ],
+    },
+};
+
+// ── B1 · Reported Speech ────────────────────────────────────────────────────
+const b1Discours: LessonExtras = {
+    warmup: [
+        { q: 'Give one connector per family: cause, consequence, contrast, conclusion.', a: 'parce que; donc; cependant / en revanche; en conclusion.' },
+        { q: 'grâce à or à cause de: "____ ta faute, on a raté le train."', a: 'À cause de ta faute — negative cause.' },
+        { q: 'Fill: Je pense que le projet ______ (être) réaliste.', a: 'est — affirmative je pense que + indicative.' },
+        { q: 'How do you disagree politely, one sentence?', a: 'Je vois ce que tu veux dire, mais je ne suis pas d\u2019accord. / Je nuancerais ce point.' },
+        { q: 'Fronted reason: start with "it was late" — ?', a: 'Comme il était tard, nous avons pris un taxi.' },
+    ],
+    verbTables: [
+        {
+            title: 'The backshift machine — direct → reported',
+            note: 'Runs ONLY when the reporting verb is past (a dit, a demandé). Present reporters leave everything in place.',
+            rows: [
+                { label: 'présent', form: '« Je suis là » → il a dit qu\u2019il ÉTAIT là', pron: 'est → était' },
+                { label: 'passé composé', form: '« J\u2019ai fini » → il a dit qu\u2019il AVAIT fini', pron: 'PC → plus-que-parfait' },
+                { label: 'futur', form: '« Je viendrai » → il a dit qu\u2019il VIENDRAIT', pron: 'futur → conditionnel' },
+                { label: 'impératif', form: '« Attends ! » → il m\u2019a dit D\u2019ATTENDRE', pron: 'command → de + infinitive' },
+                { label: 'yes/no question', form: '« Tu viens ? » → il a demandé SI je venais', pron: 'si + imparfait, no conditional' },
+                { label: 'wh-question', form: '« Où vas-tu ? » → il a demandé où j\u2019ALLAIS', pron: 'wh-word kept, inversion dropped' },
+            ],
+        },
+        {
+            title: 'Time & place shifts in reported speech',
+            rows: [
+                { label: 'hier', form: '→ la veille', pron: 'lah veh-yuh' },
+                { label: 'demain', form: '→ le lendemain', pron: 'luh lahn-duh-MAN' },
+                { label: 'aujourd\u2019hui', form: '→ ce jour-là', pron: 'suh zhoor-LAH' },
+                { label: 'il y a deux jours', form: '→ deux jours auparavant', pron: 'oh-pah-rah-VAHN' },
+                { label: 'ici', form: '→ là-bas', pron: 'lah-BAH' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'reporting verbs — pick the one that carries attitude',
+            uses: [
+                { use: 'neutral: dire que / répondre que', examples: [{ fr: 'Il a répondu qu\u2019il ne savait pas.', en: 'He answered that he didn\u2019t know.' }] },
+                { use: 'explanatory: expliquer / préciser que', examples: [{ fr: 'Elle a précisé que le bureau fermait à 17 h.', en: 'She specified the office closed at 5 pm.' }] },
+                { use: 'official: déclarer / annoncer que', examples: [{ fr: 'On m\u2019a annoncé que le vol était retardé.', en: 'I was told the flight was delayed.' }] },
+                { use: 'skeptical: prétendre que', examples: [{ fr: 'Il prétend qu\u2019il était malade.', en: 'He claims he was sick.' }] },
+            ],
+        },
+        {
+            word: 'si — three different jobs, one little word',
+            uses: [
+                { use: 'reported yes/no question', examples: [{ fr: 'Il m\u2019a demandé si j\u2019avais mon passeport.', en: 'He asked me if I had my passport.' }] },
+                { use: 'hypothetical condition', examples: [{ fr: 'Si j\u2019avais su, j\u2019aurais réagi.', en: 'If I had known, I would have reacted.' }] },
+                { use: 'real condition', examples: [{ fr: 'Si tu peux venir, préviens-moi.', en: 'If you can come, let me know.' }] },
+                { use: 'never a "whether" after espérer/savoir with que', examples: [{ fr: 'Je ne sais pas SI il viendra — but je pense QU\u2019il viendra', en: 'si for alternatives, que for beliefs' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Reported speech runs in one breath: reporter… pause… reported clause. Read each line so the backshifted verb lands softly — it carries no stress.',
+        lines: [
+            { fr: 'Elle m\u2019a dit qu\u2019elle serait en route vers midi.', pron: 'el mah DEE kel suh-REH ahn ROOT vair mee-DEE', en: 'She told me she would be on the way around noon.' },
+            { fr: 'Il m\u2019a demandé si j\u2019avais déjà réservé la salle.', pron: 'eel mah duh-mahn-DAY see zhah-VEH day-zhah lahl', en: 'He asked me if I had already booked the room.' },
+            { fr: 'Le directeur a annoncé que la réunion serait reportée au lendemain.', pron: 'luh deer-ek-TUHR ah ah-non-SAY', en: 'The director announced the meeting would be postponed to the next day.' },
+            { fr: 'Elle m\u2019a demandé de ne rien dire avant vendredi.', pron: 'el mah duh-mahn-DAY duh nuh RYEN deer', en: 'She asked me not to say anything before Friday.' },
+            { fr: 'Il a expliqué qu\u2019il avait raté le dernier métro la veille.', pron: 'eel ah eh-splee-KAY kee-lah-VEH rah-TAY', en: 'He explained he had missed the last metro the day before.' },
+            { fr: 'On m\u2019a répondu que le dossier était complet et qu\u2019on me rappellerait.', pron: 'ohn mah ray-pohn-DÜ kuh luh doh-SYAY', en: 'I was told the file was complete and that they would call me back.' },
+        ],
+    },
+};
+
+export const B1_EXTRAS: Record<string, LessonExtras> = {
+    'B1:passe-vs-imparfait': b1PasseVsImparfait,
+    'B1:conditionnel': b1Conditionnel,
+    'B1:relatifs': b1Relatifs,
+    'B1:immigration': b1Immigration,
+    'B1:opinions': b1Opinions,
+    'B1:discours': b1Discours,
+};
+
 // Merged registry — consumed by frenchLessons.ts
 export const LESSON_EXTRAS: Record<string, LessonExtras> = {
     ...A1_EXTRAS,
     ...A2_EXTRAS,
+    ...B1_EXTRAS,
 };
 
 export type { LessonExtras };
