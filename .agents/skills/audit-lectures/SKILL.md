@@ -66,6 +66,13 @@ the process.
   the why. New lectures may follow this convention freely.
 - `StaticFrText` falls back: exact key → after-apostrophe → singular. Write glossary keys
   in the SINGULAR; plurals resolve automatically.
+- The toolkit is app-wide, two-source, one look: `src/components/wordCards.tsx` exports
+  `RichWord` (universal tap-target: glossary card if the lesson provides one via
+  `LessonGlossaryContext`, else `RichAiWord` — AI fills the SAME GlossaryEntry schema via
+  `getRichWordCard`, localStorage-cached as `rich-card:v1:<lang>:<word>`). `InteractiveText`
+  is a thin wrapper around `RichWord` — trainers, mock exams, flashcards, quiz, chat and
+  the other portals all get the rich card through it. NEVER reintroduce the plain
+  BreakdownWord tooltip; never let the AI cards drift from the GlossaryEntry schema.
 - Duplicate glossary keys in one object literal = TS error — grep before adding.
 - Vercel API files are native ESM: shared code in `api/*.js` with explicit `.js` extensions.
 - Supabase migrations are run BY HAND by the user from repo-root SQL files — never assume
