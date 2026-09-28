@@ -212,15 +212,19 @@ const StaticFrText = ({ text, className }: { text: string; className?: string })
         if (!isWord(p)) { out.push(<span key={`x${key++}`}>{p}</span>); i++; continue; }
         // try up to 4 consecutive words, longest glossary match wins
         let matched = 0, matchedEn = '', matchedEntry: import('../../services/frenchLessons').GlossaryEntry | undefined, surface = p, lastIdx = i;
-        const words: string[] = [];
-        for (let len = 0; len < 4; len++) {
-            const wi = i + len * 2;
-            if (wi >= parts.length || !isWord(parts[wi])) break;
-            words.push(parts[wi]);
-            const n = normFr(words.join(' '));
-            const gv = glossary[n];
-            if (n && gv !== undefined) { matched = len + 1; matchedEn = asEntry(gv).en; matchedEntry = asEntry(gv); surface = parts.slice(i, wi + 1).join(''); lastIdx = wi; }
-        }
+            const words: string[] = [];
+            for (let len = 0; len < 4; len++) {
+                const wi = i + len * 2;
+                if (wi >= parts.length || !isWord(parts[wi])) break;
+                words.push(parts[wi]);
+                const n = normFr(words.join(' '));
+                // exact key, else the word after an elision (j'espère → espère),
+                // else the singular (avantages → avantage) — never on a direct hit
+                let gv = glossary[n];
+                if (gv === undefined && n.includes("'")) gv = glossary[n.split("'").pop()!];
+                if (gv === undefined && /s$/.test(n)) gv = glossary[n.replace(/s$/, '')];
+                if (n && gv !== undefined) { matched = len + 1; matchedEn = asEntry(gv).en; matchedEntry = asEntry(gv); surface = parts.slice(i, wi + 1).join(''); lastIdx = wi; }
+            }
         if (matched > 0) {
             out.push(<StaticWord key={`w${key++}`} word={surface} en={matchedEn} entry={matchedEntry} />);
             i = lastIdx + 1;
@@ -388,7 +392,10 @@ const Curriculum = ({ language }: { language: string }) => {
     const glossaryEntryFor = (word: string) => {
         const g = staticExtras?.glossary;
         if (!g) return undefined;
-        const v = g[normFr(word)] ?? g[word.toLowerCase()];
+        const n = normFr(word);
+        let v = g[n] ?? g[word.toLowerCase()];
+        if (v === undefined && n.includes("'")) v = g[n.split("'").pop()!];
+        if (v === undefined && /s$/.test(n)) v = g[n.replace(/s$/, '')];
         return v === undefined ? undefined : asEntry(v);
     };
 

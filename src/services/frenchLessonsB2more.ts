@@ -469,6 +469,10 @@ const b2Societe: StaticFrenchLesson = {
         'enregistrée': { en: 'recorded (fem — PC of enregistrer)', pron: 'ahn-ruh-JEE-STRAY', type: 'verb', base: { form: 'enregistrer', en: 'to record' }, note: 'une hausse a été enregistrée — the news-reporting passive.' },
         'RAMQ': { en: 'Régie de l\u2019assurance-maladie du Québec (public health insurance)', pron: 'rahm-KÜ', gender: 'feminine', type: 'noun', note: 'la carte RAMQ = the Quebec health card — cite it in Canada essays.' },
         'démographique': { en: 'demographic', pron: 'day-moh-grah-FEEK', type: 'adjective', note: 'la croissance démographique — adjective stays the same for both genders.' },
+        'repris': { en: 'picked up / resumed (PC of reprendre)', pron: 'ruh-PREE', type: 'verb', base: { form: 'reprendre', en: 'to resume / take back' }, note: 'l\u2019embauche a repris — the recovery verb of economic reporting.' },
+        'pollution': { en: 'pollution', pron: 'poh-lü-SYOHN', gender: 'feminine', type: 'noun', note: 'la pollution de l\u2019air; investir dans les transports réduit la pollution.' },
+        'progresse': { en: 'progresses (present of progresser)', pron: 'proh-GRESS', type: 'verb', base: { form: 'progresser', en: 'to progress' }, note: 'le recyclage progresse — steady positive trend verb.' },
+        'débordent': { en: 'overflow (present of déborder — they)', pron: 'day-BORD', type: 'verb', base: { form: 'déborder', en: 'to overflow' }, note: 'les urgences débordent chaque hiver — the crisis image of healthcare essays.' },
     },
 };
 
