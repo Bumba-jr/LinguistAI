@@ -106,7 +106,7 @@ const b1PasseVsImparfait: StaticFrenchLesson = {
         formal: 'À cette époque-là, le gouvernement apportait son soutien aux familles nombreuses. (à cette époque-là = formal "back then")',
     },
 
-    culture: 'Storytelling is a TCF speaking task: the examiner asks about a past experience (racontez un souvenir). The scoring grid rewards the background/event mix: weather, time, and feelings in the imparfait; the decisive moments in the passé composé. In spoken Quebec French the imparfait covers some events ("j\u2019étais allé" style constructions differ), but for the exam keep the standard division — it is what the grid measures.',
+    culture: 'Storytelling is a TCF speaking task: the examiner asks about a past experience (racontez un souvenir). The scoring grid rewards the background/event mix: weather, time, and feelings in the imparfait; the decisive moments in the passé composé. The passé simple (il mangea) exists only in literature — you will never need to speak it. And while spoken French everywhere is looser than this division, the exam grades the standard one — keep the scene in the imparfait and the events in the passé composé.',
 
     freeProduction: 'Tell the story of a memorable day from your childhood or last year (8–10 sentences). Open with the scene (il était…, il faisait…, je …ais), then give at least three events (soudain…, un moment…, enfin…). Guiding questions: Where were you? Who was there? What was happening around you? What happened first, then what? How did it end and how did you feel?',
 
@@ -601,7 +601,7 @@ const b1Relatifs: StaticFrenchLesson = {
         blanks: [
             { prompt: 'L\u2019ami ______ habite chez moi est brésilien.', answer: 'qui', explanation: 'Verb (habite) follows the gap → subject relative qui.' },
             { prompt: 'Les clés ______ tu cherches sont sur la table.', answer: 'que', explanation: 'Subject-verb pair (tu cherches) follows → object relative que.' },
-            { prompt: 'Le pays ______ il vient est le Sénégal.', answer: 'd\u2019où', alt: ['dont'], explanation: 'venir de (origin) → d\u2019où (from where). dont would only work with parler/avoir besoin style de-verbs.' },
+            { prompt: 'Le pays ______ il vient est le Sénégal.', answer: 'd\u2019où', explanation: 'venir de (origin) → d\u2019où (from where). dont only replaces de + THING in de-verbs like parler de / avoir besoin de — place of origin takes d\u2019où.' },
             { prompt: 'La décision ______ je suis content a été rapide.', answer: 'dont', explanation: 'être content de → dont. De-emotion verbs all chain into dont.' },
             { prompt: 'Le moment ______ j\u2019ai compris reste clair.', answer: 'où', explanation: 'Time relative: le moment où. où is not only a place.' },
             { prompt: 'Les lettres que j\u2019______ (écrire) sont perdues.', answer: 'ai écrites', alt: ['ai écrit'], explanation: 'Fronted plural object (les lettres) → participle agrees: écrites (+es). The classic dont/que agreement test.' },
