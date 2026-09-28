@@ -1783,12 +1783,374 @@ export const B2_EXTRAS: Record<string, LessonExtras> = {
     'B2:societe': b2Societe,
 };
 
+// ── C1 · Idioms & Register Control ──────────────────────────────────────────
+const c1Idiomes: LessonExtras = {
+    warmup: [
+        { q: 'Give the spoken and written forms of "there is" and "I don\u2019t know".', a: 'y\u2019a / il y a · chais pas / je ne sais pas — speech deletes, writing restores.' },
+        { q: 'Build the debate close: the disagreement is about means, not ends.', a: 'Pour conclure : le désaccord porte sur les moyens, non sur les fins.' },
+        { q: 'What does il semblerait que take after it?', a: 'The subjunctive: il semblerait que ce soit…' },
+        { q: 'Which certainty verb for a 40-person survey: démontrer or suggérer?', a: 'suggérer — the sample forbids the strong verb.' },
+        { q: 'Interject politely on a panel.', a: 'Excusez-moi de vous couper, mais… (then offer the floor back).' },
+    ],
+    verbTables: [
+        {
+            title: 'The register ladder for one idea — "it was disappointing"',
+            rows: [
+                { label: 'slang', form: 'C\u2019était nul, carrément.', pron: 'friends only' },
+                { label: 'casual', form: 'Pas terrible, franchement.', pron: 'negated positive' },
+                { label: 'neutral', form: 'C\u2019était décevant.', pron: 'décevoir → décevant' },
+                { label: 'formal', form: 'Le bilan est en deçà des attentes.', pron: 'en deçà de = below' },
+                { label: 'understated', form: 'Ce n\u2019était pas génial…', pron: 'the C1 signature' },
+            ],
+        },
+        {
+            title: 'The irony kit — one particle flips the sentence',
+            rows: [
+                { label: 'yeah right', form: 'Ben voyons !', pron: 'bahn vway-OHN' },
+                { label: 'sure sure', form: 'C\u2019est ça…', pron: 'with a flat tone' },
+                { label: 'great…', form: 'Super, encore une panne !', pron: 'sarcasm after bad news' },
+                { label: 'what a party', form: 'C\u2019est la fête…', pron: 'after an ordeal' },
+                { label: 'voice quotes', form: 'Il a « oublié » son tour.', pron: 'flat repetition = irony' },
+            ],
+        },
+        {
+            title: 'Five frozen images — articles and number never move',
+            rows: [
+                { label: 'stand up', form: 'poser UN lapin', pron: 'never des lapins' },
+                { label: 'make a fuss', form: 'en faire tout UN fromage', pron: 'en obligatory' },
+                { label: 'cost a fortune', form: 'coûter LES yeux de la tête', pron: 'fixed plural article' },
+                { label: 'faint', form: 'tomber dans LES pommes', pron: 'familier — use s\u2019évanouir formally' },
+                { label: 'love at first sight', form: 'le coup de foudre', pron: 'lightning-bolt image' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'pas mal / pas génial / pas faux — the direction dial',
+            uses: [
+                { use: 'pas mal (du tout) = quite good', examples: [{ fr: '— Comment c\u2019était ? — Pas mal du tout !', en: '— How was it? — Pretty good!' }] },
+                { use: 'pas terrible / pas génial = bad', examples: [{ fr: 'Le service ? Pas terrible…', en: 'The service? Not great… (= poor)' }] },
+                { use: 'pas faux = right (understated agreement)', examples: [{ fr: '— Le fond est juste. — C\u2019est pas faux.', en: '— The substance is right. — Can\u2019t argue.' }] },
+                { use: 'pas désagréable = pleasant (litotes)', examples: [{ fr: 'La soirée n\u2019était pas désagréable.', en: 'The evening was rather pleasant.' }] },
+            ],
+        },
+        {
+            word: 'euphemism — saying less to soften more',
+            uses: [
+                { use: 'death', examples: [{ fr: 'Il nous a quittés la semaine dernière.', en: 'He left us last week. (= died)' }] },
+                { use: 'firing', examples: [{ fr: 'La direction s\u2019en est séparée.', en: 'Management parted ways with her. (= fired)' }] },
+                { use: 'old age', examples: [{ fr: 'Il n\u2019est plus tout jeune.', en: 'He\u2019s not as young as he was.' }] },
+                { use: 'naming it', examples: [{ fr: '« Restructuration » — en clair, des licenciements.', en: '"Restructuring" — plainly, layoffs.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Idioms are delivered deadpan — no wink in the voice. Read each line flat; the listener hears the image and decodes alone.',
+        lines: [
+            { fr: 'Elle m\u2019a posé un lapin — trente minutes sous la pluie, merci.', pron: 'el mah poh-ZAY ün lah-PAN', en: 'She stood me up — thirty minutes in the rain, thanks.' },
+            { fr: 'N\u2019en fais pas tout un fromage : c\u2019est cinq minutes de retard.', pron: 'nahn fay pah too tuhn fro-MAHZH', en: 'Don\u2019t make a fuss: it\u2019s five minutes late.' },
+            { fr: 'Le réparateur ? Encore trois semaines, et ça m\u2019a coûté les yeux de la tête.', pron: 'luh ray-pah-rah-TUHR', en: 'The repairman? Three more weeks, and it cost me a fortune.' },
+            { fr: 'La conférence ? Ce n\u2019était pas génial, pour ne pas dire plus.', pron: 'lah kohn-feh-RAHNSS suh neh-TAY pah zhay-NYAHL', en: 'The conference? Not great, to say the least.' },
+            { fr: 'Il a encore « oublié » son tour de cuisine — ben voyons.', pron: 'eel ah ahn-KOR oo-blee-AY', en: 'He "forgot" his cooking turn again — yeah right.' },
+            { fr: 'Bref, c\u2019est plié : samedi, on refait tout — et je ne dirais pas non à une main.', pron: 'bref seh plee-AY sam-DEE', en: 'Anyway, it\u2019s settled: Saturday we redo everything — and I wouldn\u2019t say no to a hand.' },
+        ],
+    },
+};
+
+// ── C1 · Synthesis & Critical Reading ───────────────────────────────────────
+const c1Synthese: LessonExtras = {
+    warmup: [
+        { q: 'Decode: Il a encore « oublié » son tour de cuisine.', a: 'Irony via voice-quotes — he didn\u2019t forget; the speaker implies intent.' },
+        { q: 'Ce n\u2019était pas terrible — good or bad?', a: 'Bad — the negated positive points at the base adjective\u2019s opposite.' },
+        { q: 'Formal way to say someone fainted?', a: 'Elle s\u2019est évanouie / elle a perdu connaissance — tomber dans les pommes is familier.' },
+        { q: 'One euphemism for firing, one for dying.', a: 'La direction s\u2019en est séparée · il nous a quittés.' },
+        { q: 'Complete: J\u2019ai d\u2019autres ______ à fouetter.', a: 'chats — bigger fish to fry.' },
+    ],
+    verbTables: [
+        {
+            title: 'Attribution frames — who says what',
+            rows: [
+                { label: 'light', form: 'Selon le document A, …', pron: 'courant register' },
+                { label: 'literary', form: 'D\u2019après l\u2019auteure, …', pron: 'no preposition doubling!' },
+                { label: 'with stress', form: 'L\u2019auteure souligne que…', pron: 'indicative after que' },
+                { label: 'emergence', form: 'Il ressort du rapport que…', pron: 'fixed impersonal frame' },
+                { label: 'skeptical', form: 'À en croire le rapport, …', pron: 'suspends judgment' },
+            ],
+        },
+        {
+            title: 'Nominalization — clause into noun phrase',
+            rows: [
+                { label: 'aware', form: 'prendre conscience → la prise de conscience', pron: 'the model upgrade' },
+                { label: 'implement', form: 'mettre en place → la mise en place', pron: 'report staple' },
+                { label: 'carry out', form: 'mettre en œuvre → la mise en œuvre', pron: 'administration loves it' },
+                { label: 'underfund', form: 'être sous-financé → le sous-financement', pron: 'accusation, nominalized' },
+                { label: 'oppose', form: 'les habitants s\u2019opposent → l\u2019opposition des habitants', pron: 'people become a force' },
+            ],
+        },
+        {
+            title: 'Convergence vs divergence — grouping sources',
+            rows: [
+                { label: 'converge', form: 'Dans le même ordre d\u2019idées, C évoque…', pron: 'group the agreeing' },
+                { label: 'likewise', form: 'De même, B insiste sur…', pron: 'lighter convergence' },
+                { label: 'in the style of', form: 'À l\u2019instar de A, B dénonce…', pron: 'formal grouping' },
+                { label: 'diverge', form: 'Tandis que A insiste…, B met l\u2019accent sur…', pron: 'set against' },
+                { label: 'conversely', form: 'À l\u2019inverse, C minimise…', pron: 'sharp contrast' },
+                { label: 'where A sees…', form: 'Là où A voit une chance, B voit un risque.', pron: 'the elegant hinge' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'selon vs d\u2019après — same job, both correct',
+            uses: [
+                { use: 'selon + source (light, everywhere)', examples: [{ fr: 'Selon une étude de 2024, le lien est faible.', en: 'According to a 2024 study, the link is weak.' }] },
+                { use: 'd\u2019après + source (slightly literary)', examples: [{ fr: 'D\u2019après l\u2019auteure, le constat est partagé.', en: 'In the author\u2019s view, the finding is shared.' }] },
+                { use: 'never double the preposition', examples: [{ fr: 'NOT: selon à l\u2019auteure / d\u2019après de l\u2019étude', en: 'the source attaches directly' }] },
+                { use: 'relative form: selon lequel', examples: [{ fr: 'le rapport selon lequel les délais s\u2019allongent', en: 'the report according to which…' }] },
+            ],
+        },
+        {
+            word: 'the neutrality rules of the synthesis',
+            uses: [
+                { use: 'no first person', examples: [{ fr: 'NOT: je pense que B a raison', en: 'the synthesis re-presents, it does not judge' }] },
+                { use: 'attributed comparison only', examples: [{ fr: 'La thèse de B paraît la mieux étayée des trois.', en: 'the only judgment allowed' }] },
+                { use: 'no outside knowledge', examples: [{ fr: 'Le corpus suffit — pas de chiffres invented de mémoire.', en: 'stay inside the documents' }] },
+                { use: 'reformulate, never copy', examples: [{ fr: '« les délais s\u2019allongent » → les délais d\u2019attente ne cessent de s\u2019allonger', en: 'same idea, new words' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Synthesis voice is flat and even: every attribution frame lands level, no enthusiasm anywhere. Read each line like a news anchor reading someone else\u2019s findings.',
+        lines: [
+            { fr: 'D\u2019après le document A, le système souffre d\u2019un sous-financement chronique.', pron: 'dah-PRAY luh doh-kü-MAHN ah', en: 'According to document A, the system suffers chronic underfunding.' },
+            { fr: 'Tandis que B insiste sur les délais, C met l\u2019accent sur la prévention.', pron: 'tahn-DEE kuh bay an-SEEST', en: 'While B stresses delays, C focuses on prevention.' },
+            { fr: 'Dans le même ordre d\u2019idées, l\u2019éditorial évoque la pénurie de médecins de famille.', pron: 'dahn luh mem ord day-DEH', en: 'Along the same lines, the editorial mentions the family-doctor shortage.' },
+            { fr: 'Il ressort de l\u2019ensemble que la prise de conscience est réelle, mais la mise en œuvre reste lente.', pron: 'eel ruh-SOR düh lahn-SAHM-bluh', en: 'It emerges from the whole that awareness is real, but implementation remains slow.' },
+            { fr: 'Ces convergences masquent néanmoins une divergence de fond sur le financement.', pron: 'say kohn-vair-ZHAHNSS mahss-KAY', en: 'These convergences nevertheless mask a fundamental divergence on funding.' },
+            { fr: 'La thèse du document C paraît la mieux étayée des trois.', pron: 'lah TEHZ dü doh-kü-MAHN say', en: 'Document C\u2019s thesis appears the best supported of the three.' },
+        ],
+    },
+};
+
+// ── C1 · Formal Speaking & Debate ───────────────────────────────────────────
+const c1Debat: LessonExtras = {
+    warmup: [
+        { q: 'Attribute: "the system is underfunded" (source: document A).', a: 'D\u2019après le document A, le système est sous-financé.' },
+        { q: 'Divergence or convergence: tandis que / dans le même ordre d\u2019idées ?', a: 'tandis que = divergence; dans le même ordre d\u2019idées = convergence.' },
+        { q: 'Nominalize: "les gens prennent conscience du problème".', a: 'la prise de conscience du problème.' },
+        { q: 'Backshift: "L\u2019auteure a écrit que les chiffres (être) faux."', a: 'étaient — past reporter + indicative.' },
+        { q: 'May a synthesis contain "je pense que…"?', a: 'No — attribute judgments instead: la thèse de B paraît mieux étayée.' },
+    ],
+    verbTables: [
+        {
+            title: 'The debate choreography — five moves in order',
+            rows: [
+                { label: '1 · open', form: 'Permettez-moi de prendre la parole.', pron: 'formal floor-opener' },
+                { label: '2 · buy time', form: 'Vous posez une question essentielle ; d\u2019y répondre en deux temps.', pron: 'graceful seconds' },
+                { label: '3 · check', form: 'Si je comprends bien, vous me demandez si… — c\u2019est bien cela ?', pron: 'reformulate first' },
+                { label: '4 · bounce', form: 'Je vous accorde que… ; sauf que…', pron: 'concede, then return' },
+                { label: '5 · close', form: 'Pour conclure : le désaccord porte sur X, non sur Y.', pron: 'one precise verdict' },
+            ],
+        },
+        {
+            title: 'Filler register map — swap these in panels',
+            rows: [
+                { label: 'du coup →', form: 'par conséquent', pron: 'formal consequence' },
+                { label: 'genre →', form: 'notamment', pron: 'formal example' },
+                { label: 'quoi →', form: 'en somme', pron: 'formal close' },
+                { label: 'ben →', form: 'voyez-vous / écoutez', pron: 'panel-approved openers' },
+                { label: 'ouais →', form: 'tout à fait', pron: 'formal agreement' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'taking and yielding the floor',
+            uses: [
+                { use: 'take it', examples: [{ fr: 'Permettez-moi de prendre la parole sur ce point.', en: 'Allow me to take the floor on this point.' }] },
+                { use: 'build on someone', examples: [{ fr: 'Pour rebondir sur ce que vient de dire Marie…', en: 'To build on what Marie just said…' }] },
+                { use: 'yield it', examples: [{ fr: 'Je cède la parole à mon collègue.', en: 'I yield the floor to my colleague.' }] },
+                { use: 'cut in politely', examples: [{ fr: 'Excusez-moi de vous couper — puis-je terminer une idée ?', en: 'Sorry to cut in — may I finish one thought?' }] },
+            ],
+        },
+        {
+            word: 'granting and disputing points',
+            uses: [
+                { use: 'grant the point', examples: [{ fr: 'Vous me donnez raison sur le fond.', en: 'You concede I\u2019m right on the substance.' }] },
+                { use: 'flatly dispute', examples: [{ fr: 'Je m\u2019inscris en faux contre ce chiffre.', en: 'I flatly dispute that figure.' }] },
+                { use: 'argue formally', examples: [{ fr: 'Elle fait valoir que le délai a tenu.', en: 'She argues that the deadline held.' }] },
+                { use: 'qualify', examples: [{ fr: 'Je nuancerais toutefois cette affirmation.', en: 'I would nevertheless qualify that claim.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Panel rhythm: level openings, a small pause at every semicolon, stress on the verdict words. Read each line as if the microphone is live.',
+        lines: [
+            { fr: 'Merci. Permettez-moi de prendre la parole sur ce point précis.', pron: 'pair-meh-TAY MWAH duh prahn-druh lah pah-ROHL', en: 'Thank you. Allow me to take the floor on this precise point.' },
+            { fr: 'Vous posez une question essentielle ; permettez-moi d\u2019y répondre en deux temps.', pron: 'voo poh-ZAY ün kwes-TYOHN ah-sahn-SYEL', en: 'You raise an essential question; let me answer it in two parts.' },
+            { fr: 'Si je comprends bien, vous me demandez si le coût est justifié — c\u2019est bien cela ?', pron: 'see zhuh kohn-PRAN byan', en: 'If I understand correctly, you\u2019re asking whether the cost is justified — right?' },
+            { fr: 'Je vous accorde que le délai est serré ; sauf que la méthode a fait ses preuves.', pron: 'zhuh voo zah-KORD kuh luh day-LYEH', en: 'I grant you the deadline is tight; except the method has proven itself.' },
+            { fr: 'Excusez-moi de vous couper, mais les données disent l\u2019inverse — je vous en prie.', pron: 'ehks-kü-zay MWAH duh voo koo-PAY', en: 'Sorry to cut you off, but the data says otherwise — please, go ahead.' },
+            { fr: 'Pour conclure : au fond, le désaccord porte sur le calendrier, non sur le principe.', pron: 'poor kohn-KLOOD oh FOHN', en: 'To conclude: at bottom, the disagreement is about timing, not principle.' },
+        ],
+    },
+};
+
+// ── C1 · Evidence-Based Argumentation ───────────────────────────────────────
+const c1ArgumentationAvancee: LessonExtras = {
+    warmup: [
+        { q: 'Open a panel turn formally.', a: 'Permettez-moi de prendre la parole. / Si je peux me permettre…' },
+        { q: 'Buy time when the question is hard.', a: 'Vous posez une question essentielle ; permettez-moi d\u2019y répondre en deux temps.' },
+        { q: 'Check you understood a question.', a: 'Si je comprends bien, vous me demandez si… — c\u2019est bien cela ?' },
+        { q: 'Concede and bounce: the deadline is tight, but the method works.', a: 'Je vous accorde que le délai est serré ; sauf que la méthode a fait ses preuves.' },
+        { q: 'Replace three casual fillers formally: du coup, genre, quoi.', a: 'par conséquent, notamment, en somme.' },
+    ],
+    verbTables: [
+        {
+            title: 'The certainty ladder — verb by verb',
+            note: 'The verb IS the claim\u2019s strength. Pick it before the sentence.',
+            rows: [
+                { label: 'proven', form: 'L\u2019étude démontre que… (indicatif)', pron: 'established results only' },
+                { label: 'observed', form: 'Les données indiquent que… (indicatif)', pron: 'co-movement, measured' },
+                { label: 'suggestive', form: 'Les résultats suggèrent que… (indicatif)', pron: 'honest middle rung' },
+                { label: 'your hedge', form: 'Il semblerait que… (+ SUBJONCTIF)', pron: 'sahm-bluh-REH' },
+                { label: 'exposed spin', form: 'Le titre laisse croire que…', pron: 'you distrust the implication' },
+                { label: 'refusal', form: 'Rien ne permet d\u2019affirmer que…', pron: 'the anti-overclaim' },
+            ],
+        },
+        {
+            title: 'Hedge moods — subjunctive vs indicative',
+            rows: [
+                { label: 'SUBJ', form: 'Il semblerait que ce soit…', pron: 'semblerait, possible' },
+                { label: 'SUBJ', form: 'Il est possible/vraisemblable que ce soit…', pron: 'uncertainty' },
+                { label: 'IND', form: 'Il est probable que c\u2019est vrai. (indicatif)', pron: 'probable = indicative' },
+                { label: 'IND', form: 'Il est certain/évident que… (indicatif)', pron: 'full confidence' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'correlation discipline — say the link, refuse the cause',
+            uses: [
+                { use: 'state the co-movement', examples: [{ fr: 'Les deux courbes coïncident depuis trois ans.', en: 'Both curves have coincided for three years.' }] },
+                { use: 'refuse the mechanism', examples: [{ fr: 'Sans que la causalité soit établie.', en: 'Without causation being established.' }] },
+                { use: 'the formula', examples: [{ fr: 'Corrélation n\u2019est pas causalité.', en: 'Correlation is not causation.' }] },
+                { use: 'conditional acceptance', examples: [{ fr: 'Le lien semble réel, à condition d\u2019isoler les autres facteurs.', en: 'The link seems real, provided other factors are isolated.' }] },
+            ],
+        },
+        {
+            word: 'critical attribution — reading the fine print aloud',
+            uses: [
+                { use: 'suspend judgment', examples: [{ fr: 'À en croire le rapport, tout irait bien.', en: 'If we believe the report, all would be well.' }] },
+                { use: 'expose the spin', examples: [{ fr: 'Le titre laisse croire une causalité que le texte ne soutient pas.', en: 'The headline implies a causation the text doesn\u2019t support.' }] },
+                { use: 'quote the caveat', examples: [{ fr: 'Ses auteurs reconnaissent eux-mêmes les limites de l\u2019échantillon.', en: 'Its authors themselves acknowledge the sample\u2019s limits.' }] },
+                { use: 'conditional verdict', examples: [{ fr: 'Sous réserve d\u2019une évaluation indépendante, le bilan plaide pour la prolongation.', en: 'Subject to independent evaluation, the verdict favours extension.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Analyst voice: slow verbs, fast figures, zero emphasis words. Read each line leaning on the certainty verb and pausing at the dashes.',
+        lines: [
+            { fr: 'Une étude de 2024 démontre une réduction de 12 % des émissions.', pron: 'ün ay-TÜD duh duh-MEE-lyuh', en: 'A 2024 study demonstrates a 12% cut in emissions.' },
+            { fr: 'Les données suggèrent — elles ne prouvent pas — un effet d\u2019entraînement.', pron: 'lay doh-NAY süg-ZHAIR', en: 'The data suggests — it doesn\u2019t prove — a knock-on effect.' },
+            { fr: 'Il semblerait que le programme porte ses fruits, sans qu\u2019on puisse isoler sa part.', pron: 'eel sahm-bluh-REH kuh luh pro-grahm PORT', en: 'It would seem the program is bearing fruit, without one isolating its share.' },
+            { fr: 'Corrélation n\u2019est pas causalité : les courbes montent ensemble, rien de plus.', pron: 'koh-ray-lah-SYOHN neh pah koh-zah-lee-TAY', en: 'Correlation is not causation: the curves rise together, nothing more.' },
+            { fr: 'Certains objectent le coût ; or, l\u2019évaluation indépendante conclut à un bilan positif.', pron: 'sair-TANZ ohb-zheh-TAY luh KOO', en: 'Some object to the cost; yet the independent evaluation concludes positively.' },
+            { fr: 'Rien ne permet d\u2019affirmer la causalité, mais l\u2019ensemble plaide pour une action rapide.', pron: 'ryen nuh pair-MEH dah-feer-MAY', en: 'Nothing allows asserting causation, but the whole argues for swift action.' },
+        ],
+    },
+};
+
+// ── C1 · Fast Speech & Implied Attitude ─────────────────────────────────────
+const c1OralImplicite: LessonExtras = {
+    warmup: [
+        { q: 'Order the certainty verbs: suggérer, démontrer, laisser croire.', a: 'démontrer (proven) > suggérer (suggestive) > laisser croire (spin you distrust).' },
+        { q: 'Mood: Il semblerait que la mesure (être) efficace.', a: 'soit — hedge → subjunctive.' },
+        { q: 'Mood: Il est probable que le lien (être) faible.', a: 'est — probable keeps the indicative.' },
+        { q: 'Complete the discipline formula.', a: 'Corrélation n\u2019est pas causalité.' },
+        { q: 'Refuse to overclaim in one frame.', a: 'Rien ne permet d\u2019affirmer que…' },
+    ],
+    verbTables: [
+        {
+            title: 'The deletion ladder — strongest first',
+            rows: [
+                { label: 'ne drops', form: 'C\u2019est pas faux. (ce n\u2019est pas faux)', pron: 'always, in speech' },
+                { label: 'il drops', form: 'Y\u2019a du monde. / Faut qu\u2019j\u2019y aille.', pron: 'il y a, il faut' },
+                { label: 'tu → t\u2019', form: 'T\u2019as vu ? T\u2019es là ?', pron: 'before a vowel' },
+                { label: 'si + il glues', form: 'Chais pas s\u2019y\u2019aura du monde.', pron: 'three elisions in a row' },
+                { label: 'subjunctive survives', form: 'Faut qu\u2019j\u2019y AILLE — subjonctif intact.', pron: 'grammar beats phonology' },
+            ],
+        },
+        {
+            title: 'Attitude particles — the stance stamps',
+            rows: [
+                { label: 'ben', form: 'Ben oui / ben non / ben voyons', pron: 'obviously / yeah right' },
+                { label: 'quoi', form: 'On part, quoi.', pron: 'sentence-final "you know"' },
+                { label: 'du coup', form: 'J\u2019ai raté le train, du coup j\u2019ai marché.', pron: 'spoken donc' },
+                { label: 'genre', form: 'Il était genre épuisé.', pron: 'vagueness' },
+                { label: 'histoire de', form: 'Je passe, histoire de saluer.', pron: 'just to…' },
+                { label: 'enfin', form: 'Enfin, on verra…', pron: 'resigned self-correction' },
+            ],
+        },
+        {
+            title: 'Distance tags — hearsay without vouching',
+            rows: [
+                { label: 'conditional', form: 'Il démissionnerait.', pron: 'the mood does the work' },
+                { label: 'tag', form: '…, paraît-il.', pron: 'pah-reh-TEEL' },
+                { label: 'tag', form: '…, dit-on.', pron: 'literary rumour' },
+                { label: 'adverb', form: 'Soi-disant malade, il serait au golf.', pron: 'sceptical allegedly' },
+                { label: 'frame', form: 'Il paraît que… / on dit que…', pron: 'softer distance' },
+            ],
+        },
+    ],
+    useCases: [
+        {
+            word: 'the two channels — same message, twice',
+            uses: [
+                { use: 'to a friend (voice note)', examples: [{ fr: 'Chais pas, faut qu\u2019j\u2019y aille — y\u2019a du taf, quoi.', en: 'Dunno, gotta go — there\u2019s work, you know.' }] },
+                { use: 'to your manager (email)', examples: [{ fr: 'Je ne sais pas encore si je pourrai venir ; j\u2019ai une contrainte professionnelle.', en: 'I don\u2019t yet know if I can come; I have a work constraint.' }] },
+                { use: 'the switch table', examples: [{ fr: 'chais pas → je ne sais pas · y\u2019a → il y a · t\u2019as → tu as · du coup → par conséquent', en: 'four rows, one habit' }] },
+                { use: 'the rule', examples: [{ fr: 'Speech deletes; writing restores. The exam grades the channel, not the fanciest words.', en: '—' }] },
+            ],
+        },
+        {
+            word: 'implied stance — what the exam actually asks',
+            uses: [
+                { use: 'irony', examples: [{ fr: 'Il a encore « oublié » son tour.', en: 'He "forgot" again — the quotes are the message.' }] },
+                { use: 'resignation', examples: [{ fr: 'Enfin, on est habitués…', en: 'Well, we\u2019re used to it…' }] },
+                { use: 'pushback', examples: [{ fr: 'Ben non ! On a tout préparé, quoi.', en: 'Obviously not! We\u2019ve prepped everything, you know.' }] },
+                { use: 'rumour distance', examples: [{ fr: 'Le budget serait en baisse, paraît-il.', en: 'The budget is allegedly shrinking, so they say.' }] },
+            ],
+        },
+    ],
+    shadowing: {
+        intro: 'Radio speed: read each line twice — once at full speed (elisions live), once at half speed spelling out the full forms. Both must feel natural.',
+        lines: [
+            { fr: '— Tu viens ? — Chais pas, j\u2019ai du taf, et puis y\u2019a la pluie.', pron: 'sheh PAH zhay dü TAHF', en: '— Coming? — Dunno, got work, plus there\u2019s the rain.' },
+            { fr: 'Faut qu\u2019j\u2019y aille — les enfants, tu sais comment c\u2019est.', pron: 'foh kuh zhy EYE', en: 'Gotta go — the kids, you know how it is.' },
+            { fr: 'Il a encore "oublié" son tour de cuisine, histoire de nous tester.', pron: 'eel ah ahn-KOR oo-blee-AY', en: 'He "forgot" his cooking turn again — just to test us.' },
+            { fr: 'C\u2019est dire si le dossier traîne : trois mois pour une signature.', pron: 'seh DEER see luh doh-SYAY tren', en: 'That says a lot about how the file drags: three months for one signature.' },
+            { fr: 'Le maire serait candidat, paraît-il ; enfin, c\u2019est ce qu\u2019on dit en coulisse.', pron: 'luh MAIR suh-REH kahn-dee-DAH', en: 'The mayor is allegedly running; well, that\u2019s what\u2019s going around backstage.' },
+            { fr: '— On annule ? — Ben non ! On a tout préparé, quoi.', pron: 'bahn NOHN oh ah too preh-pah-RAY KWAH', en: '— Cancelling? — Obviously not! We\u2019ve prepped everything, you know.' },
+        ],
+    },
+};
+
+export const C1_EXTRAS: Record<string, LessonExtras> = {
+    'C1:idiomes': c1Idiomes,
+    'C1:synthese': c1Synthese,
+    'C1:debat': c1Debat,
+    'C1:argumentation-avancee': c1ArgumentationAvancee,
+    'C1:oral-implicite': c1OralImplicite,
+};
+
 // Merged registry — consumed by frenchLessons.ts
 export const LESSON_EXTRAS: Record<string, LessonExtras> = {
     ...A1_EXTRAS,
     ...A2_EXTRAS,
     ...B1_EXTRAS,
     ...B2_EXTRAS,
+    ...C1_EXTRAS,
 };
 
 export type { LessonExtras };

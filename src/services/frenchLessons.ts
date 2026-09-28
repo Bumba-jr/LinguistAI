@@ -24,6 +24,8 @@ import { STATIC_B1_PART1 } from './frenchLessonsB1';
 import { STATIC_B1_PART2 } from './frenchLessonsB1more';
 import { STATIC_B2_PART1 } from './frenchLessonsB2';
 import { STATIC_B2_PART2 } from './frenchLessonsB2more';
+import { STATIC_C1_PART1 } from './frenchLessonsC1';
+import { STATIC_C1_PART2 } from './frenchLessonsC1more';
 import { LESSON_EXTRAS } from './frenchLessonExtras';
 
 // ── Homework & assessment (the Day-1 mega-homework format) ───────────────────
@@ -486,6 +488,8 @@ export const STATIC_FRENCH_LESSONS: Record<string, StaticFrenchLesson> = {
     ...STATIC_B1_PART2,
     ...STATIC_B2_PART1,
     ...STATIC_B2_PART2,
+    ...STATIC_C1_PART1,
+    ...STATIC_C1_PART2,
 };
 
 // Layer the extras (Part 0 warm-up, full verb tables, use-case tables,
