@@ -581,6 +581,26 @@ const Curriculum = ({ language }: { language: string }) => {
                         )}
                     </div>
 
+                    {/* Part 0 — warm-up: pull yesterday's material forward */}
+                    {staticExtras?.warmup && staticExtras.warmup.length > 0 && (
+                        <LessonSection title={`Part 0 — Warm-up (${staticExtras.warmup.length} questions from before)`} icon={<Play size={13} />}>
+                            <p className="text-xs text-stone-400 mb-3">Answer out loud before revealing. This is retrieval practice — the single highest-yield study move.</p>
+                            <div className="space-y-2">
+                                {staticExtras.warmup.map((w, i) => {
+                                    const revealed = answers[`w${i}`];
+                                    return (
+                                        <button key={i} onClick={() => setAnswers(prev => ({ ...prev, [`w${i}`]: revealed ? '' : 'revealed' }))}
+                                            className="w-full text-left bg-stone-50 hover:bg-stone-100 rounded-2xl px-4 py-3 transition-colors">
+                                            <p className="text-sm font-semibold text-stone-800 mb-0.5"><span className="text-emerald-500 font-black mr-1.5">{i + 1}.</span>{w.q}</p>
+                                            {revealed ? <p className="text-xs text-emerald-700 font-medium pt-1.5 border-t border-stone-200">{w.a}</p>
+                                                : <p className="text-[11px] text-stone-400 pt-0.5">Tap to check yourself</p>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </LessonSection>
+                    )}
+
                     {/* vocabulary — long & detailed */}
                     <LessonSection title={`Vocabulary (${lesson.vocabulary.length} items)`} icon={<BookOpen size={13} />}>
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -677,6 +697,60 @@ const Curriculum = ({ language }: { language: string }) => {
                             </div>
                         )}
                     </LessonSection>
+
+                    {/* full conjugation tables — every form with pronunciation */}
+                    {staticExtras?.verbTables && staticExtras.verbTables.length > 0 && (
+                        <LessonSection title="Conjugate it fully" icon={<Layers size={13} />}>
+                            <div className="space-y-4">
+                                {staticExtras.verbTables.map((vt, i) => (
+                                    <div key={i} className="border border-stone-100 rounded-2xl overflow-hidden">
+                                        <div className="bg-stone-900 px-4 py-2.5">
+                                            <p className="text-sm font-black text-white">{vt.title}</p>
+                                            {vt.note && <p className="text-[11px] text-stone-300 mt-0.5 leading-relaxed">{vt.note}</p>}
+                                        </div>
+                                        <div>
+                                            {vt.rows.map((r, ri) => (
+                                                <div key={ri} className={cn('flex items-center gap-3 px-4 py-2', ri % 2 === 0 ? 'bg-white' : 'bg-stone-50/70')}>
+                                                    <span className="text-[11px] font-black text-violet-500 uppercase tracking-wider w-28 shrink-0">{r.label}</span>
+                                                    <span className="flex-1">
+                                                        <Fr text={r.form} className="text-sm font-bold text-stone-800" />
+                                                    </span>
+                                                    {r.pron && <span className="text-[11px] font-mono text-violet-400 hidden sm:block">{r.pron}</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </LessonSection>
+                    )}
+
+                    {/* one word, every job — the multi-use tables */}
+                    {staticExtras?.useCases && staticExtras.useCases.length > 0 && (
+                        <LessonSection title="One word, every job" icon={<ArrowRightLeft size={13} />}>
+                            <p className="text-xs text-stone-400 mb-3">The words examiners test hardest do more than one job. Learn every use at once — not one at a time, by accident.</p>
+                            <div className="space-y-4">
+                                {staticExtras.useCases.map((uc, i) => (
+                                    <div key={i} className="border border-amber-100 rounded-2xl overflow-hidden">
+                                        <div className="bg-amber-50 px-4 py-2.5">
+                                            <p className="text-sm font-black text-amber-900">{uc.word}</p>
+                                            {uc.note && <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">{uc.note}</p>}
+                                        </div>
+                                        <div className="divide-y divide-stone-100">
+                                            {uc.uses.map((u, ui) => (
+                                                <div key={ui} className="px-4 py-2.5 space-y-1.5">
+                                                    <p className="text-[11px] font-black text-stone-500 uppercase tracking-wider">{u.use}</p>
+                                                    {u.examples.map((ex, ei) => (
+                                                        <FrEn key={ei} fr={ex.fr} en={ex.en} />
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </LessonSection>
+                    )}
 
                     {/* transformations — the master transformation system */}
                     {lesson.transformations?.length > 0 && (
@@ -835,7 +909,7 @@ const Curriculum = ({ language }: { language: string }) => {
                         <div className="bg-stone-900 rounded-3xl p-6 text-white text-center space-y-3">
                             <ClipboardList size={22} className="text-emerald-400 mx-auto" />
                             <p className="font-black text-lg">Homework & Assessment</p>
-                            <p className="text-xs text-white/60 max-w-md mx-auto">Four sections: translate, fill in the blanks, fix the errors, and a writing task — every answer checked with a full explanation, plus the end-of-lesson checklist.</p>
+                            <p className="text-xs text-white/60 max-w-md mx-auto">{staticExtras?.homework?.shadowing ? 'Five sections: translate, fill in the blanks, fix the errors, a writing task, and a read-aloud shadowing drill — every answer checked with a full explanation, plus the end-of-lesson checklist.' : 'Four sections: translate, fill in the blanks, fix the errors, and a writing task — every answer checked with a full explanation, plus the end-of-lesson checklist.'}</p>
                             <button onClick={() => setShowHomework(true)}
                                 className="px-8 py-3.5 bg-emerald-500 text-white text-sm font-black rounded-2xl hover:bg-emerald-600 transition-colors">
                                 Open Homework & Assessment

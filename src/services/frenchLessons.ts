@@ -20,6 +20,7 @@ import { STATIC_A1_PART1 } from './frenchLessonsA1';
 import { STATIC_A1_PART2 } from './frenchLessonsA1more';
 import { STATIC_A2_PART1 } from './frenchLessonsA2';
 import { STATIC_A2_PART2 } from './frenchLessonsA2more';
+import { LESSON_EXTRAS } from './frenchLessonExtras';
 
 // ── Homework & assessment (the Day-1 mega-homework format) ───────────────────
 export interface HomeworkCheck {
@@ -35,24 +36,28 @@ export interface LessonHomework {
     corrections: HomeworkCheck[];   // Section C — correct the error
     writing: { task: string; requirements: string[]; minWords: number };
     checklist: string[];            // end-of-lesson self check
+    shadowing?: ShadowingBlock;     // Section E — pronunciation & shadowing drill
 }
-export interface RemedialLesson {
-    explanation: string;                     // re-teach the point
-    examples: { fr: string; en: string }[];  // worked examples
+// Part 0 — warm-up: retrieval questions pulling yesterday's material forward
+export interface WarmupItem { q: string; a: string }
+// Full conjugation table rendered in the lesson body (with pronunciation)
+export interface VerbTableBlock { title: string; note?: string; rows: ConjugationRow[] }
+// "One word, every job" — all the different uses of a high-frequency word
+export interface UseCaseBlock {
+    word: string;
+    note?: string;
+    uses: { use: string; examples: { fr: string; en: string }[] }[];
 }
-export interface StaticFrenchLesson extends TcfLesson {
-    traps?: string[];      // score-destroying traps, shown before the lesson
-    homework?: LessonHomework;
-    // Every French surface form used anywhere in the lecture → rich entry.
-    // The tap-to-translate toolkit reads this, so word cards work for the
-    // WHOLE lesson (grammar examples, drills, mini test) with zero AI.
-    glossary?: Glossary;
+// Homework Section E — pronunciation & shadowing drill
+export interface ShadowingBlock {
+    intro: string;
+    lines: { fr: string; pron: string; en: string }[];
 }
 
 // Rich word card: the tap-to-translate toolkit shows ALL of this —
 // meaning, gender (le/la), register (formal/informal), plural, and
 // usage notes covering multiple meanings and traps.
-export interface ConjugationRow { label: string; form: string }
+export interface ConjugationRow { label: string; form: string; pron?: string }
 export interface MascFemPair { word: string; en: string }
 export interface GlossaryEntry {
     en: string;
@@ -86,6 +91,9 @@ export interface RemedialLesson {
 }
 export interface StaticFrenchLesson extends TcfLesson {
     traps?: string[];      // score-destroying traps, shown before the lesson
+    warmup?: WarmupItem[];         // Part 0 — retrieval from previous lessons
+    verbTables?: VerbTableBlock[]; // full conjugations with pronunciation, in the lesson body
+    useCases?: UseCaseBlock[];     // "one word, every job" tables
     homework?: LessonHomework;
     checklistRemedial?: RemedialLesson[];  // aligned 1:1 with the checklist items
     // Every French surface form used anywhere in the lecture → rich entry.
@@ -471,6 +479,19 @@ export const STATIC_FRENCH_LESSONS: Record<string, StaticFrenchLesson> = {
     ...STATIC_A2_PART1,
     ...STATIC_A2_PART2,
 };
+
+// Layer the extras (Part 0 warm-up, full verb tables, use-case tables,
+// homework Section E shadowing) onto the assembled registry. Extras live in
+// frenchLessonExtras.ts so the lecture files stay focused on their core data.
+for (const [key, extra] of Object.entries(LESSON_EXTRAS)) {
+    const lesson = STATIC_FRENCH_LESSONS[key];
+    if (!lesson) continue;
+    const { shadowing, ...rest } = extra;
+    Object.assign(lesson, rest);
+    if (shadowing && lesson.homework) {
+        lesson.homework = { ...lesson.homework, shadowing };
+    }
+}
 
 export const hasStaticFrenchLesson = (level: string, slug: string): boolean =>
     Boolean(STATIC_FRENCH_LESSONS[`${level}:${slug}`]);

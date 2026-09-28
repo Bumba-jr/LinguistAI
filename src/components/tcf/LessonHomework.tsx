@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, ClipboardList, PenLine, ListChecks, PartyPopper } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, ClipboardList, PenLine, ListChecks, PartyPopper, Volume2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { HomeworkCheck, RemedialLesson, StaticFrenchLesson } from '../../services/frenchLessons';
 import { evaluateTcfWriting } from '../../services/tcfService';
+import { speakText } from '../../services/voiceService';
 
 // Full-page homework & assessment — the "Day-1 mega-homework" experience.
 // The learner answers every item, checks it, and reads the explanation for
@@ -255,6 +256,33 @@ export const LessonHomework = ({ lesson, level = 'A1', onClose, onMarkComplete }
                         </div>
                     )}
                 </div>
+
+                {/* Section E — pronunciation & shadowing drill */}
+                {hw.shadowing && (
+                    <div className="mt-8 bg-violet-50/60 border border-violet-100 rounded-3xl p-6 space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Volume2 size={15} className="text-violet-600" />
+                            <h2 className="text-sm font-black text-stone-800 uppercase tracking-wider">Section E — Pronunciation & shadowing</h2>
+                        </div>
+                        <p className="text-xs text-stone-500 leading-relaxed">{hw.shadowing.intro}</p>
+                        <div className="space-y-2">
+                            {hw.shadowing.lines.map((line, i) => (
+                                <div key={i} className="bg-white rounded-2xl border border-violet-100 px-4 py-3 space-y-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="text-sm font-bold text-stone-800">{line.fr}</p>
+                                        <button onClick={() => speakText(line.fr, 'French')}
+                                            className="text-stone-300 hover:text-violet-600 shrink-0" aria-label={`Listen: ${line.en}`}>
+                                            <Volume2 size={14} />
+                                        </button>
+                                    </div>
+                                    <p className="text-[11px] font-mono text-violet-500">/{line.pron}/</p>
+                                    <p className="text-[11px] text-stone-400">{line.en}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest">Read all {hw.shadowing.lines.length} lines aloud before ticking the checklist below</p>
+                    </div>
+                )}
 
                 {/* Final checklist */}
                 <div className="flex items-center gap-2 mt-8 mb-3">
