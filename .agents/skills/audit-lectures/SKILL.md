@@ -71,7 +71,11 @@ the process.
   `LessonGlossaryContext`, else `RichAiWord` — AI fills the SAME GlossaryEntry schema via
   `getRichWordCard`, localStorage-cached as `rich-card:v1:<lang>:<word>`). `InteractiveText`
   is a thin wrapper around `RichWord` — trainers, mock exams, flashcards, quiz, chat and
-  the other portals all get the rich card through it. NEVER reintroduce the plain
+  the other portals all get the rich card through it. Thin glossary entries (meaning-only,
+  like `grande` in family) SELF-ENRICH on first tap — the AI card merges into the instant
+  one (hand-written fields win), cached. Popovers are viewport-aware (`usePlacement`: flip
+  below when tight, right-align near edges, max-h 72vh scroll) — never clipped. The AI
+  generator retries once if the model returns a bare translation. NEVER reintroduce the plain
   BreakdownWord tooltip; never let the AI cards drift from the GlossaryEntry schema.
 - Duplicate glossary keys in one object literal = TS error — grep before adding.
 - Vercel API files are native ESM: shared code in `api/*.js` with explicit `.js` extensions.
