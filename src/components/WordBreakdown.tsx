@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, Plus, Check, Volume2 } from 'lucide-react';
 import { getWordBreakdown, type BreakdownToken } from '../services/aiService';
+import { RichWord } from './wordCards';
 import { useAppStore } from '../store/useAppStore';
 import type { Language } from '../store/useAppStore';
 import { speakText } from '../services/voiceService';
@@ -226,39 +227,23 @@ const BreakdownWord = ({ token, dark, language }: { token: BreakdownToken; dark:
 };
 
 /**
- * Renders target-language text where every word is underlined and shows a
- * rich English tooltip on hover/tap. Fetches (and caches) the word-by-word
- * breakdown; falls back to plain text while loading or on failure.
+ * Renders target-language text where every word is a tap target for the
+ * shared rich word-card system (glossary card if the lesson provides one,
+ * AI-generated card otherwise — cached). No prefetch: the text renders
+ * instantly; cards load on tap, so nothing blocks and no call is made
+ * unless the learner asks for a word.
  */
 export const InteractiveText = ({ text, language, dark = false, className }: {
   text: string; language: Language; dark?: boolean; className?: string;
 }) => {
-  const [tokens, setTokens] = useState<BreakdownToken[] | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    setTokens(null);
-    setFailed(false);
-    getWordBreakdown(text, language)
-      .then((t) => { if (alive) setTokens(t); })
-      .catch(() => { if (alive) setFailed(true); });
-    return () => { alive = false; };
-  }, [text, language]);
-
-  // Plain fallback while loading / on error — content is always readable
-  if (failed || !tokens || tokens.length === 0) {
-    return <span className={className}>{text}</span>;
-  }
-
+  const parts = text.split(/(\s+|[.,!?;:«»"()—¿¡])/);
   return (
     <span className={className} onClick={(e) => e.stopPropagation()}>
-      {tokens.map((t, i) => (
-        <React.Fragment key={i}>
-          {i > 0 && ' '}
-          <BreakdownWord token={t} dark={dark} language={language} />
-        </React.Fragment>
-      ))}
+      {parts.map((p, i) => {
+        if (!p) return null;
+        if (!p.trim() || /(\s+|[.,!?;:«»"()—¿¡])/.test(p)) return <React.Fragment key={i}>{p}</React.Fragment>;
+        return <RichWord key={i} word={p} language={language} dark={dark} />;
+      })}
     </span>
   );
 };
@@ -304,7 +289,7 @@ export const WordBreakdown = ({ text, language, dark = false }: {
         {tokens.map((t, i) => (
           <React.Fragment key={i}>
             {i > 0 && ' '}
-            <BreakdownWord token={t} dark={dark} language={language} />
+            <RichWord word={t.word} language={language} dark={dark} />
           </React.Fragment>
         ))}
       </div>
