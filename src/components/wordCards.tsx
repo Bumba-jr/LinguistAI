@@ -7,7 +7,7 @@
 // so every tapped word in the app gets the full card (pron, chips,
 // conjugation table, masc/fem pair, detail paragraph, example).
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Plus, Volume2, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { speakText } from '../services/voiceService';
@@ -163,24 +163,85 @@ export const WordCardActions = ({ word, en, language = 'French', userId }: {
     );
 };
 
-const POPOVER = 'absolute z-[9999] bottom-full left-0 mb-2 w-[320px] rounded-2xl bg-stone-900 text-white shadow-2xl overflow-hidden text-left block';
+// Viewport-aware placement: the card flips below the word when there is no
+// room above, shifts to right-align near the right edge, and scrolls inside
+// itself if taller than the viewport — never clipped.
+const POPOVER_BASE = 'absolute z-[9999] w-[320px] rounded-2xl bg-stone-900 text-white shadow-2xl overflow-y-auto text-left block max-h-[72vh]';
 const btnCls = (dark?: boolean) => cn(
     'font-bold underline decoration-dotted decoration-[1.5px] underline-offset-[5px] transition-colors cursor-help',
     dark ? 'text-white/90 decoration-white/30 hover:decoration-emerald-400 hover:text-emerald-300'
         : 'text-stone-900 decoration-stone-300 hover:decoration-emerald-500 hover:text-emerald-700');
 
-// Instant card — the entry comes from the lesson data; zero AI.
+const usePlacement = (open: boolean) => {
+    const triggerRef = useRef<HTMLSpanElement | null>(null);
+    const popRef = useRef<HTMLSpanElement | null>(null);
+    const [placement, setPlacement] = useState<'above' | 'below'>('above');
+    const [align, setAlign] = useState<'left' | 'right'>('left');
+    useEffect(() => {
+        if (!open) return;
+        const id = requestAnimationFrame(() => {
+            const trig = triggerRef.current?.getBoundingClientRect();
+            if (!trig) return;
+            const h = popRef.current?.offsetHeight ?? 320;
+            const spaceAbove = trig.top;
+            const spaceBelow = window.innerHeight - trig.bottom;
+            setPlacement(spaceAbove >= Math.min(h + 12, spaceBelow) ? 'above' : 'below');
+            setAlign(trig.left + 332 > window.innerWidth - 8 ? 'right' : 'left');
+        });
+        return () => cancelAnimationFrame(id);
+    }, [open]);
+    return { triggerRef, popRef, placement, align };
+};
+
+const stripPunct = (w: string) => w.replace(/^[«"'(]+/, '').replace(/[.,!?;:»"')]+$/, '');
+
+// A hand-written entry is "thin" when it carries a meaning but no rich
+// fields — those cards enrich themselves with the AI card on first tap
+// (cached), so no glossary word ever shows a bare translation again.
+const isThin = (e?: GlossaryEntry) =>
+    !!e && !e.detail && !e.example && !e.conj && !(e.note && e.note.length > 80);
+
+const useEnrichedEntry = (entry: GlossaryEntry | undefined, word: string, language: Lang, active: boolean) => {
+    const [merged, setMerged] = useState<GlossaryEntry | undefined>(entry);
+    useEffect(() => { setMerged(entry); }, [entry]);
+    useEffect(() => {
+        if (!active || !isThin(entry)) return;
+        let alive = true;
+        getRichWordCard(stripPunct(word), language as Parameters<typeof getRichWordCard>[1])
+            .then(ai => {
+                if (!alive) return;
+                setMerged(prev => {
+                    const out: Record<string, unknown> = { ...ai };
+                    for (const [k, v] of Object.entries(prev ?? {})) {
+                        if (v !== undefined && v !== null) out[k] = v; // hand-written fields win
+                    }
+                    return out as unknown as GlossaryEntry;
+                });
+            })
+            .catch(() => { /* the instant card stays as-is */ });
+        return () => { alive = false; };
+    }, [active, entry, word, language]);
+    return merged;
+};
+
+// Instant card — the entry comes from the lesson data; thin entries enrich
+// with the AI card (merged fields, cached) so every tap is fully rich.
 export const StaticWord = ({ word, en, entry, language = 'French', dark }: {
     word: string; en: string; entry?: GlossaryEntry; language?: Lang; dark?: boolean;
 }) => {
     const [open, setOpen] = useState(false);
     const { user } = useAppStore() as any;
+    const enriched = useEnrichedEntry(entry, word, language, open);
+    const { triggerRef, popRef, placement, align } = usePlacement(open);
     return (
-        <span className="relative inline-block">
+        <span className="relative inline-block" ref={triggerRef}>
             <button onClick={() => setOpen(o => !o)} className={btnCls(dark)}>{word}</button>
             {open && (
-                <span className={POPOVER}>
-                    <WordCardBody word={word} en={en} g={entry} />
+                <span ref={popRef}
+                    className={cn(POPOVER_BASE,
+                        placement === 'above' ? 'bottom-full mb-2' : 'top-full mt-2',
+                        align === 'right' ? 'right-0' : 'left-0')}>
+                    <WordCardBody word={word} en={en} g={enriched} />
                     <WordCardActions word={word} en={en} language={language} userId={user?.id} />
                 </span>
             )}
@@ -196,7 +257,7 @@ export const RichAiWord = ({ word, language = 'French', dark }: {
     const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
     const [entry, setEntry] = useState<GlossaryEntry | undefined>();
     const { user } = useAppStore() as any;
-    const bare = word.replace(/^[«"'(]+/, '').replace(/[.,!?;:»"')]+$/, '');
+    const bare = stripPunct(word);
     const load = () => {
         setState('loading');
         getRichWordCard(bare, language as Parameters<typeof getRichWordCard>[1])
@@ -208,11 +269,15 @@ export const RichAiWord = ({ word, language = 'French', dark }: {
         setOpen(next);
         if (next && !entry) load();
     };
+    const { triggerRef, popRef, placement, align } = usePlacement(open);
     return (
-        <span className="relative inline-block">
+        <span className="relative inline-block" ref={triggerRef}>
             <button onClick={toggle} className={btnCls(dark)}>{word}</button>
             {open && (
-                <span className={POPOVER}>
+                <span ref={popRef}
+                    className={cn(POPOVER_BASE,
+                        placement === 'above' ? 'bottom-full mb-2' : 'top-full mt-2',
+                        align === 'right' ? 'right-0' : 'left-0')}>
                     {state === 'loading' && (
                         <span className="block px-4 py-7 text-center space-y-2">
                             <Loader2 size={18} className="animate-spin text-emerald-400 mx-auto" />

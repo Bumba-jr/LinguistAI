@@ -549,11 +549,8 @@ Rules:
 - The example sentence must genuinely contain the word.
 - Only the ${targetLanguage} words are in ${targetLanguage}; every other string is English. Compact but rich.`;
 
-    const raw = await chat(system, `Word: "${word}"`, 1200);
-    const d = parseJSON(raw);
-    if (!d || !d.en) throw new Error('bad card');
-    const entry = {
-        en: String(d.en),
+    const normalize = (d: any) => ({
+        en: String(d.en ?? ''),
         pron: d.pron || undefined,
         gender: d.gender || undefined,
         plural: d.plural || undefined,
@@ -568,7 +565,22 @@ Rules:
         masc: d.masc && d.masc.word ? { word: String(d.masc.word), en: String(d.masc.en || '') } : undefined,
         fem: d.fem && d.fem.word ? { word: String(d.fem.word), en: String(d.fem.en || '') } : undefined,
         detail: d.detail || undefined,
-    } as import('./frenchLessons').GlossaryEntry;
+    });
+    const isRich = (e: { en: string; detail?: string; note?: string; example?: { fr: string }; conj?: unknown[] }) =>
+        !!e.en && !!(e.detail || e.note) && !!(e.example?.fr || (e.conj && e.conj.length > 0));
+
+    // one retry with a firmer nudge if the model came back with a bare translation
+    let parsed: any = null;
+    for (const ask of [`Word: "${word}"`,
+        `Word: "${word}" — REMINDER: "detail" (2-3 sentences with the classic mistake), "example" ({fr, en}) and "pron" are REQUIRED fields; verbs need the full 6-row "conj" table; nouns/adjectives need "masc"/"fem". Return them all.`]) {
+        const raw = await chat(system, ask, 1200);
+        const d = parseJSON(raw);
+        if (!d || !d.en) continue;
+        parsed = normalize(d);
+        if (isRich(parsed)) break;
+    }
+    if (!parsed || !parsed.en) throw new Error('bad card');
+    const entry = parsed as import('./frenchLessons').GlossaryEntry;
     saveRichCard(key, entry);
     richCardMemory.set(key, entry);
     return entry;
