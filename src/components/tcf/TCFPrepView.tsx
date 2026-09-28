@@ -393,8 +393,10 @@ const Curriculum = ({ language }: { language: string }) => {
     };
 
     // Never auto-promote: level N+1 stays locked until the level N checkpoint is passed
+    // TEMPORARY: CHECKPOINTS_ENABLED=false unlocks all levels for review; flip back to true when done
+    const CHECKPOINTS_ENABLED = false;
     const prevLevel = LEVELS[Math.max(0, LEVELS.indexOf(level) - 1)];
-    const locked = level !== 'A1' && !checkpoints[prevLevel];
+    const locked = CHECKPOINTS_ENABLED && level !== 'A1' && !checkpoints[prevLevel];
 
     const openLesson = async (topic: { title: string; slug: string; focus: string }) => {
         const key = `${level}:${topic.slug}`;
