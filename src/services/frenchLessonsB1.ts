@@ -25,7 +25,7 @@ const b1PasseVsImparfait: StaticFrenchLesson = {
         { fr: 'soudain', en: 'suddenly (triggers passé composé)', pron: 'soo-DAN', register: 'neutral', example: { fr: 'Soudain, elle s\u2019est mise à pleurer.', en: 'Suddenly, she started crying.' }, related: [{ fr: 'tout à coup', en: 'all of a sudden' }] },
         { fr: 'la scène', en: 'the scene / setting', pron: 'lah SEN', gender: 'feminine', register: 'neutral', example: { fr: 'Décris la scène à l\u2019imparfait.', en: 'Describe the scene in the imparfait.' }, related: [{ fr: 'le décor', en: 'the setting' }] },
         { fr: 'l\u2019interruption', en: 'the interruption', pron: 'lan-teh-rüp-SYOHN', gender: 'feminine', register: 'neutral', example: { fr: 'Quand le PC interrompt l\u2019imparfait…', en: 'When the PC interrupts the imparfait…' }, related: [{ fr: 'interrompre', en: 'to interrupt' }] },
-        { fr: 'la habitude → l\u2019habitude', en: 'the habit', pron: 'lah-bee-TÜD', gender: 'feminine', register: 'neutral', example: { fr: 'Les habitudes prennent l\u2019imparfait.', en: 'Habits take the imparfait.' }, related: [{ fr: 'avoir l\u2019habitude de', en: 'to be used to' }] },
+        { fr: 'l\u2019habitude', en: 'the habit (habits and repeated actions take the imparfait)', pron: 'lah-bee-TÜD', gender: 'feminine', register: 'neutral', example: { fr: 'J\u2019ai l\u2019habitude de me lever tôt.', en: 'I\u2019m used to getting up early.' }, related: [{ fr: 'd\u2019habitude', en: 'usually' }, { fr: 'avoir l\u2019habitude de', en: 'to be used to' }] },
     ],
 
     pronunciation: [
@@ -226,7 +226,7 @@ const b1PasseVsImparfait: StaticFrenchLesson = {
         'mettait': { en: 'was putting (imparfait of mettre)', pron: 'muh-TEH', type: 'verb', note: 'nous mettons gives the stem mett-' },
         'arrivée': { en: 'arrived (fem — PC of arriver)', pron: 'ah-ree-VAY', type: 'verb', note: 'être verb → agreement: arrivé, arrivée, arrivés, arrivées' },
         's\u2019est mis à': { en: 'started to (PC reflexive of se mettre à)', pron: 'seh mee ah', type: 'verb', note: 'se mettre à + infinitive = to start doing' },
-        's\u2019est éteintes': { en: 'went out (fem pl — PC of s\u2019éteindre)', pron: 'seh zay-TENT', type: 'verb', note: 'lights go out → reflexive être verb, plural agreement' },
+        'se sont éteintes': { en: 'went out (fem pl — PC of s\u2019éteindre)', pron: 'suh sohn zay-TENT', type: 'verb', note: 'lights go out → reflexive être verb, plural agreement' },
         'rencontré': { en: 'met (PC of rencontrer)', pron: 'rahn-kohn-TRAY', type: 'verb', note: 'rencontrer takes avoir' },
         'disparu': { en: 'disappeared (PC of disparaître)', pron: 'dees-pah-RÜ', type: 'verb', note: 'disparaître takes être: il a disparu is wrong — il est disparu' },
         'bruit': { en: 'noise', pron: 'BRÜEE', gender: 'masculine', plural: 'bruits', type: 'noun', note: 'faire du bruit = to make noise' },

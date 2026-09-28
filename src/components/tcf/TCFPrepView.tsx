@@ -879,7 +879,12 @@ const Curriculum = ({ language }: { language: string }) => {
                         <div className="space-y-4">
                             {lesson.miniTest.map((q, i) => {
                                 const picked = answers[`m${i}`];
-                                const right = picked === q.answer;
+                                // answers may carry a "why" suffix ("buvait — habit → imparfait");
+                                // match the bare option and surface the explanation once picked
+                                const correctOpt = q.options.find(o => o === q.answer || q.answer.startsWith(`${o} `));
+                                const expl = correctOpt && q.answer !== correctOpt
+                                    ? q.answer.slice(correctOpt.length).replace(/^[\s—–-]+/, '')
+                                    : '';
                                 return (
                                     <div key={i}>
                                         <Fr text={q.question} className="block text-sm font-bold text-stone-800 mb-2" />
@@ -888,12 +893,15 @@ const Curriculum = ({ language }: { language: string }) => {
                                                 <button key={oi} onClick={() => { if (picked === undefined) setAnswers(prev => ({ ...prev, [`m${i}`]: opt })); }}
                                                     className={cn('text-left px-3 py-2 rounded-xl border text-xs font-medium transition-all',
                                                         picked === undefined ? 'bg-white border-stone-200 text-stone-700 hover:border-emerald-300'
-                                                            : opt === q.answer ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                                                            : opt === correctOpt ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
                                                                 : opt === picked ? 'bg-red-50 border-red-200 text-red-500' : 'bg-white border-stone-100 text-stone-400')}>
                                                     {opt}
                                                 </button>
                                             ))}
                                         </div>
+                                        {picked !== undefined && expl && (
+                                            <p className="text-[11px] font-semibold text-emerald-700 mt-1.5">{expl}</p>
+                                        )}
                                     </div>
                                 );
                             })}
