@@ -24,6 +24,7 @@ import { recordAndTranscribe } from '../../services/speechService';
 import { LevelBar, TCFListeningTrainer, TCFReadingTrainer, TCFVocabTrainer, SentenceBuilder } from './TCFTrainers';
 import { TCFMockExam } from './TCFMockExam';
 import { FrenchAlphabetChart, FrenchFoundations, FrenchCheatSheet } from './TCFFoundations';
+import SentenceEngine from './TCFSentenceEngine';
 import ExamPlanCard from '../exam/ExamPlanCard';
 import CheckpointQuiz from '../exam/CheckpointQuiz';
 import InteractiveExaminer from '../exam/InteractiveExaminer';
@@ -33,7 +34,7 @@ import { LessonHomework } from './LessonHomework';
 import { LessonGlossaryContext, WordCardBody, WordCardActions, StaticWord, RichAiWord, normFr, resolveGlossary } from '../wordCards';
 
 const LEVELS: TcfLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-type TcfTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'vocab' | 'builder' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
+type TcfTab = 'overview' | 'curriculum' | 'foundations' | 'cheatsheet' | 'engine' | 'vocab' | 'builder' | 'mock' | 'listening' | 'reading' | 'writing' | 'speaking' | 'progress';
 
 const SKILL_META = {
     listening: { label: 'Listening', icon: Headphones, color: 'text-indigo-500', bg: 'bg-indigo-50', exam: '39 questions · 35 min · audio once' },
@@ -1285,6 +1286,7 @@ const TCFPrepView = () => {
         { id: 'overview', label: 'Overview', icon: Flag },
         { id: 'curriculum', label: 'Learn', icon: BookOpen },
         { id: 'foundations', label: 'Foundations', icon: Languages },
+        { id: 'engine', label: 'Sentence Engine', icon: Layers },
         { id: 'cheatsheet', label: 'Cheat Sheet', icon: ClipboardList },
         { id: 'vocab', label: 'Vocabulary', icon: Layers },
         { id: 'builder', label: 'Sentence Builder', icon: ArrowRightLeft },
@@ -1331,6 +1333,7 @@ const TCFPrepView = () => {
                 </div>
             )}
             {tab === 'cheatsheet' && <FrenchCheatSheet />}
+            {tab === 'engine' && <SentenceEngine />}
             {tab === 'mock' && (
                 <TCFMockExam level={level} onLevelChange={setLevel} />
             )}
