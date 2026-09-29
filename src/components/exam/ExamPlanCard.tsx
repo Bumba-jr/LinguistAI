@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CalendarDays, Loader2, Target, RotateCcw, AlertTriangle, Trash2 } from 'lucide-react';
+import { cn } from '../../lib/utils';
 import { generateStudyPlan } from '../../services/aiService';
 import type { Language } from '../../store/useAppStore';
 
@@ -15,21 +16,36 @@ interface ExamPlanCardProps {
 }
 
 const ExamPlanCard = ({ examName, levelLabel, language, plan, onSavePlan, onClearPlan }: ExamPlanCardProps) => {
+    // The plan lives in LOCAL state: the caller passes the stored value as the
+    // initial value only — callers render `plan={getPlan()}` non-reactively,
+    // so without this the card never updates after saving (the "Build my
+    // plan does nothing" bug across all portals).
+    const [planState, setPlanState] = useState(plan);
     const [date, setDate] = useState(plan?.examDate?.slice(0, 10) || '');
     const [minutes, setMinutes] = useState(30);
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [dateNudge, setDateNudge] = useState(false);
+    const dateRef = React.useRef<HTMLInputElement | null>(null);
 
-    const daysLeft = plan ? Math.max(0, Math.ceil((new Date(plan.examDate).getTime() - Date.now()) / 86400000)) : null;
+    const daysLeft = planState ? Math.max(0, Math.ceil((new Date(planState.examDate).getTime() - Date.now()) / 86400000)) : null;
 
     const build = async () => {
-        if (!date) { setError('Pick your exam date first.'); return; }
+        if (!date) {
+            setError('Pick your exam date first — then the coach builds the week-by-week plan.');
+            setDateNudge(true);
+            dateRef.current?.focus();
+            setTimeout(() => setDateNudge(false), 2400);
+            return;
+        }
         const weeks = Math.max(1, Math.min(12, Math.ceil((new Date(date).getTime() - Date.now()) / (7 * 86400000))));
         setGenerating(true); setError(null);
         try {
             const p = await generateStudyPlan(examName, levelLabel, weeks, minutes, language);
             if (!p.weeks?.length) throw new Error('empty');
-            onSavePlan({ examDate: new Date(date + 'T12:00:00').toISOString(), level: levelLabel, summary: p.summary, dailyTargets: p.dailyTargets, weeks: p.weeks });
+            const saved = { examDate: new Date(date + 'T12:00:00').toISOString(), level: levelLabel, summary: p.summary, dailyTargets: p.dailyTargets, weeks: p.weeks };
+            onSavePlan(saved);
+            setPlanState(saved);
         } catch {
             setError('Could not build the plan — the AI may be busy. Try again.');
         } finally { setGenerating(false); }
@@ -46,12 +62,13 @@ const ExamPlanCard = ({ examName, levelLabel, language, plan, onSavePlan, onClea
                 )}
             </div>
 
-            {!plan ? (
+            {!planState ? (
                 <>
                     <p className="text-xs text-stone-400 mb-3">Set your exam date and daily study time — the coach builds a week-by-week plan: foundations first, full mock + weak-skill drilling in the final week.</p>
                     <div className="flex flex-wrap gap-2 items-center">
-                        <input type="date" value={date} min={new Date().toISOString().slice(0, 10)} onChange={e => setDate(e.target.value)}
-                            className="px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-bold text-stone-800 focus:outline-none focus:border-emerald-400" />
+                        <input ref={dateRef} type="date" value={date} min={new Date().toISOString().slice(0, 10)} onChange={e => { setDate(e.target.value); setDateNudge(false); setError(null); }}
+                            className={cn('px-3.5 py-2.5 bg-stone-50 border rounded-xl text-sm font-bold text-stone-800 focus:outline-none transition-colors',
+                                dateNudge ? 'border-red-400 ring-2 ring-red-100' : 'border-stone-200 focus:border-emerald-400')} />
                         <select value={minutes} onChange={e => setMinutes(Number(e.target.value))}
                             className="px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-bold text-stone-800 focus:outline-none focus:border-emerald-400">
                             {[15, 20, 30, 45, 60].map(m => <option key={m} value={m}>{m} min / day</option>)}
@@ -65,19 +82,19 @@ const ExamPlanCard = ({ examName, levelLabel, language, plan, onSavePlan, onClea
                 </>
             ) : (
                 <div className="space-y-3 mt-3">
-                    <p className="text-sm text-stone-600 leading-relaxed">{plan.summary}</p>
-                    {plan.dailyTargets?.length > 0 && (
+                    <p className="text-sm text-stone-600 leading-relaxed">{planState.summary}</p>
+                    {planState.dailyTargets?.length > 0 && (
                         <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3.5">
                             <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1.5">Daily targets</p>
                             <ul className="space-y-1">
-                                {plan.dailyTargets.map((t, i) => (
+                                {planState.dailyTargets.map((t, i) => (
                                     <li key={i} className="text-xs text-emerald-800 flex gap-1.5"><Target size={11} className="shrink-0 mt-0.5" />{t}</li>
                                 ))}
                             </ul>
                         </div>
                     )}
                     <div className="space-y-2">
-                        {plan.weeks.map(w => (
+                        {planState.weeks.map(w => (
                             <div key={w.week} className="border border-stone-100 rounded-2xl p-3.5">
                                 <p className="text-xs font-black text-stone-900">Week {w.week} — {w.focus}</p>
                                 <ul className="mt-1 space-y-0.5">
@@ -93,12 +110,12 @@ const ExamPlanCard = ({ examName, levelLabel, language, plan, onSavePlan, onClea
                             className="flex-1 py-2.5 bg-stone-100 text-stone-600 text-xs font-black rounded-xl hover:bg-stone-200 transition-colors flex items-center justify-center gap-1.5">
                             <RotateCcw size={12} /> Rebuild plan
                         </button>
-                        <button onClick={() => { onClearPlan(); setDate(''); }}
+                        <button onClick={() => { onClearPlan(); setPlanState(null); setDate(''); }}
                             className="px-4 py-2.5 bg-stone-50 text-stone-400 text-xs font-black rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors flex items-center gap-1.5">
                             <Trash2 size={12} /> Clear
                         </button>
                     </div>
-                    <p className="text-[10px] text-stone-300">Target: {plan.level} · exam {new Date(plan.examDate).toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                    <p className="text-[10px] text-stone-300">Target: {planState.level} · exam {new Date(planState.examDate).toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                 </div>
             )}
         </div>
