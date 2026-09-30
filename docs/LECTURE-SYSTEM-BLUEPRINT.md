@@ -185,4 +185,4 @@ Full protocol + learned gotchas: `.agents/skills/audit-lectures/SKILL.md`.
 | 🇮🇹 Italian (CILS) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | 🇯🇵 Japanese (JLPT) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | 🇵🇹 Portuguese (CAPLE) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 🇨🇳 Chinese (HSK) | 🔨 1/6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ✅ | ✅ base | ✅ CI |
+| 🇨🇳 Chinese (HSK) | ✅ 6/6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ✅ | ✅ base | ✅ 39 CI |

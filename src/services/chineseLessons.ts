@@ -262,8 +262,13 @@ const h1Greetings: StaticChineseLesson = {
     },
 };
 
+import { CHINESE_A1_PART1, CHINESE_A1_PART1_EXTRAS } from './chineseLessonsA1';
+import { CHINESE_A1_PART2, CHINESE_A1_PART2_EXTRAS } from './chineseLessonsA1more';
+
 export const STATIC_CHINESE_LESSONS: Record<string, StaticChineseLesson> = {
     '1:greetings': h1Greetings,
+    ...CHINESE_A1_PART1,
+    ...CHINESE_A1_PART2,
 };
 
 // ── Extras (Part 0 warm-up, tables, use cases, shadowing) ───────────────────
@@ -344,6 +349,8 @@ const h1GreetingsExtras = {
 
 export const CHINESE_LESSON_EXTRAS: Record<string, { warmup?: WarmupItem[]; verbTables?: VerbTableBlock[]; useCases?: UseCaseBlock[]; shadowing?: ShadowingBlock }> = {
     '1:greetings': h1GreetingsExtras,
+    ...CHINESE_A1_PART1_EXTRAS,
+    ...CHINESE_A1_PART2_EXTRAS,
 };
 
 // Merge the extras onto the registry at load (same pattern as French)
