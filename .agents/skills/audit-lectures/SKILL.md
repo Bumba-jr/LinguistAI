@@ -5,6 +5,13 @@ description: Mandatory quality-control protocol for the LinguistAI static lectur
 
 # Lecture QC Protocol — run it WITHOUT being asked
 
+**THE CANONICAL STRUCTURE DOC: `docs/LECTURE-SYSTEM-BLUEPRINT.md`** — the complete
+file map, curriculum shape (33 lectures: 6·6·6·5·5·5), per-lecture field spec with
+minimum counts, extras spec, glossary strata, per-portal surfaces, replication
+checklist for new languages, and the status board. A language is COMPLETE only when
+every box there is ticked and the audit passes. Check the blueprint FIRST in every
+session that touches lectures.
+
 The user should never have to say "check if something is missing" again. The moment any
 lecture content, glossary, extras, or the toolkit renderer changes — or a new level of
 lectures is written — run this entire protocol end-to-end in the same session, then report

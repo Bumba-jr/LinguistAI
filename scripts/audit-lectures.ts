@@ -8,7 +8,13 @@
 //   npx tsx scripts/audit-lectures.ts B2:        # audit keys with a prefix
 
 import { STATIC_FRENCH_LESSONS } from '../src/services/frenchLessons';
-import { LESSON_EXTRAS } from '../src/services/frenchLessonExtras';
+import { LESSON_EXTRAS as FR_EXTRAS } from '../src/services/frenchLessonExtras';
+
+// Every language registry must be registered here — the CI gate then covers it
+// automatically. When a new language's static lectures land, add ONE line.
+const REGISTRIES: { name: string; lessons: Record<string, any>; extras: Record<string, any> }[] = [
+    { name: 'French 🇫🇷 (TCF Canada)', lessons: STATIC_FRENCH_LESSONS, extras: FR_EXTRAS },
+];
 
 const prefix = process.argv[2] ?? '';
 const problems: Record<string, string[]> = {};
@@ -16,9 +22,12 @@ const check = (key: string, cond: boolean | undefined | null, msg: string) => {
     if (!cond) (problems[key] ||= []).push(msg);
 };
 
-for (const key of Object.keys(STATIC_FRENCH_LESSONS).filter(k => k.startsWith(prefix))) {
-    const L: any = (STATIC_FRENCH_LESSONS as any)[key];
-    const ex: any = (LESSON_EXTRAS as any)[key];
+let audited = 0;
+for (const { name, lessons: REGISTRY, extras: EXTRAS } of REGISTRIES) {
+for (const key of Object.keys(REGISTRY).filter(k => k.startsWith(prefix))) {
+    audited++;
+    const L: any = (REGISTRY as any)[key];
+    const ex: any = (EXTRAS as any)[key];
 
     check(key, !!L.title && !!L.objective, 'title/objective missing');
     check(key, L.vocabulary?.length >= 10, `vocabulary ${L.vocabulary?.length} (want >=10)`);
@@ -90,12 +99,13 @@ for (const key of Object.keys(STATIC_FRENCH_LESSONS).filter(k => k.startsWith(pr
 }
 
 // every lecture must have its extras keyed identically
-const reg = Object.keys(STATIC_FRENCH_LESSONS).filter(k => k.startsWith(prefix));
-const ext = Object.keys(LESSON_EXTRAS).filter(k => k.startsWith(prefix));
-const noExtras = reg.filter(k => !(LESSON_EXTRAS as any)[k]);
-const noLesson = ext.filter(k => !(STATIC_FRENCH_LESSONS as any)[k]);
-if (noExtras.length) (problems['__registry__'] ||= []).push(`lectures WITHOUT extras: ${noExtras.join(', ')}`);
-if (noLesson.length) (problems['__registry__'] ||= []).push(`extras WITHOUT lectures: ${noLesson.join(', ')}`);
+const reg = Object.keys(REGISTRY).filter(k => k.startsWith(prefix));
+const ext = Object.keys(EXTRAS).filter(k => k.startsWith(prefix));
+const noExtras = reg.filter(k => !(EXTRAS as any)[k]);
+const noLesson = ext.filter(k => !(REGISTRY as any)[k]);
+if (noExtras.length) (problems[`__registry__ ${name}`] ||= []).push(`lectures WITHOUT extras: ${noExtras.join(', ')}`);
+if (noLesson.length) (problems[`__registry__ ${name}`] ||= []).push(`extras WITHOUT lectures: ${noLesson.join(', ')}`);
+} // end registry loop
 
 let total = 0;
 for (const [k, msgs] of Object.entries(problems)) {
@@ -104,7 +114,7 @@ for (const [k, msgs] of Object.entries(problems)) {
     console.log(`❌ ${k}`);
     msgs.forEach(m => console.log(`   - ${m}`));
 }
-console.log(`\n${reg.length} lecture(s) audited.`);
+console.log(`\n${audited} lecture(s) audited across ${REGISTRIES.length} language(s).`);
 if (total > 0) {
     console.log(`❌ ${total} issue(s) found — fix before shipping.`);
     process.exit(1);
