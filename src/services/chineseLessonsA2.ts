@@ -150,7 +150,7 @@ const h2Time: StaticChineseLesson = {
             { prompt: '我 吃 ___ 早 饭 。 (completed)', answer: '了', explanation: 'V + 了 = done.' },
             { prompt: '我 每 天 七 点 起 ___ 。', answer: '床', explanation: '起床 = get up — no 了 in routines.' },
             { prompt: '我 还 ___ 吃 早 饭 。 (not yet)', answer: '没', explanation: '还没 = not yet (了 drops in the negative).' },
-            { prompt: '我 ___ 有 时 候 喝 茶 。 — wait, fix the order in Section C!', answer: '(correct: 我有时候喝茶)', explanation: 'Trick item: 有时候 sits BEFORE the verb, and 我 sometimes… is 我有时候 — never 我喝有时候.' },
+            { prompt: '我 有 时 候 ___ 茶 。 (drink)', answer: '喝', explanation: 'Trick item: 有时候 sits BEFORE the verb — 我有时候喝茶, never 我喝有时候.' },
             { prompt: '你 吃 了 早 饭 ___ ？ (yet-question particle)', answer: '吗', explanation: 'V+了+吗 = have you yet?' },
         ],
         corrections: [
