@@ -267,7 +267,7 @@ const buildRows = (p: Person, v: EngineVerb): Row[] => {
         { label: 'Past negative', fr: pastNegFr, en: en.pastNeg, note: 'The sandwich wraps the AUXILIARY: je n\u2019ai pas mangé / je ne suis pas allé(e).' },
         { label: 'Future', fr: futFr, en: en.fut, note: 'One word: stem + -ai, -as, -a, -ons, -ez, -ont. Irregular stems carried whole (ir-, ser-, aur-, fer-, viendr-).' },
         { label: 'Future negative', fr: futNegFr, en: en.futNeg, note: 'ne + FUTURE + pas — one verb, one sandwich.' },
-        { label: 'Conditional', fr: condFr, en: en.cond, note: 'would + verb → conditional: future stem + imparfait endings (-ais, -ait…).' },
+        { label: 'Conditional', fr: condFr, en: en.cond, note: 'would + verb → conditional: future stem + imparfait endings (-ais, -ait…). With si: si + IMPARFAIT → conditional — si j\u2019avais le temps, je viendrais (never si j\u2019aurais).' },
         { label: 'Conditional negative', fr: condNegFr, en: en.condNeg, note: 'The polite refusal: je ne voudrais pas = I wouldn\u2019t like to.' },
         { label: 'Question', fr: q(posFr), en: en.q, note: 'est-ce que + the positive statement — the learner\u2019s universal question key.' },
         { label: 'Negative question', fr: q(negFr), en: en.qNeg, note: 'est-ce que + the negative — asking for confirmation of the negative.' },
@@ -400,7 +400,7 @@ const SentenceEngine = () => {
                                 verbFr === v.fr ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100')}>{v.fr}</button>
                     ))}
                 </div>
-                <div className="rounded-2xl overflow-hidden border border-stone-100">
+                <div className="rounded-2xl border border-stone-100">
                     {rows.map((r, i) => (
                         <div key={r.label} className={cn('px-4 py-3', i % 2 === 0 ? 'bg-white' : 'bg-stone-50/70')}>
                             <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -461,12 +461,18 @@ const SentenceEngine = () => {
                             trap: 'NEVER je besoin — need = avoir besoin DE (I have need OF). With a pronoun: j\u2019EN ai besoin (I need it).',
                         },
                         {
+                            title: 'aimer + infinitive — like / love (and not)',
+                            formula: 'aime/aimes/aime/aimons/aimez/aiment + INFINITIVE (or noun)',
+                            rows: [['j\u2019aime le français', 'I like French'], ['je n\u2019aime pas le français', 'I don\u2019t like French'], ['j\u2019aime apprendre', 'I like learning / to learn'], ['tu aimes chanter', 'you like to sing'], ['il / elle adore danser', 'he / she loves dancing (stronger)'], ['nous préférons lire', 'we prefer reading']],
+                            trap: 'j\u2019aime + A PERSON usually means LOVE, not like — j\u2019aime Marie is a confession, not a comment.',
+                        },
+                        {
                             title: 'être en train de — right now, in progress', formula: 'suis/es/est… en train de + INFINITIVE',
                             rows: [['je suis en train de travailler', 'I am (in the middle of) working'], ['tu es en train de travailler', 'you are working right now'], ['il / elle est en train de travailler', 'he / she is working right now'], ['nous sommes en train de travailler', 'we are working right now'], ['vous êtes en train de travailler', 'you are working right now'], ['ils / elles sont en train de travailler', 'they are working right now']],
                             trap: 'French present already covers "I work" AND "I am working". Use en train de only when you must stress that it is happening THIS second.',
                         },
                     ].map(s => (
-                        <div key={s.title} className="border border-stone-100 rounded-2xl overflow-hidden">
+                        <div key={s.title} className="border border-stone-100 rounded-2xl">
                             <div className="bg-stone-900 px-4 py-2.5">
                                 <p className="text-sm font-black text-white">{s.title}</p>
                                 <p className="text-[10px] font-mono text-emerald-300 mt-0.5">{s.formula}</p>
@@ -479,7 +485,7 @@ const SentenceEngine = () => {
                                     </div>
                                 ))}
                             </div>
-                            <div className="bg-red-50 border-t border-red-100 px-4 py-2.5 flex gap-2">
+                            <div className="bg-red-50 border-t border-red-100 px-4 py-2.5 flex gap-2 rounded-b-2xl">
                                 <AlertTriangle size={12} className="text-red-400 shrink-0 mt-0.5" />
                                 <p className="text-[11px] text-red-800 leading-relaxed">{s.trap}</p>
                             </div>
@@ -494,9 +500,10 @@ const SentenceEngine = () => {
                     {[
                         { title: 'Direct objects (him, her, it, them)', rows: [['je le vois', 'I see him / it'], ['je la vois', 'I see her / it'], ['je les vois', 'I see them'], ['il me voit', 'he sees me'], ['je t\u2019aime', 'I love you']] },
                         { title: 'Indirect objects (to him, to her, to them)', rows: [['je lui parle', 'I speak to him / her'], ['je leur parle', 'I speak to them'], ['il me téléphone', 'he calls me'], ['je te comprends', 'I understand you'], ['je vous comprends', 'I understand you']] },
+                        { title: 'Reflexives — the action bounces back', rows: [['je me lève', 'I get up'], ['tu te lèves', 'you get up'], ['il / elle se lève', 'he / she gets up'], ['nous nous levons', 'we get up'], ['vous vous couchez', 'you go to bed'], ['je me suis levé (e)', 'I got up — être + agreement'], ['je ne me lève jamais tard', 'I never get up late — ne…pas wraps me+verb']] },
                     ].map(g => (
-                        <div key={g.title} className="border border-stone-100 rounded-2xl overflow-hidden">
-                            <p className="bg-stone-900 px-4 py-2 text-xs font-black text-white">{g.title}</p>
+                        <div key={g.title} className="border border-stone-100 rounded-2xl">
+                            <p className="bg-stone-900 px-4 py-2 text-xs font-black text-white rounded-t-2xl">{g.title}</p>
                             {g.rows.map(([fr, en], ri) => (
                                 <div key={fr} className={cn('flex items-center justify-between gap-3 px-4 py-2', ri % 2 === 0 ? 'bg-white' : 'bg-stone-50/70')}>
                                     <EngineFr text={fr} className="text-sm font-bold text-stone-800" />
@@ -515,8 +522,8 @@ const SentenceEngine = () => {
             {/* 5 — possession & agreement */}
             <Section n="5" title="Possession & agreement — the endings that follow the thing" sub="French possessives and adjectives agree with the THING, not the owner.">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="border border-stone-100 rounded-2xl overflow-hidden">
-                        <p className="bg-stone-900 px-4 py-2 text-xs font-black text-white">my / your / his-her / our / their</p>
+                    <div className="border border-stone-100 rounded-2xl">
+                        <p className="bg-stone-900 px-4 py-2 text-xs font-black text-white rounded-t-2xl">my / your / his-her / our / their</p>
                         {[['mon frère · ma sœur · mes amis', 'my brother · my sister · my friends'], ['ton / ta / tes', 'your (informal)'], ['votre / vos', 'your (formal or plural)'], ['son / sa / ses', 'his OR her (agrees with the thing!)'], ['notre / nos', 'our'], ['leur / leurs', 'their']].map(([fr, en], ri) => (
                             <div key={fr} className={cn('flex items-center justify-between gap-3 px-4 py-2', ri % 2 === 0 ? 'bg-white' : 'bg-stone-50/70')}>
                                 <EngineFr text={fr} className="text-sm font-bold text-stone-800" />
@@ -524,8 +531,8 @@ const SentenceEngine = () => {
                             </div>
                         ))}
                     </div>
-                    <div className="border border-stone-100 rounded-2xl overflow-hidden">
-                        <p className="bg-stone-900 px-4 py-2 text-xs font-black text-white">Adjectives follow too — fatigué</p>
+                    <div className="border border-stone-100 rounded-2xl">
+                        <p className="bg-stone-900 px-4 py-2 text-xs font-black text-white rounded-t-2xl">Adjectives follow too — fatigué</p>
                         {[['je suis fatigué (e)', 'I am tired — masc (fem) speaker'], ['elle est fatiguée', 'she is tired — +e'], ['nous sommes fatigués', 'we are tired — +s'], ['elles sont fatiguées', 'they are tired — +es'], ['le livre est gros / la voiture est grosse', 'the adjective agrees with its noun too']].map(([fr, en], ri) => (
                             <div key={fr} className={cn('flex items-center justify-between gap-3 px-4 py-2', ri % 2 === 0 ? 'bg-white' : 'bg-stone-50/70')}>
                                 <EngineFr text={fr} className="text-sm font-bold text-stone-800" />
@@ -583,8 +590,98 @@ const SentenceEngine = () => {
                 </div>
             </Section>
 
-            {/* 8 — mini test */}
-            <Section n="8" title="Check yourself" sub="Six answers, all from this page.">
+            {/* 8 — the tricky English words */}
+            <Section n="8" title="The tricky English words — where word-for-word translation dies" sub="DO, GET, MEANT, REMEMBER, ALMOST, MAY/MIGHT: English reuses one word for many jobs. French uses a different structure per job.">
+                <div className="space-y-4">
+                    {[
+                        {
+                            word: 'DO — two completely different jobs',
+                            rows: [
+                                ['auxiliary (negation/questions)', 'I do not know → Je ne sais PAS — French has no "do"; the ne…pas does the work', true],
+                                ['auxiliary (emphasis)', 'I DO like it → the stress lives in the voice, not in a word', true],
+                                ['perform / make', 'Je fais mon travail → I do my work · J’ai fait mes devoirs → I did my homework', false],
+                            ],
+                            trap: 'Never build "je ne fais pas savoir" for "I do not know". "Do" as an auxiliary simply VANISHES in French.',
+                        },
+                        {
+                            word: 'GET — five meanings, five structures',
+                            rows: [
+                                ['receive', 'J’ai reçu le message. → I got the message.', false],
+                                ['obtain', 'J’ai obtenu le poste. → I got the job.', false],
+                                ['understand', 'J’ai compris. → I got it.', false],
+                                ['become', 'Je suis devenu chef. → I got (became) boss.', false],
+                                ['have got = have', 'J’ai une voiture. → I’ve got a car — just avoir.', false],
+                            ],
+                            trap: 'Ask what "got" MEANS in the sentence, then pick the structure — never translate the word itself.',
+                        },
+                        {
+                            word: 'MEANT / TOLD / SAID — the reporting family',
+                            rows: [
+                                ['I meant…', 'Je voulais dire… → literally "I was wanting to say" — imparfait, not passé composé', false],
+                                ['I told him', 'Je lui ai dit → lui = to him/her, BEFORE the verb', false],
+                                ['I said', 'J’ai dit → the plain past of dire', false],
+                            ],
+                            trap: '"I meant" is je voulais dire — the imparfait is the natural conversational form, not j’ai voulu dire.',
+                        },
+                        {
+                            word: 'REMEMBER — two verbs, one with DE, one without',
+                            rows: [
+                                ['se souvenir DE', 'Je me souviens DE cette histoire. → the DE is obligatory', false],
+                                ['se rappeler (direct)', 'Je me rappelle cette histoire. → NO de (spoken French adds one anyway — the exam doesn’t)', false],
+                                ['I remember it', 'Je m’en souviens. → the pronoun en replaces de + thing', false],
+                            ],
+                            trap: 'se souvenir takes DE; se rappeler takes the object DIRECTLY. Mixing them (se rappeler de) is the classic slip.',
+                        },
+                        {
+                            word: 'ALMOST — two patterns',
+                            rows: [
+                                ['narrowly avoided', 'J’ai failli tomber. → I almost fell (failli + infinitive)', false],
+                                ['nearly finished', 'J’ai presque fini. → presque + verb for the neutral "almost"', false],
+                            ],
+                            trap: 'failli carries the drama ("came close to"), presque is the plain adverb. J’ai failli mourir = I almost died.',
+                        },
+                        {
+                            word: 'MAY / MIGHT — three tools',
+                            rows: [
+                                ['permission', 'Je peux entrer ? → may I come in? — pouvoir is enough', false],
+                                ['possibility', 'Il se peut que je vienne. → it may be that I come (+ subjunctive)', false],
+                                ['probability', 'Je viendrai peut-être. → perhaps I will come', false],
+                                ['unreal', 'Je pourrais venir. → I might/could come (conditional)', false],
+                            ],
+                            trap: 'There is no single French "may". Choose: permission → peux · real possibility → il se peut que / peut-être · hedged → pourrais.',
+                        },
+                    ].map(g => (
+                        <div key={g.word} className="border border-stone-100 rounded-2xl">
+                            <p className="bg-stone-900 px-4 py-2 text-xs font-black text-white rounded-t-2xl">{g.word}</p>
+                            {g.rows.map(([label, ex, strike]: any, ri) => (
+                                <div key={ri} className={cn('px-4 py-2.5', ri % 2 === 0 ? 'bg-white' : 'bg-stone-50/70')}>
+                                    <p className="text-[10px] font-black text-violet-500 uppercase tracking-wider">{label}</p>
+                                    <p className={cn('text-xs mt-0.5 leading-relaxed', strike ? 'line-through decoration-red-400 text-stone-400' : 'text-stone-700 font-semibold')}>
+                                        {String(ex).split(' → ')[0]}
+                                    </p>
+                                    <p className="text-[11px] text-stone-400">{String(ex).includes(' → ') ? String(ex).split(' → ')[1] : ''}</p>
+                                </div>
+                            ))}
+                            <div className="bg-red-50 border-t border-red-100 px-4 py-2.5 flex gap-2 rounded-b-2xl">
+                                <AlertTriangle size={12} className="text-red-400 shrink-0 mt-0.5" />
+                                <p className="text-[11px] text-red-800 leading-relaxed">{g.trap}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-4">
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Core verb bank — the builders (aim for all of them)</p>
+                    <div className="flex flex-wrap gap-1.5">
+                        {['être', 'avoir', 'faire', 'aller', 'venir', 'pouvoir', 'vouloir', 'devoir', 'savoir', 'connaître', 'dire', 'parler', 'écouter', 'voir', 'regarder', 'comprendre', 'apprendre', 'lire', 'écrire', 'penser', 'croire', 'donner', 'prendre', 'mettre', 'acheter', 'vendre', 'payer', 'manger', 'boire', 'dormir', 'travailler', 'habiter', 'aimer', 'aider', 'finir', 'attendre', 'arriver', 'partir', 'sortir', 'rester', 'chercher', 'trouver', 'oublier', 'recevoir', 'envoyer', 'demander', 'choisir', 'commencer'].map(v => (
+                            <span key={v} className="text-[11px] font-bold bg-white text-stone-600 border border-stone-100 px-2.5 py-1 rounded-lg"><RichWord word={v} language="French" /></span>
+                        ))}
+                    </div>
+                    <p className="text-[11px] text-stone-400 mt-2">Tap any verb for its card — conjugation, traps, examples.</p>
+                </div>
+            </Section>
+
+            {/* 9 — mini test */}
+            <Section n="9" title="Check yourself" sub="Six answers, all from this page.">
                 <div className="space-y-3">
                     {MINI_TEST.map((t, i) => (
                         <MiniQ key={i} q={t.q} options={t.options} answer={t.answer} />
