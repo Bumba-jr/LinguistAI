@@ -9,11 +9,33 @@
 
 import { STATIC_FRENCH_LESSONS } from '../src/services/frenchLessons';
 import { LESSON_EXTRAS as FR_EXTRAS } from '../src/services/frenchLessonExtras';
+import { STATIC_CHINESE_LESSONS } from '../src/services/chineseLessons';
 
 // Every language registry must be registered here — the CI gate then covers it
 // automatically. When a new language's static lectures land, add ONE line.
+// Chinese (and other CJK) lectures use hanzi/pinyin fields — normalize them to
+// the French shape so one check-suite covers both.
+const normalizeChinese = (L: any) => ({
+    ...L,
+    shadowing: L.shadowing ?? L.homework?.shadowing,
+    vocabulary: (L.vocabulary || []).map((v: any) => ({ ...v, fr: v.hanzi, pron: v.pinyin, example: v.example ? { ...v.example, fr: v.example.hanzi } : undefined, related: (v.related || []).map((r: any) => ({ ...r, fr: r.hanzi })) })),
+    pronunciation: (L.pronunciation || []).map((x: any) => ({ ...x, fr: x.hanzi })),
+    grammar: { ...L.grammar, examples: (L.grammar?.examples || []).map((e: any) => ({ ...e, fr: e.hanzi })) },
+    patterns: L.patterns,
+    transformations: (L.patterns || []).map((t: any) => ({ type: t.type, fr: t.hanzi, en: t.en })),
+    sentenceBuilding: (L.sentenceBuilding || []).map((x: any) => ({ ...x, fr: x.hanzi })),
+    translationPractice: (L.translationPractice || []).map((x: any) => ({ ...x, fr: x.hanzi })),
+    reverseTranslation: (L.reverseTranslation || []).map((x: any) => ({ ...x, fr: x.hanzi })),
+    register: { informal: L.register?.casual ?? '', neutral: L.register?.polite ?? '', formal: L.register?.formal ?? '' },
+});
+
+const CHINESE_NORM: Record<string, any> = Object.fromEntries(
+    Object.entries(STATIC_CHINESE_LESSONS).map(([k, v]) => [k, normalizeChinese(v)]),
+);
+
 const REGISTRIES: { name: string; lessons: Record<string, any>; extras: Record<string, any> }[] = [
     { name: 'French 🇫🇷 (TCF Canada)', lessons: STATIC_FRENCH_LESSONS, extras: FR_EXTRAS },
+    { name: 'Chinese 🇨🇳 (HSK)', lessons: CHINESE_NORM, extras: CHINESE_NORM },
 ];
 
 const prefix = process.argv[2] ?? '';

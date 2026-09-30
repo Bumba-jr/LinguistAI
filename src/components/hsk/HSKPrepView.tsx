@@ -3,10 +3,13 @@ import { useAppStore } from '../../store/useAppStore';
 import LessonFeedbackButton from '../exam/LessonFeedbackButton';
 import {
     GraduationCap, Loader2, CheckCircle2, XCircle, Target, BookOpen,
-    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, Pencil, ClipboardList, Layers,
+    Headphones, BookOpenCheck, PenLine, Mic, Flag, Trophy, AlertTriangle, RotateCcw, Square, Volume2, Languages, FileCheck, Save, Play, Lock, Pencil, ClipboardList, Layers, ArrowRightLeft,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { InteractiveText } from '../WordBreakdown';
+import { LessonGlossaryContext, RichWord } from '../wordCards';
+import { STATIC_CHINESE_LESSONS, type StaticChineseLesson } from '../../services/chineseLessons';
+import { LessonHomework } from '../tcf/LessonHomework';
 import { speakText, stopSpeaking } from '../../services/voiceService';
 import {
     HskLevel, HskVersion, HSK_SYLLABUS, HSK_WRITING_TASKS, HSK_SPEAKING_TASKS, HSK_LEVEL_INFO,
@@ -169,6 +172,8 @@ const Curriculum = () => {
     const [level, setLevel] = useState<HskLevel>('1');
     const [openTopic, setOpenTopic] = useState<string | null>(null);
     const [lesson, setLesson] = useState<HskLesson | null>(null);
+    const [staticExtras, setStaticExtras] = useState<StaticChineseLesson | undefined>(undefined);
+    const [showHomework, setShowHomework] = useState(false);
     const [lessonKey, setLessonKey] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -189,8 +194,12 @@ const Curriculum = () => {
         setLesson(null); setAnswers({}); setError(null);
         setSavedVocab(new Set());
         setLastLesson(level, topic.slug, topic.title);
+        // static-first: hand-written lectures render instantly, zero AI
+        const staticL = STATIC_CHINESE_LESSONS[key];
+        if (staticL) { setLesson(staticL as unknown as HskLesson); setStaticExtras(staticL); setLessonKey(key); return; }
+        setStaticExtras(undefined);
         const cached = getCachedLesson<HskLesson>(key);
-        if (cached) { setLesson(cached); setLessonKey(key); return; }
+        if (cached) { setLesson(cached); setStaticExtras(undefined); setLessonKey(key); return; }
         setLoading(true);
         try {
             const l = await generateHskLesson(level, topic.title, topic.focus);
@@ -324,6 +333,7 @@ const Curriculum = () => {
             {/* lesson renderer */}
             {lesson && (
                 <div className="space-y-5">
+                  <LessonGlossaryContext.Provider value={(staticExtras?.glossary ?? null) as any}>
                     <button onClick={() => { setLesson(null); setOpenTopic(null); }}
                         className="flex items-center gap-2 text-sm font-bold text-stone-400 hover:text-stone-800 transition-colors">
                         <RotateCcw size={14} /> Back to topics
@@ -339,6 +349,17 @@ const Curriculum = () => {
                             <Target size={14} className="text-emerald-600 mt-0.5 shrink-0" />
                             <p className="text-sm text-emerald-800"><span className="font-black">Objective: </span>{lesson.objective}</p>
                         </div>
+
+                        {staticExtras?.traps && (
+                            <div className="mt-3 bg-red-50 border border-red-100 rounded-2xl p-4">
+                                <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">The traps that will destroy your score — fix these first</p>
+                                <ul className="space-y-1.5">
+                                    {staticExtras.traps.map((t, i) => (
+                                        <li key={i} className="text-xs text-red-800 flex gap-2"><span className="font-black shrink-0">{i + 1}.</span>{t}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
 
                     {/* vocabulary — three forms */}
@@ -610,7 +631,105 @@ const Curriculum = () => {
                             </button>
                         )}
                     </LessonSection>
+
+                    {/* Part 0 — warm-up (static lectures) */}
+                    {staticExtras?.warmup && staticExtras.warmup.length > 0 && (
+                        <LessonSection title={`Part 0 — Warm-up (${staticExtras.warmup.length} questions from before)`} icon={<Play size={13} />}>
+                            <p className="text-xs text-stone-400 mb-3">Answer out loud before revealing. Retrieval practice — the highest-yield study move.</p>
+                            <div className="space-y-2">
+                                {staticExtras.warmup.map((w, i) => {
+                                    const revealed = answers[`w${i}`];
+                                    return (
+                                        <button key={i} onClick={() => setAnswers(prev => ({ ...prev, [`w${i}`]: revealed ? '' : 'revealed' }))}
+                                            className="w-full text-left bg-stone-50 hover:bg-stone-100 rounded-2xl px-4 py-3 transition-colors">
+                                            <p className="text-sm font-semibold text-stone-800 mb-0.5"><span className="text-emerald-500 font-black mr-1.5">{i + 1}.</span>{w.q}</p>
+                                            {revealed ? <p className="text-xs text-emerald-700 font-medium pt-1.5 border-t border-stone-200">{w.a}</p>
+                                                : <p className="text-[11px] text-stone-400 pt-0.5">Tap to check yourself</p>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </LessonSection>
+                    )}
+
+                    {/* Conjugate/pattern tables (static lectures) */}
+                    {staticExtras?.verbTables && staticExtras.verbTables.length > 0 && (
+                        <LessonSection title="Pattern tables — full paradigm" icon={<Layers size={13} />}>
+                            <div className="space-y-4">
+                                {staticExtras.verbTables.map((vt, i) => (
+                                    <div key={i} className="border border-stone-100 rounded-2xl">
+                                        <div className="bg-stone-900 px-4 py-2.5 rounded-t-2xl">
+                                            <p className="text-sm font-black text-white">{vt.title}</p>
+                                            {vt.note && <p className="text-[11px] text-stone-300 mt-0.5 leading-relaxed">{vt.note}</p>}
+                                        </div>
+                                        <div>
+                                            {vt.rows.map((r, ri) => (
+                                                <div key={ri} className={cn('flex items-center gap-3 px-4 py-2', ri % 2 === 0 ? 'bg-white' : 'bg-stone-50/70')}>
+                                                    <span className="text-[11px] font-black text-violet-500 uppercase tracking-wider w-28 shrink-0">{r.label}</span>
+                                                    <RichWord word={r.form} language="Chinese" />
+                                                    {r.pron && <span className="text-[11px] font-mono text-violet-400 hidden sm:block">{r.pron}</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </LessonSection>
+                    )}
+
+                    {/* One word, every job (static lectures) */}
+                    {staticExtras?.useCases && staticExtras.useCases.length > 0 && (
+                        <LessonSection title="One word, every job" icon={<ArrowRightLeft size={13} />}>
+                            <p className="text-xs text-stone-400 mb-3">The words examiners test hardest do more than one job. Learn every use at once.</p>
+                            <div className="space-y-4">
+                                {staticExtras.useCases.map((uc, i) => (
+                                    <div key={i} className="border border-amber-100 rounded-2xl">
+                                        <div className="bg-amber-50 px-4 py-2.5 rounded-t-2xl">
+                                            <p className="text-sm font-black text-amber-900">{uc.word}</p>
+                                            {uc.note && <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">{uc.note}</p>}
+                                        </div>
+                                        <div className="divide-y divide-stone-100">
+                                            {uc.uses.map((u, ui) => (
+                                                <div key={ui} className="px-4 py-2.5 space-y-1.5">
+                                                    <p className="text-[11px] font-black text-stone-500 uppercase tracking-wider">{u.use}</p>
+                                                    {u.examples.map((ex, ei) => (
+                                                        <div key={ei} className="space-y-0.5">
+                                                            <RichWord word={ex.fr} language="Chinese" />
+                                                            <p className="text-[11px] text-stone-400">{ex.en}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </LessonSection>
+                    )}
+
+                    {/* homework & assessment — full-page section (static lectures) */}
+                    {staticExtras?.homework && (
+                        <div className="bg-stone-900 rounded-3xl p-6 text-white text-center space-y-3">
+                            <ClipboardList size={22} className="text-emerald-400 mx-auto" />
+                            <p className="font-black text-lg">Homework & Assessment</p>
+                            <p className="text-xs text-white/60 max-w-md mx-auto">{staticExtras?.homework?.shadowing ? 'Five sections: translate, fill in the blanks, fix the errors, a writing task, and a read-aloud shadowing drill — every answer checked with a full explanation, plus the end-of-lesson checklist.' : 'Four sections: translate, fill in the blanks, fix the errors, and a writing task — every answer checked with a full explanation, plus the end-of-lesson checklist.'}</p>
+                            <button onClick={() => setShowHomework(true)}
+                                className="px-8 py-3.5 bg-emerald-500 text-white text-sm font-black rounded-2xl hover:bg-emerald-600 transition-colors">
+                                Open Homework & Assessment
+                            </button>
+                        </div>
+                    )}
+                  </LessonGlossaryContext.Provider>
                 </div>
+            )}
+
+            {showHomework && staticExtras?.homework && (
+                <LessonHomework
+                    lesson={staticExtras as any}
+                    level={level}
+                    onClose={() => setShowHomework(false)}
+                    onMarkComplete={() => { markLessonComplete(lessonKey); setDone(getCompletedLessons()); }}
+                />
             )}
         </div>
     );

@@ -128,7 +128,12 @@ Write keys in the SINGULAR; the toolkit's lookup falls back elision → singular
 (zero-AI) · miss → `RichAiWord` (AI fills the SAME GlossaryEntry schema via
 `getRichWordCard`, cached `rich-card:v1:<lang>:<word>`, retry-on-thin, AI badge).
 `InteractiveText` wraps `RichWord` — every surface (trainers, mocks, flashcards, chat)
-gets rich cards in ANY language automatically. Popovers are viewport-aware (flip below /
+gets rich cards in ANY language automatically.
+
+**CJK amendment (Chinese/Japanese):** those scripts have no spaces — ALL lesson text is
+authored PRE-SEGMENTED with spaces between words (我 叫 小 明 .) so the same word-tap
+pipeline works unchanged. Pinyin (with tone marks) rides in the `pron` field; gender
+fields stay empty; tone-sandhi rules live in `note`s. Popovers are viewport-aware (flip below /
 right-align / max-h 72vh). NEVER reintroduce the old plain tooltip; never fork the card UI.
 
 ---
@@ -180,4 +185,4 @@ Full protocol + learned gotchas: `.agents/skills/audit-lectures/SKILL.md`.
 | 🇮🇹 Italian (CILS) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | 🇯🇵 Japanese (JLPT) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | 🇵🇹 Portuguese (CAPLE) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| 🇨🇳 Chinese (HSK) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| 🇨🇳 Chinese (HSK) | 🔨 1/6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ✅ | ✅ base | ✅ CI |

@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, ClipboardList, PenLine, Li
 import { cn } from '../../lib/utils';
 import type { HomeworkCheck, RemedialLesson, StaticFrenchLesson } from '../../services/frenchLessons';
 import { evaluateTcfWriting } from '../../services/tcfService';
+import { evaluateHskWriting } from '../../services/hskService';
 import { speakText } from '../../services/voiceService';
 
 // Full-page homework & assessment — the "Day-1 mega-homework" experience.
@@ -68,7 +69,7 @@ const CheckItem = ({ index, tag, item, answer, onAnswer, graded, onRetry }: {
     );
 };
 
-export const LessonHomework = ({ lesson, level = 'A1', onClose, onMarkComplete }: { lesson: StaticFrenchLesson; level?: string; onClose: () => void; onMarkComplete: () => void }) => {
+export const LessonHomework = ({ lesson, level = 'A1', language = 'French', onClose, onMarkComplete }: { lesson: StaticFrenchLesson; level?: string; language?: string; onClose: () => void; onMarkComplete: () => void }) => {
     const hw = lesson.homework!;
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [writing, setWriting] = useState('');
@@ -85,8 +86,9 @@ export const LessonHomework = ({ lesson, level = 'A1', onClose, onMarkComplete }
     const rateWriting = async () => {
         setWritingBusy(true); setWritingErr(null); setWritingFb(null);
         try {
-            const fb = await evaluateTcfWriting(
-                'Homework writing task', hw.writing.task, hw.writing.minWords, writing, (level as any) || 'A1');
+            const fb = language === 'Chinese'
+                ? await evaluateHskWriting('Homework writing task', hw.writing.task, hw.writing.minWords, writing, '1') as any
+                : await evaluateTcfWriting('Homework writing task', hw.writing.task, hw.writing.minWords, writing, (level as any) || 'A1');
             setWritingFb(fb);
         } catch (e: any) {
             const msg = e?.message || String(e);
@@ -270,7 +272,7 @@ export const LessonHomework = ({ lesson, level = 'A1', onClose, onMarkComplete }
                                 <div key={i} className="bg-white rounded-2xl border border-violet-100 px-4 py-3 space-y-1">
                                     <div className="flex items-center justify-between gap-2">
                                         <p className="text-sm font-bold text-stone-800">{line.fr}</p>
-                                        <button onClick={() => speakText(line.fr, 'French')}
+                                        <button onClick={() => speakText(line.fr, language)}
                                             className="text-stone-300 hover:text-violet-600 shrink-0" aria-label={`Listen: ${line.en}`}>
                                             <Volume2 size={14} />
                                         </button>
