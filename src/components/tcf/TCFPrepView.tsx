@@ -572,8 +572,8 @@ const Curriculum = ({ language }: { language: string }) => {
                         <LessonSection title="Conjugate it fully" icon={<Layers size={13} />}>
                             <div className="space-y-4">
                                 {staticExtras.verbTables.map((vt, i) => (
-                                    <div key={i} className="border border-stone-100 rounded-2xl overflow-hidden">
-                                        <div className="bg-stone-900 px-4 py-2.5">
+                                    <div key={i} className="border border-stone-100 rounded-2xl">
+                                        <div className="bg-stone-900 px-4 py-2.5 rounded-t-2xl">
                                             <p className="text-sm font-black text-white">{vt.title}</p>
                                             {vt.note && <p className="text-[11px] text-stone-300 mt-0.5 leading-relaxed">{vt.note}</p>}
                                         </div>
@@ -600,7 +600,7 @@ const Curriculum = ({ language }: { language: string }) => {
                             <p className="text-xs text-stone-400 mb-3">The words examiners test hardest do more than one job. Learn every use at once — not one at a time, by accident.</p>
                             <div className="space-y-4">
                                 {staticExtras.useCases.map((uc, i) => (
-                                    <div key={i} className="border border-amber-100 rounded-2xl overflow-hidden">
+                                    <div key={i} className="border border-amber-100 rounded-2xl">
                                         <div className="bg-amber-50 px-4 py-2.5">
                                             <p className="text-sm font-black text-amber-900">{uc.word}</p>
                                             {uc.note && <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">{uc.note}</p>}
@@ -625,7 +625,7 @@ const Curriculum = ({ language }: { language: string }) => {
                     {lesson.transformations?.length > 0 && (
                         <LessonSection title="Sentence transformations — one idea, every form" icon={<RotateCcw size={13} />}>
                             <p className="text-xs text-stone-400 mb-3">The same core sentence in every tense and form. Notice what changes and why.</p>
-                            <div className="overflow-hidden rounded-2xl border border-stone-100">
+                            <div className="rounded-2xl border border-stone-100">
                             {lesson.transformations.map((t, i) => (
                                 <div key={i} className={cn('flex items-start gap-3 px-4 py-2.5', i % 2 === 0 ? 'bg-white' : 'bg-stone-50')}>
                                     <span className="text-[9px] font-black text-violet-500 uppercase tracking-wider w-24 shrink-0 pt-0.5">{t.type}</span>
