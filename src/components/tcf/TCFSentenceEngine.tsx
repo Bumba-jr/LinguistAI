@@ -433,7 +433,7 @@ const SentenceEngine = () => {
                         {
                             title: 'avoir — to have (age, possessions, feelings)', formula: 'SUBJECT + ai/as/a/avons/avez/ont',
                             rows: [['j\u2019ai', 'I have'], ['tu as', 'you have'], ['il / elle a', 'he / she has'], ['nous avons', 'we have'], ['vous avez', 'you have'], ['ils / elles ont', 'they have']],
-                            trap: 'Age uses it: j\u2019ai trente ans (I HAVE thirty years). Feelings too: j\u2019ai froid, j\u2019ai peur, j\u2019ai faim. Negative drops the article: je n\u2019ai pas DE voiture.',
+                            trap: 'Age uses it: j’ai trente ans. Feelings too: j’ai froid, j’ai peur, j’ai faim. Negative drops the article: je n’ai pas DE voiture. And the past splits: j’AVAIS une voiture = I had (ongoing — used to have); j’AI EU une voiture = I got one (event).',
                         },
                         {
                             title: 'vouloir + infinitive — want / would like', formula: 'SUBJECT + veux/veux/veut/voulons/voulez/veulent + INFINITIVE',
@@ -588,6 +588,26 @@ const SentenceEngine = () => {
                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">The master order</p>
                     <p className="text-xs text-white/70 leading-relaxed">WHO → TIME marker (often first!) → VERB → OBJECT → PERSON → PLACE → TIME → REASON. And every structure from Section 3 slots into the ACTION slot: je veux / je vais / je viens de / j’ai besoin de + the rest.</p>
                 </div>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="border border-stone-100 rounded-2xl p-4">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Time pieces (the WHEN slot)</p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {[['aujourd’hui', 'today'], ['demain', 'tomorrow'], ['hier', 'yesterday'], ['tous les jours', 'every day'], ['souvent', 'often'], ['parfois', 'sometimes'], ['ne … jamais', 'never']].map(([fr, en]) => (
+                                <span key={fr} className="text-[11px] font-bold bg-white text-stone-600 border border-stone-100 px-2.5 py-1 rounded-lg"><RichWord word={fr} language="French" /> = {en}</span>
+                            ))}
+                        </div>
+                        <p className="text-[11px] text-stone-400 mt-2">Jamais replaces pas: je ne travaille JAMAIS le dimanche — I never work on Sundays.</p>
+                    </div>
+                    <div className="border border-stone-100 rounded-2xl p-4">
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">Place pieces (the WHERE slot)</p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {[['à la maison', 'at home'], ['au bureau', 'at the office'], ['à l’école', 'at school'], ['au marché', 'at the market'], ['je suis à la maison', 'I am at home']].map(([fr, en]) => (
+                                <span key={fr} className="text-[11px] font-bold bg-white text-stone-600 border border-stone-100 px-2.5 py-1 rounded-lg"><RichWord word={fr} language="French" /> = {en}</span>
+                            ))}
+                        </div>
+                        <p className="text-[11px] text-stone-400 mt-2">à + le → au (au bureau); à + la stays (à la maison); à + vowel → à l’école.</p>
+                    </div>
+                </div>
             </Section>
 
             {/* 8 — the tricky English words */}
@@ -641,6 +661,17 @@ const SentenceEngine = () => {
                             trap: 'failli carries the drama ("came close to"), presque is the plain adverb. J’ai failli mourir = I almost died.',
                         },
                         {
+                            word: 'VERBS + their prepositions — where English prepositions do not transfer',
+                            rows: [
+                                ['écouter (NO à)', 'J’écoute la musique. — I listen TO the music; the à stays home', false],
+                                ['attendre (NO à/pour)', 'J’attends le bus. — I wait FOR the bus; direct object', false],
+                                ['téléphoner À', 'Je téléphone À Marie. — I call Marie; this one DOES take à', false],
+                                ['parler À / DE', 'Je parle À Paul, DE la réunion. — to Paul, about the meeting', false],
+                                ['jouer À / DE', 'jouer AU tennis (games) · jouer DU piano (instruments)', false],
+                            ],
+                            trap: 'Learn each verb WITH its preposition (or with none) as one unit — translating English “to/for” word-for-word is the slip.',
+                        },
+                        {
                             word: 'MAY / MIGHT — three tools',
                             rows: [
                                 ['permission', 'Je peux entrer ? → may I come in? — pouvoir is enough', false],
@@ -680,7 +711,25 @@ const SentenceEngine = () => {
                 </div>
             </Section>
 
-            {/* 9 — mini test */}
+            {/* 8b — the core map */}
+            <Section n="9" title="The core map — your 27 sentence starters" sub="Memorized as WHOLE structures: say the opener, fill the rest.">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {[
+                        'Je suis…', 'J’ai…', 'Je fais…', 'Je vais…', 'Je veux…', 'Je voudrais…',
+                        'Je peux…', 'Je dois…', 'Je devrais…', 'J’ai besoin de…', 'J’aime…', 'Je n’aime pas…',
+                        'Je sais…', 'Je comprends…', 'Je pense…', 'Je crois…', 'Je me souviens de…', 'J’oublie…',
+                        'J’ai dit…', 'Je lui ai dit…', 'Je voulais dire…', 'J’aide…', 'J’ai failli…',
+                        'J’étais…', 'Je suis allé(e)…', 'J’avais…', 'J’ai reçu…',
+                    ].map(fr => (
+                        <div key={fr} className="bg-stone-50/70 border border-stone-100 rounded-xl px-3 py-2">
+                            <RichWord word={fr.replace(/…$/, '')} language="French" />
+                        </div>
+                    ))}
+                </div>
+                <p className="text-[11px] text-stone-400 mt-3">Each opener is one structure from Sections 2–4. Combined with the master order, these build the overwhelming majority of everyday French sentences.</p>
+            </Section>
+
+            {/* 10 — mini test */}
             <Section n="9" title="Check yourself" sub="Six answers, all from this page.">
                 <div className="space-y-3">
                     {MINI_TEST.map((t, i) => (
